@@ -5,6 +5,6 @@ WORKDIR /app
 COPY ./app /app/app
 
 # Install basic dependencies
-RUN pip install fastapi uvicorn sqlalchemy psycopg2-binary passlib[argon2] python-jose[cryptography] python-multipart email-validator slowapi
+RUN pip install fastapi uvicorn sqlalchemy psycopg2-binary passlib[argon2] python-jose[cryptography] python-multipart email-validator slowapi Pillow
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
