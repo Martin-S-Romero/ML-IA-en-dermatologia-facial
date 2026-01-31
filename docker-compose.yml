@@ -8,6 +8,30 @@ services:
     volumes:
       - ./backend/app:/app/app
       - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/tesis_db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - tesis-network
+
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=tesis_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - tesis-network
 
@@ -23,3 +47,6 @@ services:
 networks:
   tesis-network:
     driver: bridge
+
+volumes:
+  postgres_data:

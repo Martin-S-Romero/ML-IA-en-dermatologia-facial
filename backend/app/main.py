@@ -1,8 +1,32 @@
 import time
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
+from sqlalchemy.orm import Session
+from sqlalchemy import text
 from app.core.logger import logger
+from app.core.database import engine, Base, get_db
+from app import models
+
+# Create tables on startup
+# Retry logic for DB connection
+max_retries = 10
+retry_delay = 2
+
+for i in range(max_retries):
+    try:
+        models.Base.metadata.create_all(bind=engine)
+        logger.info("Database connection successful and tables created.")
+        break
+    except Exception as e:
+        if i == max_retries - 1:
+            logger.error(f"Could not connect to database after {max_retries} attempts.", exc_info=True)
+            raise e
+        logger.warning(f"Database not ready yet, retrying in {retry_delay}s... ({i+1}/{max_retries})")
+        time.sleep(retry_delay)
 
 app = FastAPI()
+
+from app.api import auth
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -23,7 +47,17 @@ async def log_requests(request: Request, call_next):
 @app.get("/")
 def read_root():
     logger.info("Root endpoint accessed")
-    return {"message": "Hello from Backend with Logs"}
+    return {"message": "Hello from Backend with Logs", "db_status": "connected"}
+
+@app.get("/health/db")
+def check_db(db: Session = Depends(get_db)):
+    try:
+        # Try to execute a simple query
+        result = db.execute(text("SELECT 1"))
+        return {"status": "ok", "result": result.scalar()}
+    except Exception as e:
+        logger.error("Database connection failed", exc_info=True)
+        return {"status": "error", "message": str(e)}
 
 @app.get("/test-error")
 def test_error():

@@ -135,3 +135,8 @@ coverage/
 # Documentación generada
 ############################
 docs/_build/
+.env.example
+README.md
+ARCHITECTURE.md
+AI_RULES.md
+TEST_LOG.md
