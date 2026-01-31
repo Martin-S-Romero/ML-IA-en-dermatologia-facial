@@ -2,8 +2,12 @@ import time
 from fastapi import FastAPI, Request, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from app.core.logger import logger
 from app.core.database import engine, Base, get_db
+from app.core.ratelimit import limiter
 from app import models
 
 # Create tables on startup
@@ -24,6 +28,11 @@ for i in range(max_retries):
         time.sleep(retry_delay)
 
 app = FastAPI()
+
+# Rate Limiting Setup
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 from app.api import auth
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
