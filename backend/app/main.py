@@ -34,9 +34,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-from app.api import auth, upload
+from app.api import auth, upload, process
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(upload.router, prefix="/upload", tags=["upload"])
+app.include_router(process.router, prefix="/process", tags=["process"])
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):

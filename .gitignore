@@ -140,7 +140,7 @@ README.md
 ARCHITECTURE.md
 AI_RULES.md
 TEST_LOG.md
-/scripts/verify_upload.py
+/scripts
 *.txt
 *.jpg
 *.png
