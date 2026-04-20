@@ -1,6 +1,7 @@
 {
   "name": "skinai",
   "version": "1.0.0",
+  "type": "module",
   "description": "SkinAI — Detección de acné y rosácea con IA",
   "scripts": {
     "dev": "vite",
