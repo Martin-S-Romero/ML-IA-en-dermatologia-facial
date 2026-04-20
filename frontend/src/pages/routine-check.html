@@ -1,0 +1,56 @@
+<section
+  id="page-routine-check"
+  class="page-enter min-h-[calc(100vh-44px)] bg-bg"
+  aria-label="Verificación de rutina"
+>
+  <div class="max-w-lg mx-auto px-4 py-6 lg:py-10">
+
+    <button class="btn-back-dark mb-4 text-sm" data-go="capture">← Volver a captura</button>
+
+    <div class="bg-gradient-diag rounded-card px-5 py-6 text-center text-white mb-5">
+      <h1 class="font-display text-xl text-cream mb-1.5">Antes de analizar...</h1>
+      <p class="text-xs text-white/70 leading-relaxed">
+        ¿Seguiste usando los mismos productos desde tu último análisis?
+      </p>
+    </div>
+
+    <!-- Rutina registrada - se llena desde la API -->
+    <div class="mb-4">
+      <p class="section-label mb-2">Tu rutina registrada</p>
+      <div id="routine-check-list" class="card">
+        <div class="px-4 py-8 text-center">
+          <p class="text-xs text-slate">Cargando rutina activa...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <button
+        class="w-full flex items-center gap-4 bg-cream border-2 border-sand rounded-card p-4 text-left transition-all hover:border-forest hover:bg-white"
+        data-go="analyzing"
+      >
+        <div class="w-10 h-10 rounded-full bg-ok/15 flex items-center justify-center flex-shrink-0">
+          <span class="text-ok font-bold text-lg">+</span>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-ink mb-0.5">Sí, seguí la rutina</p>
+          <p class="text-[10px] text-slate">Continuar directamente al análisis</p>
+        </div>
+      </button>
+
+      <button
+        class="w-full flex items-center gap-4 bg-cream border-2 border-sand rounded-card p-4 text-left transition-all hover:border-forest hover:bg-white"
+        data-go="routine-change"
+      >
+        <div class="w-10 h-10 rounded-full bg-warn/15 flex items-center justify-center flex-shrink-0">
+          <span class="text-warn font-bold text-lg">~</span>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-ink mb-0.5">No, cambié algunos productos</p>
+          <p class="text-[10px] text-slate">Actualizar mi rutina antes de analizar</p>
+        </div>
+      </button>
+    </div>
+
+  </div>
+</section>

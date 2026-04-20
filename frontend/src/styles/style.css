@@ -1,0 +1,246 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts loaded in index.html ── */
+
+/* ── Custom component classes ── */
+@layer components {
+
+  /* Buttons */
+  .btn-primary {
+    @apply w-full bg-forest text-white font-semibold text-sm py-3 px-6 rounded-full
+           transition-all duration-200 hover:bg-opacity-90 active:scale-95
+           flex items-center justify-center gap-2;
+  }
+  .btn-secondary {
+    @apply w-full bg-transparent text-forest font-semibold text-sm py-3 px-6 rounded-full
+           border-2 border-forest transition-all duration-200
+           hover:bg-mint active:scale-95
+           flex items-center justify-center gap-2;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-slate text-xs underline cursor-pointer border-none
+           hover:text-ink transition-colors duration-150;
+  }
+  .btn-back {
+    @apply flex items-center gap-2 text-white/80 font-semibold text-sm
+           bg-transparent border-none cursor-pointer hover:text-white transition-colors;
+  }
+  .btn-back-dark {
+    @apply flex items-center gap-2 text-forest font-semibold text-sm
+           bg-transparent border-none cursor-pointer hover:text-ink transition-colors;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-card shadow-card overflow-hidden;
+  }
+  .card-body {
+    @apply p-4;
+  }
+
+  /* Section label */
+  .section-label {
+    @apply text-[10px] font-bold tracking-[0.09em] uppercase text-bark mb-1.5;
+  }
+
+  /* Form fields */
+  .field-label {
+    @apply block text-[11px] font-semibold text-slate mb-1;
+  }
+  .field-input {
+    @apply w-full px-3 py-2.5 border-[1.5px] border-sand rounded-sm
+           font-body text-sm text-ink bg-cream outline-none
+           focus:border-forest focus:bg-white transition-colors;
+  }
+
+  /* Option pill buttons (profile selectors) */
+  .option-btn {
+    @apply bg-cream border-2 border-sand rounded-sm py-2.5 px-3
+           text-center text-xs font-medium text-slate cursor-pointer
+           transition-all duration-200 hover:bg-mint hover:border-forest hover:text-forest;
+  }
+  .option-btn.selected {
+    @apply bg-mint border-forest text-forest font-semibold;
+  }
+
+  /* Chips */
+  .chip {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium;
+  }
+  .chip-green  { @apply bg-mint text-ok; }
+  .chip-warn   { @apply bg-[#FEF3D7] text-[#915A00]; }
+  .chip-rose   { @apply bg-blush text-rose; }
+  .chip-blue   { @apply bg-[#E8F4FE] text-[#1A6FAD]; }
+
+  /* Severity bar */
+  .sev-bar-track {
+    @apply h-[5px] rounded-full bg-white/20 overflow-hidden;
+  }
+  .sev-bar-fill {
+    @apply h-full rounded-full;
+    background: linear-gradient(90deg, #7ECBA1, #D4942A);
+  }
+
+  /* Characteristic card */
+  .char-card {
+    @apply bg-cream rounded-sm p-3 border-l-[3px] border-sand;
+  }
+  .char-card.bad  { @apply border-rose; }
+  .char-card.ok   { @apply border-ok; }
+  .char-card.warn { @apply border-warn; }
+
+  /* Product status badges */
+  .status-used  { @apply text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-mint text-ok; }
+  .status-new   { @apply text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[#E8F4FE] text-[#1A6FAD]; }
+  .status-drop  { @apply text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-blush text-rose; }
+  .status-init  { @apply text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-sand text-slate; }
+
+  /* Reuse / only tags */
+  .reuse-tag { @apply inline-flex items-center gap-1 bg-mint text-ok px-1.5 py-0.5 rounded-md text-[10px] font-semibold; }
+  .only-tag  { @apply bg-[#FEF3D7] text-[#915A00] px-1.5 py-0.5 rounded-md text-[10px] font-semibold; }
+
+  /* Compare bar */
+  .comp-bar-track { @apply w-20 h-[5px] bg-sand rounded-full overflow-hidden flex-shrink-0; }
+  .comp-bar-fill  { @apply h-full rounded-full bg-ok; }
+  .comp-bar-fill.bad { @apply bg-rose; }
+
+  /* Info / warn boxes */
+  .info-box { @apply bg-mint rounded-sm p-3 text-[12px] text-ok leading-relaxed flex gap-2; }
+  .warn-box { @apply bg-[#FEF3D7] rounded-sm p-3 text-[12px] text-[#7A4800] leading-relaxed flex gap-2; }
+
+  /* Routine step */
+  .routine-step {
+    @apply bg-cream rounded-sm mb-2 overflow-hidden border-[1.5px] border-sand;
+  }
+  .routine-step-header {
+    @apply flex items-center gap-2.5 p-3 cursor-pointer;
+  }
+  .step-num {
+    @apply w-6 h-6 rounded-full bg-forest text-white text-[10px] font-bold
+           flex items-center justify-center flex-shrink-0;
+  }
+  .step-num.reuse { @apply bg-bark; }
+
+  /* History item */
+  .hist-item {
+    @apply bg-cream rounded-sm mb-2 border-[1.5px] border-sand
+           cursor-pointer transition-all duration-200
+           hover:border-bark hover:bg-white;
+  }
+
+  /* Description card (detail view) */
+  .desc-card {
+    @apply bg-cream rounded-sm p-3.5 border-l-4 border-bark;
+  }
+
+  /* Drawer overlay */
+  .drawer-overlay {
+    @apply fixed inset-0 bg-ink/50 z-50 hidden backdrop-blur-sm;
+  }
+  .drawer-overlay.open { @apply block; }
+
+  /* Side drawer — abre desde la izquierda */
+  .side-drawer {
+    @apply fixed top-0 left-0 w-[72%] max-w-xs h-full bg-forest z-[55]
+           flex flex-col -translate-x-full transition-transform duration-300 ease-in-out;
+  }
+  .side-drawer.open { @apply translate-x-0; }
+
+  /* Desktop sidebar */
+  .desktop-sidebar {
+    @apply hidden lg:flex flex-col w-64 bg-forest text-white flex-shrink-0
+           sticky top-0 h-screen overflow-y-auto;
+  }
+  .desktop-sidebar-hidden .desktop-sidebar {
+    @apply !hidden;
+  }
+  .sidebar-nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-sm cursor-pointer
+           transition-all duration-200 text-sm font-medium text-white/60
+           hover:bg-white/10 hover:text-white mb-1;
+  }
+  .sidebar-nav-item.active { @apply bg-bark/20 text-bark; }
+
+  /* PDF modal */
+  .pdf-section-row {
+    @apply flex items-start gap-3 p-2.5 bg-cream rounded-sm mb-2
+           cursor-pointer border-[1.5px] border-sand
+           hover:border-forest hover:bg-white transition-all duration-200;
+  }
+
+  /* Capture viewfinder */
+  .viewfinder {
+    @apply bg-ink rounded-xl h-56 flex flex-col items-center justify-center
+           relative overflow-hidden mb-3;
+  }
+  .viewfinder-guide {
+    @apply w-36 h-44 rounded-full border-2 border-dashed border-bark/60
+           flex items-center justify-center text-5xl;
+  }
+  .viewfinder-corner::before,
+  .viewfinder-corner::after {
+    content: '';
+    @apply absolute w-8 h-8 border-bark border-solid;
+  }
+  .viewfinder-corner::before { @apply top-3 left-3 border-t-[3px] border-l-[3px] border-r-0 border-b-0; }
+  .viewfinder-corner::after  { @apply bottom-3 right-3 border-b-[3px] border-r-[3px] border-t-0 border-l-0; }
+
+  /* Zone markers on image */
+  .zone-marker {
+    @apply absolute rounded-full border-2 animate-zone-pulse;
+  }
+  .zone-marker.sev { @apply border-red-500 bg-red-500/20; }
+  .zone-marker.mod { @apply border-warn bg-warn/20; }
+
+  /* Analyzing ring */
+  .analyzing-ring {
+    @apply w-24 h-24 rounded-full border-[3px] border-sand border-t-forest
+           animate-spin-ring relative;
+  }
+
+  /* Page fade animation */
+  .page-enter {
+    @apply animate-fade-in;
+  }
+
+  /* Fitz dots */
+  .fitz-dot {
+    @apply flex-1 h-7 rounded-md cursor-pointer border-2 border-transparent
+           transition-all duration-200;
+  }
+  .fitz-dot.selected { @apply border-forest scale-110; }
+
+  /* Accordion (rutina por análisis) */
+  .accordion-card {
+    @apply bg-cream rounded-sm mb-2 overflow-hidden border-[1.5px] border-sand;
+  }
+  .accordion-header {
+    @apply flex items-center justify-between p-3 cursor-pointer;
+  }
+  .accordion-body {
+    @apply hidden border-t border-sand px-3 pb-3 pt-2;
+  }
+  .accordion-card.open .accordion-body { @apply block; }
+  .accordion-arrow {
+    @apply text-bark text-sm transition-transform duration-200;
+  }
+  .accordion-card.open .accordion-arrow { @apply rotate-180; }
+}
+
+/* ── Custom scrollbar ── */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .bg-gradient-hero {
+    background: linear-gradient(160deg, #233D30 0%, #2a5040 100%);
+  }
+  .bg-gradient-diag {
+    background: linear-gradient(140deg, #233D30 0%, #2a5040 100%);
+  }
+  .bg-sev-bar {
+    background: linear-gradient(90deg, #7ECBA1, #D4942A);
+  }
+}

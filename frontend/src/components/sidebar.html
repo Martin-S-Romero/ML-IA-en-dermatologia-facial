@@ -1,0 +1,31 @@
+<aside
+  class="desktop-sidebar"
+  role="complementary"
+  aria-label="Navegación del dashboard"
+>
+  <!-- Top bar: hamburger + logo -->
+  <div class="flex items-center gap-3 px-4 py-3 border-b border-white/10 flex-shrink-0">
+    <button
+      onclick="toggleDesktopSidebar()"
+      class="flex flex-col gap-1 p-1 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity flex-shrink-0"
+      aria-label="Cerrar menú lateral"
+    >
+      <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+      <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+      <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+    </button>
+    <span class="font-display text-lg text-bark tracking-tight">SkinAI</span>
+  </div>
+  <nav class="flex-1 p-3 pt-4" aria-label="Menú del dashboard">
+    <button class="sidebar-nav-item active w-full text-left" id="sidebar-dash-btn" onclick="dtab('dd')">Dashboard</button>
+    <div class="h-px bg-white/10 my-3"></div>
+    <button class="sidebar-nav-item w-full text-left" data-go="account">Mi cuenta</button>
+    <button class="sidebar-nav-item w-full text-left" onclick="openPdfModal()">Exportar PDF</button>
+    <div class="h-px bg-white/10 my-3"></div>
+    <button class="sidebar-nav-item w-full text-left" onclick="showTerms()">Términos</button>
+    <button class="sidebar-nav-item w-full text-left !text-rose/70 hover:!text-rose" onclick="logout()">Cerrar sesión</button>
+  </nav>
+  <footer class="px-4 py-3 border-t border-white/10">
+    <button class="text-[10px] text-white/35 hover:text-white/55 underline" onclick="showTerms()">SkinAI v1.0 · Privacidad</button>
+  </footer>
+</aside>

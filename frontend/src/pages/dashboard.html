@@ -1,0 +1,203 @@
+<section
+  id="page-dashboard"
+  class="page-enter min-h-[calc(100vh-44px)]"
+  aria-label="Dashboard"
+>
+  <div class="flex min-h-[calc(100vh-44px)]">
+
+    <div id="dashboard-sidebar"></div>
+
+    <div class="flex-1 flex flex-col bg-bg overflow-hidden">
+
+      <!-- Mobile top bar -->
+      <header class="bg-forest text-white px-4 pt-10 pb-3 relative overflow-hidden lg:hidden">
+        <div class="flex items-center gap-3 mb-1 relative">
+          <button
+            id="ham-btn"
+            class="flex flex-col gap-1 p-1.5 bg-transparent border-none cursor-pointer flex-shrink-0"
+            onclick="toggleDrawer()"
+            aria-label="Abrir menú"
+            aria-expanded="false"
+          >
+            <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+            <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+            <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+          </button>
+          <span class="font-display text-lg text-bark">SkinAI</span>
+        </div>
+        <p class="text-xs text-white/55 relative">Bienvenido,</p>
+        <p id="dash-name-mobile" class="font-display text-lg font-medium relative">--</p>
+      </header>
+
+      <!-- Desktop top bar -->
+      <header class="hidden lg:flex bg-forest text-white px-6 py-4 items-center justify-between">
+        <div class="flex items-center gap-4">
+          <!-- Botón restore: solo visible cuando el sidebar está oculto -->
+          <button
+            id="desktop-ham-restore"
+            style="display:none"
+            class="flex-col gap-1 p-1.5 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
+            onclick="toggleDesktopSidebar()"
+            aria-label="Abrir menú lateral"
+          >
+            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+          </button>
+          <div>
+            <p class="text-xs text-white/55">Bienvenido,</p>
+            <p id="dash-name-desktop" class="font-display text-xl font-medium">--</p>
+          </div>
+        </div>
+        <button
+          class="flex items-center gap-2 text-xs font-semibold bg-bark text-ink px-4 py-2 rounded-full hover:bg-bark/90 transition-colors"
+          onclick="openPdfModal()"
+        >
+          Exportar PDF
+        </button>
+      </header>
+
+      <!-- Tab bar -->
+      <nav class="flex bg-forest border-b border-white/10 overflow-x-auto scrollbar-hide" role="tablist">
+        <button class="dtab active" data-tab="dd" onclick="dtab('dd')" role="tab" aria-selected="true">Dashboard</button>
+        <button class="dtab" data-tab="dh" onclick="dtab('dh')" role="tab" aria-selected="false">Historial</button>
+        <button class="dtab" data-tab="dg" onclick="dtab('dg')" role="tab" aria-selected="false">Gráficas</button>
+        <button class="dtab" data-tab="dr" onclick="dtab('dr')" role="tab" aria-selected="false">Rutina</button>
+      </nav>
+
+      <!-- TAB: DASHBOARD -->
+      <div id="dd" class="dpage active px-4 py-4 lg:px-8 lg:py-6 overflow-y-auto" role="tabpanel">
+        <div class="max-w-5xl mx-auto grid gap-4 lg:grid-cols-2 lg:gap-5">
+
+          <div class="lg:col-span-2">
+            <button class="btn-primary" data-go="capture">Nuevo análisis</button>
+          </div>
+
+          <div class="lg:hidden">
+            <button class="w-full flex items-center justify-center gap-2 bg-white text-forest border-2 border-forest rounded-full py-2.5 text-xs font-semibold hover:bg-forest hover:text-white transition-all" onclick="openPdfModal()">Exportar análisis en PDF</button>
+          </div>
+
+          <!-- Análisis más reciente -->
+          <div id="dash-latest" class="lg:col-span-2 bg-gradient-diag rounded-card p-4 text-white relative overflow-hidden">
+            <p class="text-[10px] text-white/55 uppercase tracking-widest mb-3">Sin análisis aún</p>
+            <p class="text-sm text-white/70">Realiza tu primer análisis para ver los resultados aquí.</p>
+            <div class="mt-4">
+              <button class="bg-bark text-ink text-xs font-semibold py-2 px-4 rounded-full hover:bg-bark/90 transition-colors" data-go="capture">Comenzar análisis</button>
+            </div>
+          </div>
+
+          <!-- Zonas detectadas -->
+          <div id="dash-zones" class="card card-body hidden">
+            <p class="section-label mb-3">Zonas detectadas</p>
+            <div class="relative h-52 bg-ink rounded-xl overflow-hidden mb-3">
+              <p class="absolute inset-0 flex items-center justify-center text-white/40 text-xs">Imagen del análisis</p>
+            </div>
+          </div>
+
+          <!-- Características -->
+          <div id="dash-chars" class="card card-body hidden">
+            <p class="section-label mb-3">Características detectadas</p>
+            <div id="dash-chars-grid" class="grid grid-cols-2 gap-2"></div>
+          </div>
+
+          <!-- Productos en uso -->
+          <div id="dash-products" class="card card-body lg:col-span-2 hidden">
+            <p class="section-label mb-1">Productos en uso</p>
+            <div id="dash-products-list" class="divide-y divide-sand"></div>
+          </div>
+
+          <!-- Comparación -->
+          <div id="dash-comparison" class="card card-body lg:col-span-2 hidden">
+            <p class="section-label mb-1">Comparación con análisis anterior</p>
+            <div id="dash-comparison-body" class="bg-cream rounded-sm p-3 space-y-2.5 mb-3"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB: HISTORIAL -->
+      <div id="dh" class="dpage px-4 py-4 lg:px-8 lg:py-6 overflow-y-auto" role="tabpanel">
+        <div class="max-w-3xl mx-auto">
+          <div id="hist-list">
+            <p class="section-label mb-1">Análisis realizados</p>
+            <div id="hist-items" class="mt-3">
+              <div class="card card-body text-center py-10">
+                <p class="text-xs text-slate">No tienes análisis registrados aún.</p>
+                <button class="btn-primary mt-4 max-w-xs mx-auto" data-go="capture">Hacer primer análisis</button>
+              </div>
+            </div>
+          </div>
+          <div id="hist-detail" class="hidden animate-fade-in" role="region" aria-label="Detalle del análisis"></div>
+        </div>
+      </div>
+
+      <!-- TAB: GRÁFICAS -->
+      <div id="dg" class="dpage px-4 py-4 lg:px-8 lg:py-6 overflow-y-auto" role="tabpanel">
+        <div class="max-w-4xl mx-auto grid gap-4 lg:grid-cols-2">
+
+          <div class="card card-body lg:col-span-2 text-center py-10">
+            <p class="text-xs text-slate">Las gráficas estarán disponibles cuando tengas al menos 2 análisis registrados.</p>
+          </div>
+
+          <div class="card card-body hidden" id="chart-block-lesiones">
+            <p class="section-label mb-1">Lesiones activas en el tiempo</p>
+            <p class="text-xs text-slate mb-3">Evolución desde el primer análisis</p>
+            <div class="relative h-44"><canvas id="chart-lesiones" aria-label="Gráfica de lesiones"></canvas></div>
+          </div>
+
+          <div class="card card-body hidden" id="chart-block-radar">
+            <p class="section-label mb-1">Perfil — primer vs último análisis</p>
+            <div class="relative h-52"><canvas id="chart-radar" aria-label="Gráfica radar"></canvas></div>
+          </div>
+
+          <div class="card card-body hidden" id="chart-block-sev">
+            <p class="section-label mb-1">Severidad por análisis</p>
+            <div class="relative h-40"><canvas id="chart-sev" aria-label="Gráfica de severidad"></canvas></div>
+          </div>
+
+          <div class="card card-body hidden" id="chart-block-bars">
+            <p class="section-label mb-1">Indicadores de mejoría</p>
+            <div class="relative h-44"><canvas id="chart-bars" aria-label="Gráfica de mejorías"></canvas></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB: RUTINA -->
+      <div id="dr" class="dpage px-4 py-4 lg:px-8 lg:py-6 overflow-y-auto" role="tabpanel">
+        <div class="max-w-4xl mx-auto grid gap-4 lg:grid-cols-2 lg:gap-5">
+
+          <!-- Productos actuales -->
+          <div class="lg:col-span-2 bg-cream rounded-card p-4">
+            <p class="section-label !mb-3">Productos en rutina actual</p>
+            <div id="routine-current-products" class="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+              <p class="text-xs text-slate col-span-full text-center py-4">Sin rutina activa. Realiza tu primer análisis.</p>
+            </div>
+          </div>
+
+          <!-- Rutina recomendada -->
+          <div id="routine-recommended" class="card card-body lg:col-span-2 hidden">
+            <p class="section-label mb-1">Rutina recomendada</p>
+            <p id="routine-recommended-meta" class="text-xs text-slate mb-3">--</p>
+
+            <div class="flex gap-2 mb-4">
+              <button id="rtab-am" class="flex-1 py-2 rounded-md text-xs font-semibold bg-warn text-white border-none cursor-pointer transition-all" onclick="switchRoutine('am')">Mañana</button>
+              <button id="rtab-pm" class="flex-1 py-2 rounded-md text-xs font-semibold bg-cream text-slate border-[1.5px] border-sand cursor-pointer transition-all" onclick="switchRoutine('pm')">Noche</button>
+            </div>
+
+            <div id="routine-am"></div>
+            <div id="routine-pm" class="hidden"></div>
+          </div>
+
+          <!-- Sin rutina -->
+          <div id="routine-empty" class="card card-body lg:col-span-2 text-center py-10">
+            <p class="text-xs text-slate mb-4">No tienes rutina activa. Realiza un análisis para recibir tu rutina personalizada.</p>
+            <button class="btn-primary max-w-xs mx-auto" data-go="capture">Hacer análisis</button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>

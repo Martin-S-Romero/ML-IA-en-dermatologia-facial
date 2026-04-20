@@ -14,7 +14,7 @@ La separación es principalmente **lógica**, con la capacidad de evolucionar ha
 [ Usuario ]
      |
      v
-[ Frontend (React) ]
+[ Frontend (HTML/Vite + Tailwind CSS) ]
      |
      v
 [ API Gateway / Backend Orquestador ]
@@ -36,7 +36,7 @@ La separación es principalmente **lógica**, con la capacidad de evolucionar ha
 
 ### 1. Frontend
 
-* Aplicación web desarrollada en React
+* Aplicación web desarrollada en HTML/Vite + Tailwind CSS
 * Único punto de entrada del usuario
 * Comunicación exclusiva con el API Gateway
 * Manejo de estados de análisis (processing, completed, failed)

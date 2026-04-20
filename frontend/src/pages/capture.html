@@ -1,0 +1,147 @@
+<section
+  id="page-capture"
+  class="page-enter min-h-[calc(100vh-44px)] bg-bg"
+  aria-label="Captura de imagen"
+>
+  <div class="max-w-2xl mx-auto px-4 py-6 lg:py-10 grid gap-6 lg:grid-cols-2 lg:gap-10 lg:items-start">
+
+    <!-- ── STATE: NORMAL CAPTURE ── -->
+    <div id="capture-normal">
+      <button class="btn-back-dark mb-4 text-sm" data-go="dashboard">← Volver al Dashboard</button>
+      <h1 class="font-display text-xl text-ink mb-1">Foto de tu rostro</h1>
+      <p class="text-xs text-slate mb-4">Necesitamos una imagen clara para el análisis</p>
+
+      <!-- Viewfinder -->
+      <div class="viewfinder mb-3" aria-label="Visor de cámara">
+        <div class="viewfinder-corner absolute inset-0"></div>
+        <div class="viewfinder-guide" aria-hidden="true">[ ]</div>
+        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-bark/15 rounded-lg px-3 py-1.5 text-[10px] text-cream text-center whitespace-nowrap">
+          Centra tu rostro · Buena iluminación · Sin filtros
+        </div>
+      </div>
+
+      <!-- Guide tips -->
+      <div class="bg-cream rounded-card p-3 mb-4">
+        <p class="text-xs font-semibold text-ink mb-2">Para un mejor análisis:</p>
+        <ul class="space-y-1">
+          <li class="flex items-center gap-2 text-[11px] text-slate">
+            <div class="w-1.5 h-1.5 rounded-full bg-forest flex-shrink-0"></div>
+            Luz natural o frontal uniforme
+          </li>
+          <li class="flex items-center gap-2 text-[11px] text-slate">
+            <div class="w-1.5 h-1.5 rounded-full bg-forest flex-shrink-0"></div>
+            Sin maquillaje ni filtros de cámara
+          </li>
+          <li class="flex items-center gap-2 text-[11px] text-slate">
+            <div class="w-1.5 h-1.5 rounded-full bg-forest flex-shrink-0"></div>
+            Cabello retirado del rostro
+          </li>
+          <li class="flex items-center gap-2 text-[11px] text-slate">
+            <div class="w-1.5 h-1.5 rounded-full bg-forest flex-shrink-0"></div>
+            Mirar directo a la cámara
+          </li>
+        </ul>
+      </div>
+
+      <!-- Hidden file inputs -->
+      <input type="file" id="upload-file-input" accept="image/jpeg,image/png" class="hidden">
+      <input type="file" id="camera-file-input" accept="image/jpeg,image/png" capture="user" class="hidden">
+
+      <!-- API error message -->
+      <div id="capture-upload-error" class="hidden bg-[#FFF5F5] border border-rose/30 rounded-xl p-3 mb-3">
+        <p id="capture-upload-error-msg" class="text-xs text-rose"></p>
+      </div>
+
+      <!-- Action buttons -->
+      <div id="capture-btns" class="grid grid-cols-2 gap-3">
+        <button id="btn-upload-photo" class="btn-secondary text-xs">Subir foto</button>
+        <button id="btn-camera-photo" class="btn-primary text-xs">Tomar foto</button>
+      </div>
+
+      <!-- Upload progress -->
+      <div id="capture-uploading" class="hidden text-center py-3">
+        <p class="text-xs text-slate animate-pulse">Subiendo imagen, por favor espera...</p>
+      </div>
+
+    </div>
+
+    <!-- ── STATE: IMAGE ERROR ── -->
+    <!-- Appears in the SAME screen when captured/uploaded image fails validation -->
+    <div id="capture-error" class="hidden" role="alert" aria-live="assertive">
+      <h1 class="font-display text-xl text-ink mb-1">Imagen con problemas</h1>
+      <p class="text-xs text-slate mb-4">No podemos analizar esta foto. Revisa los problemas detectados y vuelve a intentarlo.</p>
+
+      <!-- Failed image preview -->
+      <div class="relative rounded-xl overflow-hidden mb-0">
+        <div class="h-48 bg-ink flex items-center justify-center">
+          <span class="text-9xl opacity-20 blur-sm select-none" aria-hidden="true">[ ]</span>
+        </div>
+        <!-- Error overlay -->
+        <div class="absolute inset-0 bg-rose/10 flex flex-col items-center justify-center gap-2">
+          <span class="text-4xl" aria-hidden="true"></span>
+          <span class="bg-rose/90 text-white text-xs font-bold px-4 py-1.5 rounded-full text-center leading-snug">
+            Imagen no apta<br>para el análisis
+          </span>
+        </div>
+      </div>
+
+      <!-- Detected problems -->
+      <div class="bg-[#FFF5F5] px-4 py-3 rounded-b-xl mb-3">
+        <p class="text-xs font-semibold text-rose mb-2">Problemas detectados:</p>
+        <ul class="space-y-1.5" role="list">
+          <li class="flex items-center gap-2 text-xs text-rose pb-1.5 border-b border-rose/20">
+            <div class="w-1.5 h-1.5 rounded-full bg-rose flex-shrink-0"></div>
+            Imagen borrosa o sin enfoque
+          </li>
+          <li class="flex items-center gap-2 text-xs text-rose pb-1.5 border-b border-rose/20">
+            <div class="w-1.5 h-1.5 rounded-full bg-rose flex-shrink-0"></div>
+            Iluminación insuficiente o irregular
+          </li>
+          <li class="flex items-center gap-2 text-xs text-rose pb-1.5 border-b border-rose/20">
+            <div class="w-1.5 h-1.5 rounded-full bg-rose flex-shrink-0"></div>
+            Rostro parcialmente cubierto
+          </li>
+          <li class="flex items-center gap-2 text-xs text-rose">
+            <div class="w-1.5 h-1.5 rounded-full bg-rose flex-shrink-0"></div>
+            Ángulo incorrecto — se necesita vista frontal
+          </li>
+        </ul>
+      </div>
+
+      <!-- Tips to fix -->
+      <div class="bg-[#FEF3D7] rounded-card p-3 mb-4">
+        <p class="text-xs font-semibold text-[#915A00] mb-2">Para obtener un buen resultado:</p>
+        <ul class="space-y-1">
+          <li class="flex items-center gap-2 text-[11px] text-[#7A4800]"> Usa luz natural frente a ti, no detrás</li>
+          <li class="flex items-center gap-2 text-[11px] text-[#7A4800]"> Mantén el teléfono estable a la altura de los ojos</li>
+          <li class="flex items-center gap-2 text-[11px] text-[#7A4800]"> Retira cabello, lentes y accesorios</li>
+          <li class="flex items-center gap-2 text-[11px] text-[#7A4800]"> Espera a que la cámara enfoque antes de tomar la foto</li>
+        </ul>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button class="btn-secondary text-xs" onclick="hideCaptureError()">Subir otra foto</button>
+        <button class="btn-primary text-xs" onclick="hideCaptureError()">Reintentar</button>
+      </div>
+    </div>
+
+    <!-- Right column (desktop): additional guidance -->
+    <aside class="hidden lg:block" aria-label="Consejos de captura">
+      <div class="card card-body">
+        <p class="section-label">Consejos de calidad</p>
+        <h2 class="font-display text-base text-ink mb-3">¿Cómo tomar la mejor foto?</h2>
+        <div class="space-y-3 text-xs text-slate leading-relaxed">
+          <p>🌅 <strong class="text-ink">Iluminación:</strong> frente a una ventana con luz natural difusa, o bajo una lámpara frontal uniforme.</p>
+          <p>📐 <strong class="text-ink">Ángulo:</strong> cámara al nivel de los ojos, no desde arriba ni abajo. El rostro debe ocupar el 70% del encuadre.</p>
+          <p>🧖 <strong class="text-ink">Sin filtros:</strong> no uses beautify, modo retrato ni filtros de red social. El modelo necesita ver la piel real.</p>
+          <p>⏱ <strong class="text-ink">Estático:</strong> apoya el codo o usa un soporte. El movimiento genera desenfoque.</p>
+        </div>
+      </div>
+
+      <div class="info-box mt-4 text-[11px]">
+         La detección de zonas afectadas en la imagen se realiza automáticamente al completar el modelo ML. Los resultados aparecen en el reporte final.
+      </div>
+    </aside>
+
+  </div>
+</section>

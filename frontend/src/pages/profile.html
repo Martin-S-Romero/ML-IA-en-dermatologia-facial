@@ -1,0 +1,152 @@
+<section
+  id="page-profile"
+  class="page-enter min-h-[calc(100vh-44px)] bg-bg"
+  aria-label="Perfil de piel"
+>
+  <div class="max-w-3xl mx-auto px-4 py-6 lg:py-10">
+
+    <button class="btn-back-dark mb-4 text-sm" data-go="dashboard">← Volver al Dashboard</button>
+
+    <div class="mb-5">
+      <h1 class="font-display text-xl text-ink mb-1">Tu perfil de piel</h1>
+      <p class="text-xs text-slate">Esta información calibra cómo el modelo evalúa tu piel.</p>
+    </div>
+
+    <div id="profile-error" class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-md px-3 py-2"></div>
+    <div id="profile-success" class="hidden mb-4 bg-green-50 border border-green-200 text-green-700 text-xs rounded-md px-3 py-2"></div>
+
+    <div class="grid gap-6 lg:grid-cols-2 lg:gap-8">
+
+      <!-- Sección 1: Datos básicos -->
+      <div class="card card-body">
+        <p class="section-label">Sección 1 de 6</p>
+        <h2 class="font-display text-lg text-ink mb-1">Datos básicos</h2>
+        <p class="text-xs text-slate mb-4">Calibra cómo el modelo evalúa tu piel</p>
+
+        <div class="mb-3">
+          <label class="field-label" for="age">¿Cuántos años tienes?</label>
+          <input id="age" type="number" class="field-input w-24" placeholder="25" min="12" max="90" />
+        </div>
+        <div>
+          <label class="field-label">Sexo biológico</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="option-btn" data-group="sex" data-value="masculino">Masculino</button>
+            <button class="option-btn" data-group="sex" data-value="femenino">Femenino</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 2: Fitzpatrick -->
+      <div class="card card-body">
+        <p class="section-label">Sección 2 de 6</p>
+        <h2 class="font-display text-lg text-ink mb-1">Fototipo Fitzpatrick</h2>
+        <p class="text-xs text-slate mb-3">¿Cómo reacciona tu piel al sol sin protector?</p>
+
+        <div class="flex gap-1 mb-3">
+          <div class="fitz-dot" style="background:#FFE4C4" data-value="I"   title="Tipo I"></div>
+          <div class="fitz-dot" style="background:#F5CBA7" data-value="II"  title="Tipo II"></div>
+          <div class="fitz-dot" style="background:#E59866" data-value="III" title="Tipo III"></div>
+          <div class="fitz-dot" style="background:#CA6F1E" data-value="IV"  title="Tipo IV"></div>
+          <div class="fitz-dot" style="background:#935116" data-value="V"   title="Tipo V"></div>
+          <div class="fitz-dot" style="background:#6E2C00" data-value="VI"  title="Tipo VI"></div>
+        </div>
+        <div id="fitz-label" class="bg-cream rounded-sm p-3 text-[11px] text-slate mb-3">
+          Selecciona tu fototipo tocando uno de los colores
+        </div>
+        <button class="option-btn w-full text-center py-2.5 text-[11px]" data-group="fitz-unsure" data-value="desconocido">No sé cómo reacciona mi piel al sol</button>
+      </div>
+
+      <!-- Sección 3: Tipo de piel -->
+      <div class="card card-body">
+        <p class="section-label">Sección 3 de 6</p>
+        <h2 class="font-display text-lg text-ink mb-3">Tipo de piel</h2>
+        <div class="grid grid-cols-3 gap-1.5 mb-2">
+          <button class="option-btn" data-group="skintype" data-value="grasa">Grasa</button>
+          <button class="option-btn" data-group="skintype" data-value="mixta">Mixta</button>
+          <button class="option-btn" data-group="skintype" data-value="seca">Seca</button>
+          <button class="option-btn" data-group="skintype" data-value="sensible">Sensible</button>
+          <button class="option-btn" data-group="skintype" data-value="normal">Normal</button>
+        </div>
+        <button class="option-btn w-full text-center py-2.5 text-[11px]" data-group="skintype" data-value="desconocido">No sé qué tipo de piel tengo</button>
+      </div>
+
+      <!-- Sección 4: Historial dermatológico -->
+      <div class="card card-body">
+        <p class="section-label">Sección 4 de 6</p>
+        <h2 class="font-display text-lg text-ink mb-3">Historial dermatológico</h2>
+        <p class="text-xs text-slate mb-2">Puedes seleccionar varias</p>
+        <div class="grid grid-cols-2 gap-1.5 mb-2">
+          <button class="option-btn multi" data-group="cond" data-value="acné">Acné</button>
+          <button class="option-btn multi" data-group="cond" data-value="rosácea">Rosácea</button>
+          <button class="option-btn multi" data-group="cond" data-value="dermatitis">Dermatitis</button>
+          <button class="option-btn multi" data-group="cond" data-value="psoriasis">Psoriasis</button>
+          <button class="option-btn multi" data-group="cond" data-value="eccema">Eccema</button>
+          <button class="option-btn multi" data-group="cond" data-value="ninguna">Ninguna</button>
+        </div>
+        <div>
+          <label class="field-label">¿Has recibido tratamiento previo?</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button class="option-btn" data-group="treatment" data-value="si">Sí</button>
+            <button class="option-btn" data-group="treatment" data-value="no">No</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 5: Alergias -->
+      <div class="card card-body">
+        <p class="section-label">Sección 5 de 6</p>
+        <h2 class="font-display text-lg text-ink mb-3">Alergias a ingredientes</h2>
+        <div class="grid grid-cols-3 gap-1.5 mb-3">
+          <button class="option-btn" data-group="allergy" data-value="si">Sí</button>
+          <button class="option-btn" data-group="allergy" data-value="no">No</button>
+          <button class="option-btn" data-group="allergy" data-value="desconocido">No sé</button>
+        </div>
+        <div id="allergy-input" class="hidden">
+          <label class="field-label" for="allergy-detail">¿A qué ingredientes?</label>
+          <input id="allergy-detail" type="text" class="field-input" placeholder="Ej: fragancia, parabenos..." />
+        </div>
+      </div>
+
+      <!-- Sección 6: Zona geográfica -->
+      <div class="card card-body">
+        <p class="section-label">Sección 6 de 6</p>
+        <h2 class="font-display text-lg text-ink mb-3">Zona geográfica</h2>
+        <div class="mb-2">
+          <label class="field-label" for="country">País</label>
+          <select id="country" class="field-input">
+            <option value="">Selecciona un país</option>
+            <option value="panama">Panamá</option>
+            <option value="mexico">México</option>
+            <option value="colombia">Colombia</option>
+            <option value="argentina">Argentina</option>
+            <option value="costa_rica">Costa Rica</option>
+            <option value="guatemala">Guatemala</option>
+            <option value="peru">Perú</option>
+            <option value="chile">Chile</option>
+            <option value="venezuela">Venezuela</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="field-label" for="city">Ciudad</label>
+          <input id="city" type="text" class="field-input" placeholder="Ciudad de Panamá" />
+        </div>
+        <div>
+          <label class="field-label">¿Pasas tiempo en A/C o calefacción?</label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button class="option-btn" data-group="ac" data-value="siempre">Sí, siempre</button>
+            <button class="option-btn" data-group="ac" data-value="aveces">A veces</button>
+            <button class="option-btn" data-group="ac" data-value="no">No</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CTA -->
+    <div class="mt-6 flex gap-3">
+      <button id="btn-save-profile" class="btn-primary max-w-xs">Guardar y continuar →</button>
+    </div>
+
+  </div>
+</section>

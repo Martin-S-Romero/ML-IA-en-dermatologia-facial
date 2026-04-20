@@ -1,0 +1,40 @@
+<section
+  id="page-routine-change"
+  class="page-enter min-h-[calc(100vh-44px)] bg-bg"
+  aria-label="Actualización de rutina"
+>
+  <div class="max-w-lg mx-auto px-4 py-6 lg:py-10">
+
+    <button class="btn-back-dark mb-4 text-sm" data-go="routine-check">← Volver</button>
+
+    <h1 class="font-display text-xl text-ink mb-1">Actualiza tu rutina</h1>
+    <p class="text-xs text-slate mb-5 leading-relaxed">
+      Indica qué productos sigues usando y cuáles cambiaron. Esto mejora el análisis comparativo.
+    </p>
+
+    <!-- Productos actuales - se llenan desde la API -->
+    <div class="card card-body mb-4">
+      <p class="section-label">¿Sigues usando estos productos?</p>
+      <div id="routine-change-list" class="divide-y divide-sand">
+        <div class="py-8 text-center">
+          <p class="text-xs text-slate">Cargando productos de tu rutina...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agregar productos nuevos -->
+    <div class="card card-body mb-5">
+      <p class="section-label">Agregar productos nuevos</p>
+      <div class="relative mb-3">
+        <input id="product-search" type="text" class="field-input" placeholder="Buscar producto nuevo..." />
+      </div>
+      <div id="new-products-list" class="flex flex-wrap gap-1 mb-3"></div>
+      <div class="info-box text-[11px]">
+        Los nuevos productos se registran con la fecha de hoy para calcular semanas de uso.
+      </div>
+    </div>
+
+    <button class="btn-primary" data-go="analyzing">Guardar y continuar →</button>
+
+  </div>
+</section>

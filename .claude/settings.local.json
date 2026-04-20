@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"del /f .git\\\\index.lock\")",
+      "WebFetch(domain:claude.ai)",
+      "Bash(mkdir -p '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/src/pages' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/src/components' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/src/scripts' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/src/styles')",
+      "Bash(cp -r '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/src/pages' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/src/')",
+      "Bash(cp -r '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/src/components' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/src/')",
+      "Bash(cp -r '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/src/scripts' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/src/')",
+      "Bash(cp -r '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/src/styles' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/src/')",
+      "Bash(cp '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/index.html' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/index.html')",
+      "Bash(cp '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/package.json' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/package.json')",
+      "Bash(cp '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/vite.config.js' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/vite.config.js')",
+      "Bash(cp '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/tailwind.config.js' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/tailwind.config.js')",
+      "Bash(cp '/c/Users/usuario/OneDrive - Universidad Tecnológica de Panamá/Uni/Tesis/skinai_clean/postcss.config.js' '/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1/frontend/postcss.config.js')",
+      "Bash(git -C \"/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1\" branch)",
+      "Bash(git -C \"/c/Users/usuario/OneDrive/Escritorio/ai tesis/ML-IA-en-dermatologia-facial-1\" show main:\"Ai Rules.md\")"
+    ]
+  }
+}

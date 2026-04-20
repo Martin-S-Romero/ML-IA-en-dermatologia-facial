@@ -1,0 +1,35 @@
+<!-- Overlay — cerrar drawer al tocar fuera -->
+<div id="drawer-overlay" class="drawer-overlay" aria-hidden="true" onclick="closeDrawer()"></div>
+
+<!-- Side drawer -->
+<aside id="side-drawer" class="side-drawer" role="complementary" aria-label="Menú lateral">
+  <!-- Header idéntico al mobile top bar del dashboard para que el hamburger quede en la misma posición -->
+  <header class="px-4 pt-10 pb-3 border-b border-white/10 flex-shrink-0">
+    <div class="flex items-center gap-3 mb-1">
+      <button
+        class="flex flex-col gap-1 p-1.5 bg-transparent border-none cursor-pointer flex-shrink-0"
+        onclick="closeDrawer()"
+        aria-label="Cerrar menú"
+      >
+        <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+        <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+        <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+      </button>
+      <span class="font-display text-lg text-bark">SkinAI</span>
+    </div>
+    <p class="text-xs text-white/55">Bienvenido,</p>
+    <p id="drawer-greeting-name" class="font-display text-lg font-medium text-cream">--</p>
+  </header>
+  <nav class="flex-1 p-3.5" aria-label="Menú de usuario">
+    <button class="sidebar-nav-item w-full text-left" onclick="closeDrawer(); dtab('dd')">Dashboard</button>
+    <div class="h-px bg-white/10 my-2.5"></div>
+    <button class="sidebar-nav-item w-full text-left" data-go="account" onclick="closeDrawer()">Mi cuenta</button>
+    <button class="sidebar-nav-item w-full text-left" onclick="closeDrawer(); openPdfModal()">Exportar PDF</button>
+    <div class="h-px bg-white/10 my-2.5"></div>
+    <button class="sidebar-nav-item w-full text-left" onclick="closeDrawer(); showTerms()">Términos</button>
+    <button class="sidebar-nav-item w-full text-left !text-rose/80 hover:!text-rose" onclick="logout()">Cerrar sesión</button>
+  </nav>
+  <footer class="px-4 py-3 border-t border-white/10">
+    <button class="text-[10px] text-white/40 hover:text-white/60 underline" onclick="showTerms()">SkinAI v1.0 · Privacidad</button>
+  </footer>
+</aside>

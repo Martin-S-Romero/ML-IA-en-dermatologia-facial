@@ -1,0 +1,52 @@
+<section
+  id="page-analyzing"
+  class="page-enter min-h-[calc(100vh-44px)] bg-bg flex items-center justify-center"
+  aria-label="Análisis en proceso"
+  aria-live="polite"
+>
+  <div class="max-w-md mx-auto px-6 py-10 flex flex-col items-center text-center">
+
+    <div class="analyzing-ring mb-6" role="status" aria-label="Procesando análisis"></div>
+
+    <h1 class="font-display text-2xl text-ink mb-2">Analizando tu piel</h1>
+    <p class="text-sm text-slate leading-relaxed mb-8">
+      Esto tomará unos segundos.<br />No cierres la aplicación.
+    </p>
+
+    <ol class="w-full text-left space-y-0 mb-6" id="analyzing-steps" aria-label="Pasos del análisis">
+      <li class="flex items-center gap-3 py-2.5 border-b border-sand text-sm" data-step="1">
+        <div class="w-2 h-2 rounded-full bg-sand flex-shrink-0"></div>
+        <span class="text-slate/60">Validando imagen</span>
+      </li>
+      <li class="flex items-center gap-3 py-2.5 border-b border-sand text-sm" data-step="2">
+        <div class="w-2 h-2 rounded-full bg-sand flex-shrink-0"></div>
+        <span class="text-slate/60">Segmentación del rostro</span>
+      </li>
+      <li class="flex items-center gap-3 py-2.5 border-b border-sand text-sm" data-step="3">
+        <div class="w-2 h-2 rounded-full bg-sand flex-shrink-0"></div>
+        <span class="text-slate/60">Detectando condiciones y lesiones</span>
+      </li>
+      <li class="flex items-center gap-3 py-2.5 border-b border-sand text-sm" data-step="4">
+        <div class="w-2 h-2 rounded-full bg-sand flex-shrink-0"></div>
+        <span class="text-slate/60">Clasificando tipo y severidad</span>
+      </li>
+      <li class="flex items-center gap-3 py-2.5 border-b border-sand text-sm" data-step="5">
+        <div class="w-2 h-2 rounded-full bg-sand flex-shrink-0"></div>
+        <span class="text-slate/60">Enmarcando zonas afectadas</span>
+      </li>
+      <li class="flex items-center gap-3 py-2.5 border-b border-sand text-sm" data-step="6">
+        <div class="w-2 h-2 rounded-full bg-sand flex-shrink-0"></div>
+        <span class="text-slate/60">Cruzando con perfil y rutina</span>
+      </li>
+      <li class="flex items-center gap-3 py-2.5 text-sm" data-step="7">
+        <div class="w-2 h-2 rounded-full bg-sand flex-shrink-0"></div>
+        <span class="text-slate/60">Generando reporte personalizado</span>
+      </li>
+    </ol>
+
+    <div class="warn-box w-full text-[11px] mb-6">
+      El enmarcado de zonas se genera al completar el modelo. Aparecerá en el reporte final.
+    </div>
+
+  </div>
+</section>

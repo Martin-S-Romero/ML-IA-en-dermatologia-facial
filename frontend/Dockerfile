@@ -2,11 +2,13 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# We are using python to serve static files for this minimal infrastructure phase
-# to avoid setting up a full React build chain just to prove connectivity.
-RUN apk add --no-cache python3
-
+# Instalar dependencias primero (capa cacheada)
 COPY package.json .
-COPY index.html .
+RUN npm install
 
-CMD ["npm", "start"]
+# Copiar el resto del proyecto
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "--host"]
