@@ -56,11 +56,11 @@ def run(mode: str = "priority", batch_size: int = 500):
     # 2. Filtrar según el modo
     if mode == "test":
         urls = all_urls[:5]
-        print(f"🧪 Modo test: {len(urls)} productos")
+        print(f"[test] Modo test: {len(urls)} productos")
 
     elif mode == "priority":
         urls = filter_priority(all_urls)
-        print(f"★  Modo priority: {len(urls)} productos de marcas clave")
+        print(f"[*]  Modo priority: {len(urls)} productos de marcas clave")
 
     elif mode == "batch":
         pending = [u for u in all_urls if not already_scraped(u)]
@@ -71,15 +71,15 @@ def run(mode: str = "priority", batch_size: int = 500):
         urls = [u for u in all_urls if not already_scraped(u)]
         print(f"◉  Modo full: {len(urls)} productos pendientes")
         estimated_hours = len(urls) * 4.5 / 3600
-        print(f"   ⏱  Tiempo estimado: {estimated_hours:.1f} horas (delay ~4.5s/req)")
+        print(f"   Tiempo estimado: {estimated_hours:.1f} horas (delay ~4.5s/req)")
 
     else:
-        print(f"✗ Modo desconocido: {mode}")
+        print(f"[x] Modo desconocido: {mode}")
         print("   Usa: test | priority | batch [N] | full")
         return
 
     if not urls:
-        print("✓ No hay productos pendientes.")
+        print("[ok] No hay productos pendientes.")
         return
 
     # 3. Scraping
@@ -108,14 +108,14 @@ def run(mode: str = "priority", batch_size: int = 500):
 
         if ok:
             saved += 1
-            print(f"  ✓ {product.brand} - {product.name} | {len(product.ingredients)} ingredientes")
+            print(f"  [ok] {product.brand} - {product.name} | {len(product.ingredients)} ingredientes")
         else:
             skipped += 1
 
     # 4. Resumen
     total_time = time.time() - start
     print(f"\n{'─'*50}")
-    print(f"✓ Scraping finalizado en {total_time/60:.1f} minutos")
+    print(f"[ok] Scraping finalizado en {total_time/60:.1f} minutos")
     print(f"   Guardados: {saved}")
     print(f"   Skipped:   {skipped}")
     print(f"   Errores:   {errors}")

@@ -233,10 +233,10 @@ function _renderDetail(a, container) {
   const dateStr = _formatDate(a.created_at)
 
   const statusBadge = a.status === 'completed'
-    ? '<span class="bg-ok/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">✓ Completado</span>'
+    ? '<span class="bg-ok/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Completado</span>'
     : a.status === 'failed'
-    ? '<span class="bg-rose/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">✗ Error</span>'
-    : '<span class="bg-warn/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">⏳ Procesando</span>'
+    ? '<span class="bg-rose/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Error</span>'
+    : '<span class="bg-warn/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Procesando</span>'
 
   // Imagen: usa el endpoint público /api/analysis/{id}/image
   const imgSection = a.censored_filename || a.original_filename
@@ -244,9 +244,9 @@ function _renderDetail(a, container) {
          src="${API}/analysis/${a.id}/image"
          alt="Imagen procesada análisis #${a.id}"
          class="w-full h-full object-cover"
-         onerror="this.parentElement.innerHTML='<span class=\\'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl opacity-30 select-none\\'>🧑</span>'"
+         onerror="this.parentElement.innerHTML='<span class=\\'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl opacity-30 select-none\\'></span>'"
        >`
-    : '<span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl opacity-30 select-none">🧑</span>'
+    : '<span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl opacity-30 select-none"></span>'
 
   container.innerHTML = `
     <!-- Volver -->
@@ -282,7 +282,7 @@ function _renderDetail(a, container) {
     <div class="card card-body mb-4">
       <p class="section-label mb-2">Resultados del modelo ML</p>
       <div class="info-box text-[11px]">
-        🔬 La clasificación automática de condiciones dérmicas (acné, rosácea, manchas)
+        La clasificación automática de condiciones dérmicas (acné, rosácea, manchas)
         estará disponible en la Fase 8 del proyecto cuando el modelo ONNX esté integrado.
         La imagen ya fue procesada y anonimizada correctamente.
       </div>
@@ -396,14 +396,14 @@ function _statusLabel(status) {
 
 function _categoryIcon(category) {
   const map = {
-    limpiador:  '🧴',
-    tónico:     '💦',
-    sérum:      '💧',
-    hidratante: '🌿',
-    protector:  '☀️',
-    exfoliante: '🧪',
-    mascarilla: '🍃',
-    contorno:   '👁️',
+    limpiador:  '',
+    tónico:     '',
+    sérum:      '',
+    hidratante: '',
+    protector:  '',
+    exfoliante: '',
+    mascarilla: '',
+    contorno:   '',
   }
-  return map[(category || '').toLowerCase()] || '🫧'
+  return map[(category || '').toLowerCase()] || ''
 }

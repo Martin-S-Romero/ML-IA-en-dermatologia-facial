@@ -2,7 +2,7 @@
 
 > **Proyecto académico (Tesis – Ingeniería de Software)**
 
-## 📌 Descripción general
+## Descripción general
 
 Esta plataforma web permite a los usuarios subir imágenes de su rostro para obtener **orientación inmediata sobre posibles afecciones cutáneas generales** (p. ej., irritación, acné, rosácea) y **recomendaciones de ingredientes** que podrían ayudar a mejorar dichas condiciones.
 
@@ -17,7 +17,7 @@ El proyecto prioriza:
 
 ---
 
-## 🎯 Objetivos
+## Objetivos
 
 ### Objetivo general
 
@@ -34,7 +34,7 @@ Desarrollar una aplicación web escalable que integre visión por computador e I
 
 ---
 
-## 🧠 Alcance del sistema
+## Alcance del sistema
 
 ### El sistema **SÍ**:
 
@@ -52,7 +52,7 @@ Desarrollar una aplicación web escalable que integre visión por computador e I
 
 ---
 
-## 🧩 Funcionalidades principales
+## Funcionalidades principales
 
 * **Autenticación de usuarios**
 * **Nuevo análisis cutáneo** (subida de imagen)
@@ -62,7 +62,7 @@ Desarrollar una aplicación web escalable que integre visión por computador e I
 
 ---
 
-## 🖥️ Interfaz de usuario
+## Interfaz de usuario
 
 La aplicación web cuenta con al menos cuatro vistas principales:
 
@@ -80,7 +80,7 @@ El diseño sigue un enfoque:
 
 ---
 
-## ⚙️ Tecnologías
+## Tecnologías
 
 ### Frontend
 
@@ -113,7 +113,7 @@ El diseño sigue un enfoque:
 
 ---
 
-## 🔐 Seguridad y privacidad
+## Seguridad y privacidad
 
 * Comunicación mediante tokens de acceso (JWT).
 * Imágenes almacenadas de forma **anonimizada**.
@@ -122,7 +122,7 @@ El diseño sigue un enfoque:
 
 ---
 
-## ⚖️ Aspectos éticos y legales
+## Aspectos éticos y legales
 
 * Consentimiento informado obligatorio.
 * Uso de imágenes únicamente con fines académicos y de mejora del sistema.
@@ -131,7 +131,7 @@ El diseño sigue un enfoque:
 
 ---
 
-## 📈 Escalabilidad
+## Escalabilidad
 
 Aunque el sistema se ejecuta inicialmente en entorno local, la arquitectura está diseñada para:
 
@@ -141,12 +141,12 @@ Aunque el sistema se ejecuta inicialmente en entorno local, la arquitectura est�
 
 ---
 
-## 📚 Estado del proyecto
+## Estado del proyecto
 
 Proyecto en fase de **Producto Mínimo Viable (MVP)** para fines académicos.
 
 ---
 
-## 👨‍🎓 Autor
+## Autor
 
 Proyecto desarrollado como parte de una tesis en la carrera de Ingeniería de Software.

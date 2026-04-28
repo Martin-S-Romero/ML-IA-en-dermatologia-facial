@@ -21,7 +21,7 @@ def _get_with_retry(url: str, timeout: int = 60, retries: int = 3) -> httpx.Resp
         try:
             return httpx.get(url, headers=HEADERS, timeout=timeout)
         except httpx.TimeoutException:
-            print(f"   ⚠  Timeout (intento {attempt}/{retries}): {url}")
+            print(f"   [!] Timeout (intento {attempt}/{retries}): {url}")
             if attempt == retries:
                 raise
     raise RuntimeError("No debería llegar aquí")
@@ -51,9 +51,9 @@ def get_all_product_urls() -> list[str]:
             urls = [u.text for u in sub.findall("sm:url/sm:loc", NS)]
             all_urls.extend(urls)
         except Exception as e:
-            print(f"   ✗ Error en {sitemap_url}: {e}")
+            print(f"   [x] Error en {sitemap_url}: {e}")
 
-    print(f"\n✓ Total: {len(all_urls)} productos en el sitemap")
+    print(f"\n[ok] Total: {len(all_urls)} productos en el sitemap")
     return all_urls
 
 
@@ -75,5 +75,5 @@ def get_ingredient_urls() -> list[str]:
         urls = [u.text for u in sub.findall("sm:url/sm:loc", NS)]
         all_urls.extend(urls)
 
-    print(f"✓ Total: {len(all_urls)} ingredientes en el sitemap")
+    print(f"[ok] Total: {len(all_urls)} ingredientes en el sitemap")
     return all_urls

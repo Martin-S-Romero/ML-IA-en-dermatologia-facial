@@ -73,12 +73,12 @@ def scrape_product(url: str) -> ScrapedProduct | None:
         r = httpx.get(url, headers=HEADERS, timeout=20, follow_redirects=True)
 
         if r.status_code == 429:
-            print(f"  ⚠  Rate limited. Esperando 60s...")
+            print(f"  [!]  Rate limited. Esperando 60s...")
             time.sleep(60)
             r = httpx.get(url, headers=HEADERS, timeout=20, follow_redirects=True)
 
         if r.status_code != 200:
-            print(f"  ✗ HTTP {r.status_code} → {url}")
+            print(f"  [x] HTTP {r.status_code} -> {url}")
             return None
 
         soup = BeautifulSoup(r.text, "lxml")
@@ -93,7 +93,7 @@ def scrape_product(url: str) -> ScrapedProduct | None:
         description = _clean(desc_el.get_text())  if desc_el  else ""
 
         if not name:
-            print(f"  ✗ No se encontró nombre en {url}")
+            print(f"  [x] No se encontró nombre en {url}")
             return None
 
         # ── Highlights (#tags) ──────────────────────────────────────────────
@@ -152,8 +152,8 @@ def scrape_product(url: str) -> ScrapedProduct | None:
         )
 
     except httpx.TimeoutException:
-        print(f"  ✗ Timeout en {url}")
+        print(f"  [x] Timeout en {url}")
         return None
     except Exception as e:
-        print(f"  ✗ Error inesperado en {url}: {e}")
+        print(f"  [x] Error inesperado en {url}: {e}")
         return None

@@ -19,14 +19,14 @@ try:
     mp_face_mesh = mp.solutions.face_mesh
     FaceMesh = mp_face_mesh.FaceMesh
 except Exception as e:
-    print(f"⚠️ Error initializing MediaPipe standard import: {e}", file=sys.stderr)
+    print(f"[!] Error initializing MediaPipe standard import: {e}", file=sys.stderr)
     try:
         # Fallback for some environments
         from mediapipe.python.solutions import face_mesh
         mp_face_mesh = face_mesh
         FaceMesh = face_mesh.FaceMesh
     except Exception as e2:
-        print(f"❌ CRITICAL: Could not import MediaPipe: {e2}", file=sys.stderr)
+        print(f"[ERROR] CRITICAL: Could not import MediaPipe: {e2}", file=sys.stderr)
         raise e2
 
 class FaceCensor:
@@ -79,11 +79,11 @@ class FaceCensor:
         current_pixels = width * height
 
         if current_pixels < min_pixels:
-            print(f"⚠️ Warning: resolution too low ({width}x{height} = {current_pixels}px). "
+            print(f"[!] Warning: resolution too low ({width}x{height} = {current_pixels}px). "
                 f"Requires at least {min_pixels}px (approx 720p) for proper processing.")
             return False
         else:
-            print(f"✅ Valid resolution: {width}x{height}")
+            print(f"[ok] Valid resolution: {width}x{height}")
             return True
 
     def _get_box(self, points):
@@ -181,14 +181,14 @@ class FaceCensor:
         """
         image = cv2.imread(input_path)
         if image is None:
-            print(f"❌ Could not read image: {input_path}")
+            print(f"[ERROR] Could not read image: {input_path}")
             return None
         
         h, w = image.shape[:2]
 
-        # ⚠️ Resolution validation
+        # Resolution validation
         if not self._validate_resolution(w, h):
-            print("🚫 Image rejected due to low resolution.")
+            print("[REJECTED] Image rejected due to low resolution.")
             return None
 
         result = self._process_frame(image)
@@ -198,10 +198,10 @@ class FaceCensor:
             folder = os.path.dirname(output_path)
             if folder and not os.path.exists(folder):
                 os.makedirs(folder, exist_ok=True)
-                print(f"📁 Folder created: {folder}")
+                print(f"[dir] Folder created: {folder}")
 
             # Save image
             cv2.imwrite(output_path, result)
-            print(f"💾 Censored image saved at: {output_path}")
+            print(f"[saved] Censored image saved at: {output_path}")
 
         return result

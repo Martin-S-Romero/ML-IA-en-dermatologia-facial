@@ -106,11 +106,11 @@ def save_product(product: ScrapedProduct) -> bool:
 
     except IntegrityError as e:
         db.rollback()
-        print(f"  ⚠  IntegrityError guardando {product.source_url}: {e}")
+        print(f"  [!] IntegrityError guardando {product.source_url}: {e}")
         return False
     except Exception as e:
         db.rollback()
-        print(f"  ✗ Error guardando {product.source_url}: {e}")
+        print(f"  [x] Error guardando {product.source_url}: {e}")
         return False
     finally:
         db.close()

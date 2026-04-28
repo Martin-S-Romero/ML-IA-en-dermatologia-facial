@@ -1,6 +1,6 @@
 # Arquitectura del Sistema
 
-## 🧱 Visión general
+## Visión general
 
 El sistema adopta una **arquitectura modular basada en contenedores**, inspirada en microservicios, pero optimizada para un entorno académico y un MVP mantenible.
 
@@ -8,7 +8,7 @@ La separación es principalmente **lógica**, con la capacidad de evolucionar ha
 
 ---
 
-## 🗺️ Diagrama conceptual (alto nivel)
+## Diagrama conceptual (alto nivel)
 
 ```
 [ Usuario ]
@@ -32,7 +32,7 @@ La separación es principalmente **lógica**, con la capacidad de evolucionar ha
 
 ---
 
-## 🧩 Componentes principales
+## Componentes principales
 
 ### 1. Frontend
 
@@ -144,7 +144,7 @@ Preparado para:
 
 ---
 
-## 🔄 Flujo de procesamiento
+## Flujo de procesamiento
 
 1. Usuario sube imagen
 2. API Gateway valida y crea un job
@@ -156,7 +156,7 @@ Preparado para:
 
 ---
 
-## ⏳ Procesamiento asíncrono
+## Procesamiento asíncrono
 
 Debido a posibles tiempos de espera elevados:
 
@@ -166,7 +166,7 @@ Debido a posibles tiempos de espera elevados:
 
 ---
 
-## 🔐 Seguridad
+## Seguridad
 
 * JWT con tiempo de expiración
 * Aislamiento de servicios internos
@@ -175,7 +175,7 @@ Debido a posibles tiempos de espera elevados:
 
 ---
 
-## 📦 Contenerización
+## Contenerización
 
 Cada componente puede ejecutarse como contenedor Docker:
 
@@ -192,7 +192,7 @@ La arquitectura está preparada para:
 
 ---
 
-## 📐 Principios arquitectónicos
+## Principios arquitectónicos
 
 * Simplicidad sobre complejidad
 * Código claro y explícito
@@ -202,7 +202,7 @@ La arquitectura está preparada para:
 
 ---
 
-## 🧠 Filosofía del sistema
+## Filosofía del sistema
 
 > Escalable, ético y mantenible.
 

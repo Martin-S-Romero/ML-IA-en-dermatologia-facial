@@ -125,7 +125,7 @@ async def process_image(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error processing image: {e}")
+        print(f"[ERROR] Error processing image: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal error processing image: {str(e)}"

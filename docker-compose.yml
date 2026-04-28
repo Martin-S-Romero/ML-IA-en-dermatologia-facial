@@ -7,7 +7,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/app:/app/app
-      - ./logs/backend.log:/app/logs/backend.log
+      - ./logs:/app/logs
       - uploaded_data:/app/uploads
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/tesis_db
@@ -42,6 +42,7 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+      - /app/node_modules
     networks:
       - tesis-network
 

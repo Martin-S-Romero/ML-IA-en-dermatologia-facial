@@ -1,6 +1,6 @@
 # Reglas de Desarrollo Asistido por IA
 
-## 📌 Propósito del documento
+## Propósito del documento
 
 Este archivo define las **reglas obligatorias** que cualquier agente de IA (Antigravity, Copilot, LLMs u otros asistentes) debe seguir al colaborar en el desarrollo del proyecto.
 
@@ -15,7 +15,7 @@ Estas reglas tienen **prioridad sobre cualquier sugerencia automática del agent
 
 ---
 
-## 🧠 Principios fundamentales
+## Principios fundamentales
 
 1. **Cada avance debe funcionar antes de continuar**
 2. **Nada se construye sin poder probarse**
@@ -26,7 +26,7 @@ Estas reglas tienen **prioridad sobre cualquier sugerencia automática del agent
 
 ---
 
-## 🔄 Regla de validación obligatoria
+## Regla de validación obligatoria
 
 Antes de avanzar a un nuevo componente o funcionalidad, se debe:
 
@@ -35,13 +35,13 @@ Antes de avanzar a un nuevo componente o funcionalidad, se debe:
 * Validar que funciona integrado con los componentes previos
 * Confirmar que los logs reflejan correctamente el comportamiento
 
-👉 **Si algo no funciona, se corrige antes de continuar.**
+**Si algo no funciona, se corrige antes de continuar.**
 
 Nunca se asume que "funcionará después".
 
 ---
 
-## 🧪 Regla de pruebas mínimas
+## Regla de pruebas mínimas
 
 Cada módulo debe tener, como mínimo:
 
@@ -52,28 +52,28 @@ Las pruebas automáticas son deseables, pero **no obligatorias** para el MVP aca
 
 ---
 
-## 🪜 Orden obligatorio de desarrollo (de básico a complejo)
+## Orden obligatorio de desarrollo (de básico a complejo)
 
 El desarrollo debe seguir estrictamente este orden, salvo justificación técnica documentada:
 
-### 1️⃣ Infraestructura mínima
+### 1. Infraestructura mínima
 
 * Docker base
 * Estructura de carpetas
 * Contenedor backend vacío
 * Contenedor frontend vacío
 
-✔ Validación: contenedores levantan correctamente
+Validación: contenedores levantan correctamente
 
 ---
 
-### 2️⃣ Sistema de logs
+### 2. Sistema de logs
 
 * Logger centralizado
 * Logs por nivel (info, warning, error)
 * Identificación básica de usuario o request
 
-✔ Validación:
+Validación:
 
 * Los logs se generan
 * Los logs se almacenan
@@ -81,12 +81,12 @@ El desarrollo debe seguir estrictamente este orden, salvo justificación técnic
 
 ---
 
-### 3️⃣ Base de datos
+### 3. Base de datos
 
 * Conexión a base de datos SQL
 * Esquema mínimo (usuarios, consentimientos)
 
-✔ Validación:
+Validación:
 
 * Conexión exitosa
 * Operaciones CRUD básicas
@@ -94,13 +94,13 @@ El desarrollo debe seguir estrictamente este orden, salvo justificación técnic
 
 ---
 
-### 4️⃣ Autenticación y seguridad
+### 4. Autenticación y seguridad
 
 * Registro de usuarios
 * Login
 * Emisión y validación de JWT
 
-✔ Validación:
+Validación:
 
 * Login funcional
 * Tokens válidos y expiran correctamente
@@ -108,26 +108,26 @@ El desarrollo debe seguir estrictamente este orden, salvo justificación técnic
 
 ---
 
-### 5️⃣ API Gateway / Backend orquestador
+### 5. API Gateway / Backend orquestador
 
 * Endpoints básicos
 * Validación de requests
 * Control de acceso
 
-✔ Validación:
+Validación:
 
 * Frontend puede comunicarse solo con el gateway
 * Servicios internos no son accesibles directamente
 
 ---
 
-### 6️⃣ Subida y manejo de imágenes
+### 6. Subida y manejo de imágenes
 
 * Endpoint de subida
 * Validación de formato
 * Almacenamiento **solo de imágenes censuradas**
 
-✔ Validación:
+Validación:
 
 * Imagen válida se procesa
 * Imagen inválida se rechaza
@@ -135,25 +135,25 @@ El desarrollo debe seguir estrictamente este orden, salvo justificación técnic
 
 ---
 
-### 7️⃣ Procesamiento de imagen
+### 7. Procesamiento de imagen
 
 * Detección de rostro
 * Recorte
 * Censura de ojos y labios
 
-✔ Validación:
+Validación:
 
 * La imagen final está censurada
 * Nunca se guarda la imagen original
 
 ---
 
-### 8️⃣ Análisis cutáneo
+### 8. Análisis cutáneo
 
 * Análisis probabilístico
 * Clasificaciones generales
 
-✔ Validación:
+Validación:
 
 * Resultados coherentes
 * Lenguaje no clínico
@@ -161,30 +161,30 @@ El desarrollo debe seguir estrictamente este orden, salvo justificación técnic
 
 ---
 
-### 9️⃣ Sistema de recomendaciones
+### 9. Sistema de recomendaciones
 
 * Uso de modelos ONNX / LLM
 * Generación de ingredientes recomendados
 
-✔ Validación:
+Validación:
 
 * El sistema responde
 * El tiempo de espera es manejado correctamente
 
 ---
 
-### 🔟 UX de espera y estados
+### 10. UX de espera y estados
 
 * Procesamiento asíncrono
 * Estados: processing / completed / failed
 
-✔ Validación:
+Validación:
 
 * El usuario siempre sabe qué está pasando
 
 ---
 
-## 🔗 Regla de dependencias
+## Regla de dependencias
 
 Ningún módulo puede desarrollarse si depende de otro que:
 
@@ -196,7 +196,7 @@ El agente debe **rechazar avanzar** si se viola esta regla.
 
 ---
 
-## 🧭 Regla de decisiones técnicas
+## Regla de decisiones técnicas
 
 Cuando existan múltiples soluciones:
 
@@ -208,7 +208,7 @@ Toda decisión compleja debe poder justificarse **en la tesis**.
 
 ---
 
-## ⚖️ Ética y seguridad (obligatorio)
+## Ética y seguridad (obligatorio)
 
 * No generar diagnósticos médicos
 * No almacenar datos sensibles sin censura
@@ -217,7 +217,7 @@ Toda decisión compleja debe poder justificarse **en la tesis**.
 
 ---
 
-## 🧩 Rol de la IA
+## Rol de la IA
 
 La IA actúa como:
 
@@ -229,7 +229,7 @@ La IA **no toma decisiones finales** ni introduce complejidad innecesaria.
 
 ---
 
-## 🏁 Regla final
+## Regla final
 
 > Si no se puede probar, no existe.
 
