@@ -46,64 +46,20 @@ def _validate_image(contents: bytes, content_type: str) -> None:
         )
 
 
-def _run_censorship(analysis_id: int, input_path: str, output_path: str, db_url: str) -> None:
-    """Tarea en background: aplica censura facial y actualiza el registro en BD."""
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    engine  = create_engine(db_url)
-    Session = sessionmaker(bind=engine)
-    db      = Session()
-
-    try:
-        analysis = db.query(models.Analysis).filter(models.Analysis.id == analysis_id).first()
-        if not analysis:
-            return
-
-        censor = FaceCensor(mode="blur", blur_strength=55, expand=10)
-        result = censor.process_image(input_path, output_path)
-
-        if result is None:
-            analysis.status        = "failed"
-            analysis.error_message = "No se detectó rostro o la resolución es insuficiente (mínimo ~720p)."
-        else:
-            censored_filename         = os.path.basename(output_path)
-            analysis.status           = "completed"
-            analysis.censored_filename = censored_filename
-            analysis.result           = json.dumps({
-                "censored_path": output_path,
-                "mode": "blur",
-            })
-            logger.info(f"Analysis {analysis_id} completed — {censored_filename}")
-
-        db.commit()
-
-    except Exception as e:
-        logger.error(f"Background censorship failed for analysis {analysis_id}: {e}", exc_info=True)
-        try:
-            analysis = db.query(models.Analysis).filter(models.Analysis.id == analysis_id).first()
-            if analysis:
-                analysis.status        = "failed"
-                analysis.error_message = str(e)
-                db.commit()
-        except Exception:
-            pass
-    finally:
-        db.close()
+# ── LA LÓGICA DE PROCESAMIENTO SE MOVIÓ A CELERY (app.worker.tasks) ──────────
 
 
 # ── ENDPOINTS ─────────────────────────────────────────────────────────────
 
 @router.post("/upload", response_model=schemas.AnalysisCreated, status_code=status.HTTP_202_ACCEPTED)
 async def upload_image(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
 ):
     """
     Recibe una imagen, la valida, crea un registro Analysis en estado 'processing'
-    y lanza la censura facial como tarea en background.
+    y lanza la censura facial como tarea de Celery en un Worker aislado.
     Devuelve el analysis_id para hacer polling de estado.
     """
     contents = await file.read()
@@ -127,16 +83,16 @@ async def upload_image(
     db.commit()
     db.refresh(analysis)
 
-    from app.core.database import DATABASE_URL
-    background_tasks.add_task(
-        _run_censorship,
+    # Lanzar la tarea de Celery al Worker de IA
+    from app.worker.tasks import process_image_task
+    process_image_task.delay(
         analysis.id,
         input_path,
         output_path,
-        DATABASE_URL,
+        current_user.id
     )
 
-    logger.info(f"Analysis {analysis.id} queued for user {current_user.id}")
+    logger.info(f"Analysis {analysis.id} sent to Celery Queue for user {current_user.id}")
     return {"analysis_id": analysis.id, "status": "processing"}
 
 

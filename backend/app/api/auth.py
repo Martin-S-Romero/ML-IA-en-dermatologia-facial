@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=schemas.TokenResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 def register(request: Request, user: schemas.UserCreate, db: Session = Depends(deps.get_db)):
     if not user.gdpr_accepted:
         raise HTTPException(status_code=400, detail="Debes aceptar los términos para continuar.")
@@ -39,7 +39,7 @@ def register(request: Request, user: schemas.UserCreate, db: Session = Depends(d
 
 
 @router.post("/login", response_model=schemas.TokenResponse)
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 def login(request: Request, user: schemas.UserLogin, db: Session = Depends(deps.get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if not db_user or not security.verify_password(user.password, db_user.hashed_password):

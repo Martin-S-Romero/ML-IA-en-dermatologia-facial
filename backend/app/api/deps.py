@@ -32,4 +32,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     user = db.query(models.User).filter(models.User.email == token_data.email).first()
     if user is None:
         raise credentials_exception
+        
+    # Establecer la variable de contexto
+    from app.core.context import current_user_id
+    current_user_id.set(str(user.id))
+    
+    # Inyectar el ID en la sesión actual para RLS
+    from sqlalchemy import text
+    db.execute(text(f"SET app.current_user_id = '{user.id}';"))
+    
     return user

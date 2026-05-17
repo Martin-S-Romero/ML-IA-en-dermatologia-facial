@@ -140,61 +140,8 @@ README.md
 ARCHITECTURE.md
 AI_RULES.md
 TEST_LOG.md
-/scripts
-*.txt
-*.jpg
-*.png
-*.jpeg
-*.gif
-*.bmp
-*.webp
-*.tiff
-*.svg
-*.ico
-*.mp4
-*.avi
-*.mov
-*.mkv
-*.webm
-*.flv
-*.wmv
-*.mp3
-*.wav
-*.aac
-*.flac
-*.ogg
-*.m4a
-*.pdf
-*.doc
-*.docx
-*.xls
-*.xlsx
-*.ppt
-*.pptx
-*.zip
-*.rar
-*.7z
-*.tar
-*.gz
-*.iso
-*.exe
-*.dll
-*.msi
-*.apk
-*.ipa
-*.deb
-*.rpm
-*.pkg
-*.dmg
-*.app
-*.jar
-*.war
-*.ear
-*.pyc
-*.pyo
-*.pyd
-*.pycache
-*.pyo
-
-
+# /scripts
+# /image
+# *.sh
+# *.bat
 # Fin de archivos a ignorar

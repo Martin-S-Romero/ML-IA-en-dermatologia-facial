@@ -1,3 +1,4 @@
+import os
 import time
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,13 +35,19 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS — permite llamadas desde el frontend Vite en desarrollo
+# CORS — permite llamadas solo desde los dominios autorizados
+# Usamos una variable de entorno para configurarlo fácilmente en producción
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=True, # Necesario si en el futuro se usan cookies o sesiones
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], # Más estricto que "*"
+    allow_headers=["*"], # Se deja en "*" para permitir Authorization, Content-Type, etc.
 )
+
 
 # Rate limiting
 app.state.limiter = limiter
@@ -55,6 +62,18 @@ app.include_router(users.router,     prefix="/api/users",     tags=["users"])
 app.include_router(analysis.router,  prefix="/api/analysis",  tags=["analysis"])
 app.include_router(routines.router,  prefix="/api/routines",  tags=["routines"])
 app.include_router(products.router,  prefix="/api/products",  tags=["products"])
+
+# ── Middleware de Seguridad (Headers) ─────────────────────────────────────
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'none';"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 # ── Middleware de logs ────────────────────────────────────────────────────
 @app.middleware("http")
