@@ -24,13 +24,19 @@ export function initProfile() {
 
 function initFitzpatrickInteraction() {
   document.querySelectorAll('.fitz-dot').forEach(dot => {
-    dot.addEventListener('click', () => {
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation()  // prevent bindFitzDots (ui.js) from also running
+      const wasSelected = dot.classList.contains('selected')
       document.querySelectorAll('.fitz-dot').forEach(d => d.classList.remove('selected'))
-      dot.classList.add('selected')
-      const val   = dot.dataset.value
       const label = document.getElementById('fitz-label')
-      if (label && FITZ_LABELS[val]) {
-        label.innerHTML = `<strong class="text-ink block mb-0.5">Tipo ${val} seleccionado</strong>${FITZ_LABELS[val]}`
+      if (wasSelected) {
+        if (label) label.textContent = 'Selecciona tu fototipo tocando uno de los colores'
+      } else {
+        dot.classList.add('selected')
+        const val = dot.dataset.value
+        if (label && FITZ_LABELS[val]) {
+          label.innerHTML = `<strong class="text-ink block mb-0.5">Tipo ${val} seleccionado</strong>${FITZ_LABELS[val]}`
+        }
       }
     })
   })
@@ -110,6 +116,7 @@ function initSaveProfile() {
       Object.assign(user, profileData)
       localStorage.setItem('skinai_user', JSON.stringify(user))
 
+      localStorage.setItem('skinai_profile_complete', '1')
       showMsg(successBox, errorBox, 'Perfil guardado correctamente.', 'success')
       setTimeout(() => window._goFull('capture'), 800)
 

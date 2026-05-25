@@ -1,10 +1,9 @@
-import json as _json
-from pydantic import BaseModel, EmailStr, validator
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr
+from typing import Optional, List, Any
 from datetime import datetime
 
 
-# ── AUTH ──────────────────────────────────────────────────────────────────
+# ── AUTH ──────────────────────────────────────────────────────────────────────
 
 class UserCreate(BaseModel):
     full_name: str
@@ -23,9 +22,9 @@ class ForgotPasswordRequest(BaseModel):
 class UserOut(BaseModel):
     id: int
     email: EmailStr
-    full_name: Optional[str]
+    full_name: Optional[str] = None
     is_active: bool
-    created_at: Optional[datetime]
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -39,7 +38,7 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 
-# ── USERS / PROFILE ───────────────────────────────────────────────────────
+# ── USERS / PERFIL DE PIEL ────────────────────────────────────────────────────
 
 class SkinProfileCreate(BaseModel):
     age: Optional[int] = None
@@ -51,19 +50,18 @@ class SkinProfileCreate(BaseModel):
     country: Optional[str] = None
     city: Optional[str] = None
 
-class SkinProfileOut(SkinProfileCreate):
+class SkinProfileOut(BaseModel):
     id: int
     user_id: int
-    updated_at: Optional[datetime]
-
-    @validator('skin_conditions', 'allergies', pre=True, always=True)
-    def parse_json_list(cls, v):
-        if isinstance(v, str):
-            try:
-                return _json.loads(v)
-            except Exception:
-                return []
-        return v or []
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    fitzpatrick: Optional[str] = None
+    skin_type: Optional[str] = None
+    skin_conditions: Optional[List[str]] = []  # JSONB → ya llega como lista
+    allergies: Optional[List[str]] = []         # JSONB → ya llega como lista
+    country: Optional[str] = None
+    city: Optional[str] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -72,7 +70,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
 
 
-# ── ANALYSIS ──────────────────────────────────────────────────────────────
+# ── ANALYSIS ──────────────────────────────────────────────────────────────────
 
 class AnalysisCreated(BaseModel):
     analysis_id: int
@@ -90,10 +88,11 @@ class AnalysisOut(BaseModel):
     id: int
     status: str
     original_filename: str
-    censored_filename: Optional[str]
-    result: Optional[str]       # JSON string con metadata del resultado
-    error_message: Optional[str]
+    censored_filename: Optional[str] = None
+    result: Optional[Any] = None        # JSONB → llega como dict, no como str
+    error_message: Optional[str] = None
     created_at: datetime
+    completed_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -101,22 +100,29 @@ class AnalysisOut(BaseModel):
 class AnalysisSnapshot(BaseModel):
     id: int
     status: str
-    censored_filename: Optional[str]
+    censored_filename: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 
-# ── ROUTINES ──────────────────────────────────────────────────────────────
+# ── ROUTINES ──────────────────────────────────────────────────────────────────
+
+class RoutineStepCreate(BaseModel):
+    step_order: int
+    time_of_day: str               # am / pm / both
+    product_name: str
+    product_category: Optional[str] = None
+    reason: Optional[str] = None
 
 class RoutineStepOut(BaseModel):
     id: int
     step_order: int
     time_of_day: str
     product_name: str
-    product_category: Optional[str]
-    reason: Optional[str]
+    product_category: Optional[str] = None
+    reason: Optional[str] = None
     is_active: bool
 
     class Config:
@@ -124,7 +130,7 @@ class RoutineStepOut(BaseModel):
 
 class RoutineOut(BaseModel):
     id: int
-    analysis_id: Optional[int]
+    analysis_id: Optional[int] = None
     is_active: bool
     created_at: datetime
     steps: List[RoutineStepOut]
@@ -158,46 +164,43 @@ class SkinCheckOut(BaseModel):
     id: int
     routine_id: int
     followed_routine: bool
-    notes: Optional[str]
+    notes: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 
-# ── PRODUCTS ──────────────────────────────────────────────────────────────
+# ── PRODUCTS ──────────────────────────────────────────────────────────────────
 
 class ProductOut(BaseModel):
     id: int
     name: str
-    brand: str
-    category: str
-    description: str
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
 
     class Config:
         from_attributes = True
-
 
 class IngredientOut(BaseModel):
     id: int
     inci_name: str
-    function: str
-    rating: str
+    function: Optional[str] = None
+    rating: Optional[str] = None
 
     class Config:
         from_attributes = True
 
-
 class ProductIngredientOut(BaseModel):
     position: int
-    irr_com: Optional[str]
+    irr_com: Optional[str] = None
     ingredient: IngredientOut
 
     class Config:
         from_attributes = True
 
-
 class ProductDetailOut(ProductOut):
-    highlights: Optional[str]    # JSON string con la lista de #tags
+    highlights: Optional[Any] = None   # JSONB → llega como lista, no como str
     source_url: str
     product_ingredients: List[ProductIngredientOut]

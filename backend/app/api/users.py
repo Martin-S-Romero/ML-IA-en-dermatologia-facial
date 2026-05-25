@@ -1,7 +1,6 @@
-import json
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app import models, schemas
+from app import db_scheme as models, schemas
 from app.api import deps
 from app.core.logger import logger
 
@@ -19,9 +18,8 @@ def update_profile(
         models.SkinProfile.user_id == current_user.id
     ).first()
 
+    # Con JSONB, SQLAlchemy serializa listas directamente — sin json.dumps
     data = profile.dict()
-    data["skin_conditions"] = json.dumps(data.get("skin_conditions") or [])
-    data["allergies"]       = json.dumps(data.get("allergies") or [])
 
     if existing:
         for key, value in data.items():
@@ -65,9 +63,26 @@ def update_me(
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
 ):
-    """Actualiza campos editables del usuario (full_name)."""
+    """Actualiza campos editables del usuario y su perfil de piel."""
     if body.full_name is not None:
         current_user.full_name = body.full_name
+
+    profile_fields = ["age", "gender", "fitzpatrick", "skin_type",
+                      "skin_conditions", "allergies", "country", "city"]
+    profile_data = {k: getattr(body, k) for k in profile_fields if getattr(body, k) is not None}
+
+    if profile_data:
+        profile = db.query(models.SkinProfile).filter(
+            models.SkinProfile.user_id == current_user.id
+        ).first()
+
+        if not profile:
+            profile = models.SkinProfile(user_id=current_user.id)
+            db.add(profile)
+
+        # Con JSONB, las listas se asignan directamente — sin json.dumps
+        for key, value in profile_data.items():
+            setattr(profile, key, value)
 
     db.commit()
     db.refresh(current_user)
@@ -84,7 +99,6 @@ def delete_me(
     user_id = current_user.id
     email   = current_user.email
 
-    # Eliminar datos relacionados en orden para respetar FK
     db.query(models.SkinCheck).filter(models.SkinCheck.user_id == user_id).delete()
     db.query(models.RoutineStep).filter(
         models.RoutineStep.routine_id.in_(
@@ -99,4 +113,3 @@ def delete_me(
 
     logger.info(f"Account deleted: {email} (id={user_id})")
     return {"message": "Cuenta eliminada correctamente."}
-

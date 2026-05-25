@@ -8,6 +8,41 @@ const API = 'http://localhost:8000/api'
 
 export function initAccount() {
   loadUserData()
+  bindDeleteAccount()
+}
+
+function bindDeleteAccount() {
+  const btn = document.getElementById('btn-delete-account')
+  if (!btn) return
+
+  btn.addEventListener('click', async () => {
+    if (!confirm('¿Estás seguro? Esta acción no se puede deshacer.')) return
+
+    btn.disabled = true
+    btn.textContent = 'Eliminando...'
+
+    const token = localStorage.getItem('skinai_token')
+    try {
+      const res = await fetch(`${API}/users/me`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.detail || `Error ${res.status}`)
+      }
+
+      // Limpiar todo el estado local y redirigir a login
+      localStorage.clear()
+      window.location.reload()
+
+    } catch (err) {
+      alert('Error al eliminar la cuenta: ' + err.message)
+      btn.disabled = false
+      btn.textContent = 'Eliminar cuenta'
+    }
+  })
 }
 
 async function loadUserData() {

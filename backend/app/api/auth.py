@@ -2,7 +2,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app import models, schemas
+from app import db_scheme as models, schemas
 from app.core import security
 from app.api import deps
 from app.core.ratelimit import limiter

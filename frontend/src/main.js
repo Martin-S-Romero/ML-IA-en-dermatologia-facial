@@ -121,6 +121,9 @@ function registerGlobals() {
   window.closePdfModal   = closePdfModal
   window.generatePdf     = generatePdf
 
+  // Account
+  window.deleteAccount    = deleteAccount
+
   // Capture states
   window.showCaptureError = showCaptureError
   window.hideCaptureError = hideCaptureError
