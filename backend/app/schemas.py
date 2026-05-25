@@ -16,6 +16,10 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
 class UserOut(BaseModel):
     id: int
     email: EmailStr
@@ -24,7 +28,7 @@ class UserOut(BaseModel):
     created_at: Optional[datetime]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -62,18 +66,10 @@ class SkinProfileOut(SkinProfileCreate):
         return v or []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
-    age: Optional[int] = None
-    gender: Optional[str] = None
-    fitzpatrick: Optional[str] = None
-    skin_type: Optional[str] = None
-    skin_conditions: Optional[List[str]] = None
-    allergies: Optional[List[str]] = None
-    country: Optional[str] = None
-    city: Optional[str] = None
 
 
 # ── ANALYSIS ──────────────────────────────────────────────────────────────
@@ -85,9 +81,10 @@ class AnalysisCreated(BaseModel):
 class AnalysisStatusOut(BaseModel):
     analysis_id: int
     status: str
+    error_message: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class AnalysisOut(BaseModel):
     id: int
@@ -99,7 +96,7 @@ class AnalysisOut(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class AnalysisSnapshot(BaseModel):
     id: int
@@ -108,7 +105,7 @@ class AnalysisSnapshot(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ── ROUTINES ──────────────────────────────────────────────────────────────
@@ -123,7 +120,7 @@ class RoutineStepOut(BaseModel):
     is_active: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class RoutineOut(BaseModel):
     id: int
@@ -133,11 +130,18 @@ class RoutineOut(BaseModel):
     steps: List[RoutineStepOut]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class RoutineStepCreate(BaseModel):
+    step_order: int
+    time_of_day: str
+    product_name: str
+    product_category: Optional[str] = None
+    reason: Optional[str] = None
 
 class RoutineCreate(BaseModel):
     analysis_id: Optional[int] = None
-    steps: List[dict]           # [{ step_order, time_of_day, product_name, product_category, reason }]
+    steps: List[RoutineStepCreate]
 
 class StepUpdate(BaseModel):
     step_id: int
@@ -158,7 +162,7 @@ class SkinCheckOut(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ── PRODUCTS ──────────────────────────────────────────────────────────────
@@ -171,7 +175,7 @@ class ProductOut(BaseModel):
     description: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class IngredientOut(BaseModel):
@@ -181,7 +185,7 @@ class IngredientOut(BaseModel):
     rating: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ProductIngredientOut(BaseModel):
@@ -190,13 +194,10 @@ class ProductIngredientOut(BaseModel):
     ingredient: IngredientOut
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ProductDetailOut(ProductOut):
     highlights: Optional[str]    # JSON string con la lista de #tags
     source_url: str
     product_ingredients: List[ProductIngredientOut]
-
-    class Config:
-        orm_mode = True

@@ -1,8 +1,12 @@
+import os
+import sys
+
+# Suprimir warnings de TensorFlow/MediaPipe antes de importar
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['MEDIAPIPE_DISABLE_GPU'] = '1'
+
 import cv2
 import numpy as np
-import os
-
-import sys
 
 # MediaPipe imports
 try:

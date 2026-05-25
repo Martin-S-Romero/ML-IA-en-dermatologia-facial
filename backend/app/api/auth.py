@@ -1,5 +1,6 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.core import security
@@ -57,6 +58,30 @@ def login(request: Request, user: schemas.UserLogin, db: Session = Depends(deps.
     return {"access_token": access_token, "token_type": "bearer", "user": db_user}
 
 
+@router.post("/token", response_model=schemas.TokenResponse)
+@limiter.limit("20/minute")
+def login_swagger(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(deps.get_db)
+):
+    db_user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    if not db_user or not security.verify_password(form_data.password, db_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Correo o contraseña incorrectos.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = security.create_access_token(
+        data={"sub": db_user.email},
+        expires_delta=timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+    logger.info(f"Swagger token request successful: {db_user.email}")
+    return {"access_token": access_token, "token_type": "bearer", "user": db_user}
+
+
+
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(current_user: models.User = Depends(deps.get_current_user)):
     # JWT es stateless: el cliente elimina el token.
@@ -67,8 +92,8 @@ def logout(current_user: models.User = Depends(deps.get_current_user)):
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
 @limiter.limit("3/minute")
-def forgot_password(request: Request, body: dict, db: Session = Depends(deps.get_db)):
-    email = body.get("email", "").strip()
+def forgot_password(request: Request, body: schemas.ForgotPasswordRequest, db: Session = Depends(deps.get_db)):
+    email = body.email.strip()
     if not email:
         raise HTTPException(status_code=400, detail="El correo es requerido.")
 

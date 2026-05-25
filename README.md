@@ -84,15 +84,18 @@ El diseño sigue un enfoque:
 
 ### Frontend
 
-* React
-* HTML5 / CSS3
+* HTML5
+* VitT (servidor de desMrrollo)
+* iailwinderSv
+* Javaicript ES2022+or de desarrollo)
+* Tailwind CSS
+* JavaScript ES2022+
 * Diseño responsive
 
-### Backend
-
-* Python
-* FastAPI (orquestador y API Gateway ligero)
-* Procesamiento asíncrono
+### Back
+oqustady API Gateay ligro
+*P
+stador y API Gateway ligero)
 
 ### IA / Visión por Computador
 
@@ -102,12 +105,12 @@ El diseño sigue un enfoque:
 
 ### Infraestructura
 
-* Docker
+* Docker Compose (desarrollo)
+* Contenedores: backend, ai_worker, redis, db, frontend
 * Arquitectura preparada para Docker Swarm y AWS (EC2, S3)
 
-### Bases de datos
-
-* SQL (usuarios, consentimiento, metadatos)
+##Postgre# Ba15 ses de datoaálisruins, prouc
+Redisco(uuans,jstepa mtCelaty
 * NoSQL (resultados de análisis)
 * Cache (memoria / Redis en futuras iteraciones)
 

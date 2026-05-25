@@ -19,17 +19,32 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 logger = logging.getLogger(__name__)
 
 @celery_app.task(name="app.worker.tasks.process_image_task", bind=True, max_retries=3)
-def process_image_task(self, analysis_id: int, input_path: str, output_path: str, user_id: int):
+def process_image_task(
+    self,
+    analysis_id: int,
+    input_path: str,
+    output_path: str,
+    user_id: int,
+    censor_mode: str = "blur",
+    blur_strength: int = 55,
+    pixel_size: int = 10,
+    expand: int = 10,
+):
     """
     Tarea de Celery para procesar la imagen con IA y mock de análisis de piel.
     Se ejecuta en un contenedor aislado (Worker).
+
+    Parámetros de censura:
+        censor_mode: "blur" | "black" | "pixelate"
+        blur_strength: intensidad del desenfoque (modo blur)
+        pixel_size: tamaño del píxel (modo pixelate)
+        expand: margen extra en píxeles alrededor de ojos y boca
     """
     db = SessionLocal()
     
     try:
         from sqlalchemy import text
-        # 1. Configurar RLS manualmente para esta sesión (importante si el DATABASE_URL es app_user)
-        # Si la BD está conectada como superusuario (postgres), esto no hace daño.
+        # 1. Configurar RLS manualmente para esta sesión
         db.execute(text(f"SET app.current_user_id = '{user_id}';"))
         
         analysis = db.query(models.Analysis).filter(models.Analysis.id == analysis_id).first()
@@ -37,8 +52,13 @@ def process_image_task(self, analysis_id: int, input_path: str, output_path: str
             logger.error(f"Analysis {analysis_id} not found.")
             return "Analysis not found"
 
-        logger.info(f"Starting censorship for analysis {analysis_id}")
-        censor = FaceCensor(mode="blur", blur_strength=55, expand=10)
+        logger.info(f"Starting censorship for analysis {analysis_id} with mode='{censor_mode}'")
+        censor = FaceCensor(
+            mode=censor_mode,
+            blur_strength=blur_strength,
+            expand=expand,
+            pixel_size=pixel_size,
+        )
         result = censor.process_image(input_path, output_path)
 
         if result is None:

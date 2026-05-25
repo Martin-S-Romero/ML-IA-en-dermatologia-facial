@@ -17,6 +17,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+.conda
 
 ############################
 # Python tooling
@@ -136,7 +137,7 @@ coverage/
 ############################
 docs/_build/
 .env.example
-README.md
+# README.md
 ARCHITECTURE.md
 AI_RULES.md
 TEST_LOG.md

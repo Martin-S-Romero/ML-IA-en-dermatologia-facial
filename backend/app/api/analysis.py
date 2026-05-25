@@ -3,7 +3,7 @@ import json
 import os
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from PIL import Image
@@ -12,6 +12,7 @@ from app import models, schemas
 from app.api import deps
 from app.core.face_censor import FaceCensor
 from app.core.logger import logger
+from app.worker.tasks import process_image_task
 
 router = APIRouter()
 
@@ -53,7 +54,11 @@ def _validate_image(contents: bytes, content_type: str) -> None:
 
 @router.post("/upload", response_model=schemas.AnalysisCreated, status_code=status.HTTP_202_ACCEPTED)
 async def upload_image(
-    file: UploadFile = File(...),
+    file: UploadFile = File(..., description="Imagen JPG o PNG a analizar (máx 10 MB)"),
+    censor_mode: str = Form("blur", description="Modo de censura facial: 'blur' (desenfoque), 'black' (recuadro negro) o 'pixelate' (pixelado)"),
+    blur_strength: int = Form(55, description="Intensidad del desenfoque (solo aplica si censor_mode='blur'). Debe ser impar."),
+    pixel_size: int = Form(10, description="Tamaño del píxel (solo aplica si censor_mode='pixelate')."),
+    expand: int = Form(10, description="Píxeles extra de margen alrededor de ojos y boca en la censura."),
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
 ):
@@ -61,7 +66,18 @@ async def upload_image(
     Recibe una imagen, la valida, crea un registro Analysis en estado 'processing'
     y lanza la censura facial como tarea de Celery en un Worker aislado.
     Devuelve el analysis_id para hacer polling de estado.
+
+    **Modos de censura disponibles:**
+    - `blur` (por defecto): Desenfoque gaussiano sobre ojos y boca.
+    - `black`: Relleno negro sobre ojos y boca.
+    - `pixelate`: Efecto de pixelado sobre ojos y boca.
     """
+    if censor_mode not in ("blur", "black", "pixelate"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="censor_mode inválido. Usa: 'blur', 'black' o 'pixelate'.",
+        )
+
     contents = await file.read()
     _validate_image(contents, file.content_type)
 
@@ -84,15 +100,18 @@ async def upload_image(
     db.refresh(analysis)
 
     # Lanzar la tarea de Celery al Worker de IA
-    from app.worker.tasks import process_image_task
-    process_image_task.delay(
+    process_image_task.delay(  # type: ignore[attr-defined]
         analysis.id,
         input_path,
         output_path,
-        current_user.id
+        current_user.id,
+        censor_mode,
+        blur_strength,
+        pixel_size,
+        expand,
     )
 
-    logger.info(f"Analysis {analysis.id} sent to Celery Queue for user {current_user.id}")
+    logger.info(f"Analysis {analysis.id} sent to Celery Queue for user {current_user.id} (mode={censor_mode})")
     return {"analysis_id": analysis.id, "status": "processing"}
 
 
@@ -120,14 +139,18 @@ def get_status(
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
 ):
-    """Estado del análisis: processing / completed / failed."""
+    """Estado del análisis: processing / completed / failed. Incluye mensaje de error si falló."""
     analysis = db.query(models.Analysis).filter(
         models.Analysis.id == analysis_id,
         models.Analysis.user_id == current_user.id,
     ).first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Análisis no encontrado.")
-    return {"analysis_id": analysis.id, "status": analysis.status}
+    return {
+        "analysis_id": analysis.id,
+        "status": analysis.status,
+        "error_message": analysis.error_message
+    }
 
 
 @router.get("/{analysis_id}", response_model=schemas.AnalysisOut)
@@ -149,14 +172,17 @@ def get_analysis(
 @router.get("/{analysis_id}/image")
 def get_analysis_image(
     analysis_id: int,
+    current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
 ):
     """
     Sirve la imagen censurada del análisis.
-    Sin autenticación — los nombres de archivo son UUIDs opacos.
+    Requiere autenticación obligatoria para garantizar que solo el propietario
+    pueda acceder a sus imágenes.
     """
     analysis = db.query(models.Analysis).filter(
         models.Analysis.id == analysis_id,
+        models.Analysis.user_id == current_user.id,
     ).first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Análisis no encontrado.")

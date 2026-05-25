@@ -230,6 +230,7 @@ export async function openDetail(id) {
 }
 
 function _renderDetail(a, container) {
+  const token = localStorage.getItem('skinai_token')
   const dateStr = _formatDate(a.created_at)
 
   const statusBadge = a.status === 'completed'
@@ -238,10 +239,10 @@ function _renderDetail(a, container) {
     ? '<span class="bg-rose/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Error</span>'
     : '<span class="bg-warn/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Procesando</span>'
 
-  // Imagen: usa el endpoint público /api/analysis/{id}/image
+  // Imagen: usa el endpoint con token para autenticarse de forma segura
   const imgSection = a.censored_filename || a.original_filename
     ? `<img
-         src="${API}/analysis/${a.id}/image"
+         src="${API}/analysis/${a.id}/image?token=${token}"
          alt="Imagen procesada análisis #${a.id}"
          class="w-full h-full object-cover"
          onerror="this.parentElement.innerHTML='<span class=\\'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl opacity-30 select-none\\'></span>'"

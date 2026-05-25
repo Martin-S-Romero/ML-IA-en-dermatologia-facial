@@ -28,7 +28,7 @@ def test_users_endpoints():
         print("    [ERROR]", res.text)
         
     # 2. Crear/Actualizar Perfil de Piel
-    print("\n[2] POST /users/profile")
+    print("\n[2] PUT /users/profile")
     profile_data = {
         "age": 25,
         "gender": "femenino",
@@ -39,8 +39,8 @@ def test_users_endpoints():
         "country": "Ecuador",
         "city": "Quito"
     }
-    res = requests.post(f"{API_URL}/users/profile", json=profile_data, headers=headers)
-    if res.status_code == 201:
+    res = requests.put(f"{API_URL}/users/profile", json=profile_data, headers=headers)
+    if res.status_code == 200:
         print("    [EXITO] Perfil de piel creado correctamente.")
     else:
         print("    [ERROR]", res.text)
@@ -53,18 +53,28 @@ def test_users_endpoints():
     else:
         print("    [ERROR]", res.text)
         
-    # 4. Actualizar usuario (y perfil parcial)
+    # 4. Actualizar nombre de usuario
     print("\n[4] PUT /users/me")
     update_data = {
-        "full_name": "Nombre Actualizado",
-        "skin_type": "grasa"
+        "full_name": "Nombre Actualizado"
     }
     res = requests.put(f"{API_URL}/users/me", json=update_data, headers=headers)
+    if res.status_code == 200:
+        print("    [EXITO] Nombre de usuario actualizado correctamente.")
+    else:
+        print("    [ERROR]", res.text)
+
+    # 5. Actualizar perfil de piel
+    print("\n[5] PUT /users/profile (actualización)")
+    profile_update = {
+        "skin_type": "grasa"
+    }
+    res = requests.put(f"{API_URL}/users/profile", json=profile_update, headers=headers)
     if res.status_code == 200:
         # Verificar que se actualizó el perfil
         res_profile = requests.get(f"{API_URL}/users/profile", headers=headers)
         if res_profile.json()["skin_type"] == "grasa":
-            print("    [EXITO] Nombre y perfil de piel actualizados correctamente.")
+            print("    [EXITO] Tipo de piel actualizado correctamente.")
         else:
             print("    [ERROR] El tipo de piel no se actualizó.")
     else:
