@@ -108,9 +108,11 @@ export function bindOptionButtons() {
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-group]')
     if (!btn || btn.tagName !== 'BUTTON') return
+    if (btn.classList.contains('multi')) return  // multi-select handled per-page
+    const wasSelected = btn.classList.contains('selected')
     const group = btn.dataset.group
     document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'))
-    btn.classList.add('selected')
+    if (!wasSelected) btn.classList.add('selected')
   })
 }
 
@@ -119,7 +121,8 @@ export function bindFitzDots() {
   document.addEventListener('click', e => {
     const dot = e.target.closest('.fitz-dot')
     if (!dot) return
+    const wasSelected = dot.classList.contains('selected')
     document.querySelectorAll('.fitz-dot').forEach(d => d.classList.remove('selected'))
-    dot.classList.add('selected')
+    if (!wasSelected) dot.classList.add('selected')
   })
 }

@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from app import schemas, models
+from app import schemas, db_scheme as models
 from app.core import database, security
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -33,12 +33,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
         
-    # Establecer la variable de contexto
     from app.core.context import current_user_id
-    current_user_id.set(str(user.id))
-    
-    # Inyectar el ID en la sesión actual para RLS
     from sqlalchemy import text
-    db.execute(text(f"SET app.current_user_id = '{user.id}';"))
-    
+    current_user_id.set(str(user.id))
+    db.execute(text("SELECT set_config('app.current_user_id', :uid, false)"), {"uid": str(user.id)})
     return user

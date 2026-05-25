@@ -1,25 +1,30 @@
-from sqlalchemy import create_engine, event
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import os
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import sessionmaker
+
+from app.db_scheme.base import Base as Base  # re-exportado para que Alembic lo encuentre aquí
 from app.core.context import current_user_id
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required")
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 @event.listens_for(engine, "checkout")
-def checkout(dbapi_connection, connection_record, connection_proxy):
+def _set_rls_user(dbapi_connection, _connection_record, _connection_proxy):
+    """Inyecta el user_id en la sesión PostgreSQL para que las RLS policies funcionen."""
     user_id = current_user_id.get()
     cursor = dbapi_connection.cursor()
+    # Usamos set_config() con parámetro vinculado — sin interpolación de strings (sin SQL injection)
     if user_id:
-        cursor.execute(f"SET app.current_user_id = '{user_id}';")
+        cursor.execute("SELECT set_config('app.current_user_id', %s, false)", (str(user_id),))
     else:
-        cursor.execute("SET app.current_user_id = '';")
+        cursor.execute("SELECT set_config('app.current_user_id', '', false)")
     cursor.close()
 
-Base = declarative_base()
 
 def get_db():
     db = SessionLocal()

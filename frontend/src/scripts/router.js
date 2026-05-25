@@ -50,6 +50,7 @@ export function getUser() {
 export function logout() {
   localStorage.removeItem('skinai_token')
   localStorage.removeItem('skinai_user')
+  localStorage.removeItem('skinai_profile_complete')
   navigate('landing')
 }
 
@@ -72,10 +73,11 @@ export async function navigate(pageKey) {
     return
   }
 
-  // Si ya hay sesión y quiere ir a landing/auth → redirigir a dashboard
+  // Si ya hay sesión y quiere ir a landing/auth → redirigir según si completó el perfil
   if (PUBLIC_ONLY.includes(pageKey) && token) {
-    if (currentPage === 'dashboard') return  // ya en dashboard, no hacer nada
-    await loadPage('dashboard')
+    if (currentPage === 'dashboard' || currentPage === 'profile') return
+    const profileComplete = localStorage.getItem('skinai_profile_complete')
+    await loadPage(profileComplete ? 'dashboard' : 'profile')
     return
   }
 

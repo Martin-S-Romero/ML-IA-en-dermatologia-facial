@@ -1,8 +1,7 @@
-import json
 from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional
 from sqlalchemy.orm import Session, joinedload
-from app import models, schemas
+from app import db_scheme as models, schemas
 from app.api import deps
 
 router = APIRouter()
@@ -11,8 +10,8 @@ router = APIRouter()
 products.py
 Endpoints de productos consultando la base de datos.
 Los datos provienen del scraper de INCIDecoder (backend/scraper/).
-
 """
+
 # ── ENDPOINTS ─────────────────────────────────────────────────────────────────
 
 @router.get("/search", response_model=list[schemas.ProductOut])
@@ -45,11 +44,9 @@ def get_recommended(
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
 ):
-    """
-    Devuelve productos recomendados según el perfil de piel del usuario.
-    """
+    """Devuelve productos recomendados según el perfil de piel del usuario."""
     profile = db.query(models.SkinProfile).filter(
-        models.SkinProfile.user_id == current_user.id  # type: ignore[operator]
+        models.SkinProfile.user_id == current_user.id
     ).first()
 
     base_categories = ["cleanser", "moisturizer", "spf"]
@@ -57,23 +54,16 @@ def get_recommended(
     if not profile:
         return _get_top_per_category(db, base_categories)
 
-    conditions = []
-    if profile.skin_conditions:
-        try:
-            conditions = json.loads(profile.skin_conditions)
-        except Exception:
-            pass
+    # Con JSONB, skin_conditions ya llega como lista — sin json.loads
+    conditions: list = profile.skin_conditions or []
 
     extra_categories = []
-
     if any(c in conditions for c in ["acne", "acné"]):
         extra_categories += ["serum", "exfoliant"]
-
     if any(c in conditions for c in ["rosácea", "rosacea", "manchas", "hiperpigmentación"]):
         extra_categories.append("serum")
 
     all_categories = list(dict.fromkeys(base_categories + extra_categories))
-
     return _get_top_per_category(db, all_categories, skin_type=profile.skin_type or "")
 
 
@@ -93,10 +83,8 @@ def get_product(
         .filter(models.Product.id == product_id)
         .first()
     )
-
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-
     return product
 
 
@@ -110,15 +98,11 @@ def _get_top_per_category(
 ) -> list[models.Product]:
     """Retorna los N mejores productos de cada categoría."""
     results = []
-
     for cat in categories:
         query = db.query(models.Product).filter(models.Product.category == cat)
-
         if skin_type == "seca" and cat == "cleanser":
             query = query.filter(models.Product.name.ilike("%hydrat%"))
         elif skin_type in ("grasa", "mixta") and cat == "cleanser":
             query = query.filter(models.Product.name.ilike("%foam%"))
-
         results += query.limit(per_category).all()
-
     return results

@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from PIL import Image
 
-from app import models, schemas
+from app import db_scheme as models, schemas
 from app.api import deps
 from app.core.face_censor import FaceCensor
 from app.core.logger import logger
