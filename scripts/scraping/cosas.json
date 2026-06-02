@@ -1,0 +1,283 @@
+{
+    "barcode": "7310618429036",
+    "endpoint": "https://inciapi.com/api/web/demo/products/7310618429036",
+    "data": {
+        "product": {
+            "name": "Bliw Kök Kjøkken Keittio",
+            "brand": "Orkla",
+            "barcode": "7310618429036",
+            "imageUrls": [],
+            "category": [
+                "hand-soap"
+            ],
+            "vertical": "skincare"
+        },
+        "details": {
+            "inci": "Sodium Laureth Sulfate, Sodium Chloride, Cocamidopropyl Betaine, Glycerin, PEG-4 Rapeseedamide, Parfum, Sodium Lauroyl Glutamate, Citric ACia, Propylene Glycol, Thymus Vulgaris Flower/Leaf Extract, Phenoxyethanol, Benzoic Acid, Citral, Limonene, Hexyl Cinnamal, Geraniol, CI 19140, CI 42090, Sodium Sulfate.",
+            "analysis": {
+                "barcode": null,
+                "rawInci": [
+                    "Sodium Laureth Sulfate",
+                    "Sodium Chloride",
+                    "Cocamidopropyl Betaine",
+                    "Glycerin",
+                    "PEG-4 Rapeseedamide",
+                    "Parfum",
+                    "Sodium Lauroyl Glutamate",
+                    "Citric ACia",
+                    "Propylene Glycol",
+                    "Thymus Vulgaris Flower/Leaf Extract",
+                    "Phenoxyethanol",
+                    "Benzoic Acid",
+                    "Citral",
+                    "Limonene",
+                    "Hexyl Cinnamal",
+                    "Geraniol",
+                    "CI 19140",
+                    "CI 42090",
+                    "Sodium Sulfate."
+                ],
+                "parsedIngredients": [
+                    {
+                        "inciName": "SODIUM LAURETH SULFATE",
+                        "safetyScore": 7,
+                        "safetyLevel": "moderate",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": 3,
+                        "irritancyPotential": "moderate",
+                        "pregnancySafe": true,
+                        "found": true
+                    },
+                    {
+                        "inciName": "SODIUM CHLORIDE",
+                        "safetyScore": 7,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": null,
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "COCAMIDOPROPYL BETAINE",
+                        "safetyScore": 7,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": 0,
+                        "irritancyPotential": "low",
+                        "pregnancySafe": true,
+                        "found": true
+                    },
+                    {
+                        "inciName": "GLYCERIN",
+                        "safetyScore": 9,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": 0,
+                        "irritancyPotential": "none",
+                        "pregnancySafe": true,
+                        "found": true
+                    },
+                    {
+                        "inciName": "PEG-4 RAPESEEDAMIDE",
+                        "safetyScore": null,
+                        "safetyLevel": null,
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": null,
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "PARFUM",
+                        "safetyScore": null,
+                        "safetyLevel": null,
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": "moderate",
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "SODIUM LAUROYL GLUTAMATE",
+                        "safetyScore": 7,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": null,
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "CITRIC ACIA",
+                        "safetyScore": 5,
+                        "safetyLevel": "moderate",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": null,
+                        "pregnancySafe": null,
+                        "found": false
+                    },
+                    {
+                        "inciName": "PROPYLENE GLYCOL",
+                        "safetyScore": 7,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": 0,
+                        "irritancyPotential": "none",
+                        "pregnancySafe": true,
+                        "found": true
+                    },
+                    {
+                        "inciName": "THYMUS VULGARIS FLOWER/LEAF EXTRACT",
+                        "safetyScore": null,
+                        "safetyLevel": null,
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": null,
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "PHENOXYETHANOL",
+                        "safetyScore": 7,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": 0,
+                        "irritancyPotential": "low",
+                        "pregnancySafe": true,
+                        "found": true
+                    },
+                    {
+                        "inciName": "BENZOIC ACID",
+                        "safetyScore": 7,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": null,
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "CITRAL",
+                        "safetyScore": 3,
+                        "safetyLevel": "moderate",
+                        "isAllergen": true,
+                        "allergenTypes": [
+                            "fragrance"
+                        ],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": "moderate",
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "LIMONENE",
+                        "safetyScore": 3,
+                        "safetyLevel": "moderate",
+                        "isAllergen": true,
+                        "allergenTypes": [
+                            "fragrance"
+                        ],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": "moderate",
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "HEXYL CINNAMAL",
+                        "safetyScore": 3,
+                        "safetyLevel": "moderate",
+                        "isAllergen": true,
+                        "allergenTypes": [
+                            "fragrance"
+                        ],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": "moderate",
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "GERANIOL",
+                        "safetyScore": 3,
+                        "safetyLevel": "moderate",
+                        "isAllergen": true,
+                        "allergenTypes": [
+                            "fragrance"
+                        ],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": "moderate",
+                        "pregnancySafe": null,
+                        "found": true
+                    },
+                    {
+                        "inciName": "CI 19140",
+                        "safetyScore": 7,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": 0,
+                        "irritancyPotential": "low",
+                        "pregnancySafe": true,
+                        "found": true
+                    },
+                    {
+                        "inciName": "CI 42090",
+                        "safetyScore": 7,
+                        "safetyLevel": "safe",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": 0,
+                        "irritancyPotential": "low",
+                        "pregnancySafe": true,
+                        "found": true
+                    },
+                    {
+                        "inciName": "SODIUM SULFATE.",
+                        "safetyScore": 5,
+                        "safetyLevel": "moderate",
+                        "isAllergen": false,
+                        "allergenTypes": [],
+                        "comedogenicityRating": null,
+                        "irritancyPotential": null,
+                        "pregnancySafe": null,
+                        "found": false
+                    }
+                ],
+                "overallSafetyScore": 5.2,
+                "safetyLevel": "moderate",
+                "allergenFlags": [
+                    "CITRAL",
+                    "LIMONENE",
+                    "HEXYL CINNAMAL",
+                    "GERANIOL"
+                ],
+                "skinTypeCompatibility": {
+                    "oily": "neutral",
+                    "dry": "good",
+                    "sensitive": "bad",
+                    "combination": "good",
+                    "normal": "good",
+                    "acneProne": "neutral"
+                },
+                "pregnancySafe": true,
+                "pregnancyUnsafeIngredients": [],
+                "cleanBeautyScore": 82,
+                "comedogenicityScore": 0.6,
+                "analyzedAt": "2026-05-08T06:51:22.953Z"
+            }
+        }
+    }
+}
