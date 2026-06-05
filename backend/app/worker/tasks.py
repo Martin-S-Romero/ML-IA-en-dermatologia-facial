@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.celery_app import celery_app
 from app import db_scheme as models
-from app.core.face_censor_v2 import FaceCensor
+from app.core.face_censor_v3 import FaceCensor
 from app.core.ai_runner import run_inference
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")

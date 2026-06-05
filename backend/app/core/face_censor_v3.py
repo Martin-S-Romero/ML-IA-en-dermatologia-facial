@@ -8,7 +8,7 @@ import numpy as np
 import os
 import sys
 
-from skinai_config import (
+from app.core.skinai_config import (
     # severity
     ERYTHEMA_W, COMEDONES_W, SCALES_W,
     # umbrales de eritema

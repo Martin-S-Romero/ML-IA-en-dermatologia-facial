@@ -117,9 +117,6 @@ class AnalysisCreated(BaseModel):
 
 class AnalysisStatusOut(BaseModel):
     analysis_id: int
-<<<<<<< HEAD
-    status:      str
-=======
     status: str
 
     class Config:

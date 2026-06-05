@@ -11,7 +11,6 @@ from PIL import Image
 
 from app import db_scheme as models, schemas
 from app.api import deps
-from app.core.face_censor import FaceCensor
 from app.core.logger import logger
 from app.worker.tasks import process_image_task
 
@@ -55,24 +54,15 @@ def _validate_image(contents: bytes, content_type: str) -> None:
 
 @router.post("/upload", response_model=schemas.AnalysisCreated, status_code=status.HTTP_202_ACCEPTED)
 async def upload_image(
-<<<<<<< HEAD
-<<<<<<< HEAD
-    file:         UploadFile       = File(...),
-    lighting:     Optional[str]    = Form(None),   # capturado por el frontend
-    device:       Optional[str]    = Form(None),
-    current_user: models.User      = Depends(deps.get_current_user),
-    db:           Session          = Depends(deps.get_db),
-=======
-=======
->>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
     file: UploadFile = File(..., description="Imagen JPG o PNG a analizar (máx 10 MB)"),
     censor_mode: str = Form("blur", description="Modo de censura facial: 'blur' (desenfoque), 'black' (recuadro negro) o 'pixelate' (pixelado)"),
     blur_strength: int = Form(55, description="Intensidad del desenfoque (solo aplica si censor_mode='blur'). Debe ser impar."),
     pixel_size: int = Form(10, description="Tamaño del píxel (solo aplica si censor_mode='pixelate')."),
     expand: int = Form(10, description="Píxeles extra de margen alrededor de ojos y boca en la censura."),
+    lighting: Optional[str] = Form(None),
+    device: Optional[str] = Form(None),
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
->>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
 ):
     """
     Recibe una imagen, la valida, crea un registro Analysis en estado 'processing'
