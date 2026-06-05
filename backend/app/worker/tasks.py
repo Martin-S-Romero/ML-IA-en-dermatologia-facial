@@ -33,10 +33,9 @@ def process_image_task(
     expand: int = 10,
 ):
     """
-<<<<<<< HEAD
+
     Tarea de Celery: censura facial + análisis de piel con modelo real.
-=======
->>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
+
     Corre en el contenedor ai_worker, aislado del proceso principal de FastAPI.
     """
     db = SessionLocal()

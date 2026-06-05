@@ -98,26 +98,15 @@ class SkinProfileOut(SkinProfileCreate):
         from_attributes = True
 
 class UserUpdate(BaseModel):
-<<<<<<< HEAD
-    full_name:       Optional[str]       = None
-    birth_date:      Optional[date]      = None
-    gender:          Optional[str]       = None
-    fitzpatrick:     Optional[str]       = None
-    skin_type:       Optional[str]       = None
-    skin_conditions: Optional[List[str]] = None
-    allergies:       Optional[List[str]] = None
-    country:         Optional[str]       = None
-    city:            Optional[str]       = None
-
-    @root_validator(pre=True)
-    def accept_age_field(cls, values):
-        age = values.pop('age', None)
-        if age is not None and values.get('birth_date') is None:
-            values['birth_date'] = date(date.today().year - int(age), 1, 1)
-        return values
-=======
     full_name: Optional[str] = None
->>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    fitzpatrick: Optional[str] = None
+    skin_type: Optional[str] = None
+    skin_conditions: Optional[List[str]] = None
+    allergies: Optional[List[str]] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
 
 
 # ── ANALYSIS ──────────────────────────────────────────────────────────────────
@@ -132,8 +121,6 @@ class AnalysisStatusOut(BaseModel):
     status:      str
 =======
     status: str
-    error_message: Optional[str] = None
->>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
 
     class Config:
         from_attributes = True
@@ -201,14 +188,24 @@ class RoutineStepCreate(BaseModel):
     product_name: str
     product_category: Optional[str] = None
     reason: Optional[str] = None
+    is_active: bool
+
+    class Config:
+        orm_mode = True
+
+class RoutineOut(BaseModel):
+    id: int
+    analysis_id: Optional[int] = None
+    is_active: bool
+    created_at: datetime
+    steps: List[RoutineStepOut]
+
+    class Config:
+        orm_mode = True
 
 class RoutineCreate(BaseModel):
     analysis_id: Optional[int] = None
-<<<<<<< HEAD
-    steps:       List[dict]
-=======
-    steps: List[RoutineStepCreate]
->>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
+    steps: List[RoutineStepCreate]  # tipado correctamente
 
 class StepUpdate(BaseModel):
     step_id:      int
