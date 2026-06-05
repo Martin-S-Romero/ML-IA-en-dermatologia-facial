@@ -5,15 +5,16 @@
  */
 
 export const PAGES = {
-  landing:          '/src/pages/landing.html',
-  auth:             '/src/pages/auth.html',
-  profile:          '/src/pages/profile.html',
-  capture:          '/src/pages/capture.html',
-  'routine-check':  '/src/pages/routine-check.html',
-  'routine-change': '/src/pages/routine-change.html',
-  analyzing:        '/src/pages/analyzing.html',
-  dashboard:        '/src/pages/dashboard.html',
-  account:          '/src/pages/account.html',
+  landing:           '/src/pages/landing.html',
+  auth:              '/src/pages/auth.html',
+  'reset-password':  '/src/pages/reset-password.html',
+  profile:           '/src/pages/profile.html',
+  capture:           '/src/pages/capture.html',
+  'routine-check':   '/src/pages/routine-check.html',
+  'routine-change':  '/src/pages/routine-change.html',
+  analyzing:         '/src/pages/analyzing.html',
+  dashboard:         '/src/pages/dashboard.html',
+  account:           '/src/pages/account.html',
 }
 
 // Páginas que requieren sesión activa
@@ -24,6 +25,7 @@ const PUBLIC_ONLY = ['landing', 'auth']
 
 let currentPage = null
 let chartsReady = false
+let navSeq = 0
 
 // ── AUTH HELPERS ─────────────────────────────────────────────────────────
 
@@ -81,6 +83,13 @@ export async function navigate(pageKey) {
     return
   }
 
+  // Páginas que requieren perfil completo — si no, forzar al perfil
+  const REQUIRES_PROFILE = ['dashboard', 'capture', 'routine-check', 'routine-change', 'analyzing', 'account']
+  if (REQUIRES_PROFILE.includes(pageKey) && token && !localStorage.getItem('skinai_profile_complete')) {
+    await loadPage('profile')
+    return
+  }
+
   await loadPage(pageKey)
 }
 
@@ -93,18 +102,26 @@ async function navigateToAuth(view = 'register') {
 }
 
 async function loadPage(pageKey) {
+  const mySeq = ++navSeq
   const url = PAGES[pageKey]
 
-  // El dashboard tiene su propio header — ocultar la navbar global para evitar duplicados
+  // Only show the global navbar on authenticated flow pages that lack their own sidebar
+  const NAVBAR_PAGES = ['profile', 'capture', 'routine-check', 'routine-change', 'analyzing']
   const navbarSlot = document.getElementById('slot-navbar')
-  if (navbarSlot) navbarSlot.style.display = pageKey === 'dashboard' ? 'none' : ''
+  if (navbarSlot) navbarSlot.style.display = NAVBAR_PAGES.includes(pageKey) ? 'block' : 'none'
+
+  // Limpiar el contenido anterior de inmediato para que no persista durante la carga
+  const app = document.getElementById('app')
+  if (app) app.innerHTML = ''
 
   try {
     const res = await fetch(url)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const html = await res.text()
 
-    const app = document.getElementById('app')
+    // Si una navegación más reciente ya empezó, descartar este resultado
+    if (navSeq !== mySeq) return
+
     app.innerHTML = html
     app.querySelector('section')?.classList.add('page-enter')
 
@@ -130,16 +147,23 @@ async function runPageInit(pageKey) {
       initForgotPassword()
       break
 
+    case 'reset-password': {
+      const { initResetPassword } = await import('./auth.js')
+      initResetPassword()
+      break
+    }
+
     case 'profile':
       const { initProfile } = await import('./profile.js')
       initProfile()
       break
 
     case 'account':
+      await loadAccountComponents()
+      setDrawerActive('account')
+      fillUserUI()
       const { initAccount } = await import('./account.js')
       initAccount()
-      // Llenar sidebar/drawer con datos del usuario
-      fillUserUI()
       break
 
     case 'capture':
@@ -155,6 +179,7 @@ async function runPageInit(pageKey) {
     case 'dashboard':
       await loadDashboardComponents()
       initDashboardTabs()
+      setDrawerActive('dashboard')
       fillUserUI()
       // Cargar datos reales desde la API
       const { initDashboard } = await import('./dashboard.js')
@@ -167,6 +192,15 @@ async function runPageInit(pageKey) {
   }
 }
 
+/** Sets the active nav item in the global mobile drawer */
+function setDrawerActive(pageKey) {
+  const drawer = document.getElementById('side-drawer')
+  if (!drawer) return
+  drawer.querySelectorAll('.sidebar-nav-item').forEach(btn => btn.classList.remove('active'))
+  const target = drawer.querySelector(`[data-go="${pageKey}"]`)
+  if (target) target.classList.add('active')
+}
+
 /** Carga sidebar (desktop) y drawer (mobile) en el dashboard */
 async function loadDashboardComponents() {
   // Sidebar for desktop
@@ -175,6 +209,21 @@ async function loadDashboardComponents() {
     try {
       const res = await fetch('/src/components/sidebar.html')
       sidebarSlot.innerHTML = await res.text()
+    } catch (_) {}
+  }
+}
+
+/** Carga sidebar (desktop) en la página de cuenta */
+async function loadAccountComponents() {
+  const sidebarSlot = document.getElementById('account-sidebar')
+  if (sidebarSlot) {
+    try {
+      const res = await fetch('/src/components/sidebar.html')
+      sidebarSlot.innerHTML = await res.text()
+      const dashBtn = sidebarSlot.querySelector('#sidebar-dash-btn')
+      if (dashBtn) dashBtn.classList.remove('active')
+      const accountBtn = sidebarSlot.querySelector('[data-go="account"]')
+      if (accountBtn) accountBtn.classList.add('active')
     } catch (_) {}
   }
 }

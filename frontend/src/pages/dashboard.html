@@ -10,11 +10,14 @@
     <div class="flex-1 flex flex-col bg-bg overflow-hidden">
 
       <!-- Mobile top bar -->
-      <header class="bg-forest text-white px-4 pt-10 pb-3 relative overflow-hidden lg:hidden">
-        <div class="flex items-center gap-3 mb-1 relative">
+      <header class="bg-forest text-white px-4 pt-4 pb-4 relative overflow-hidden lg:hidden">
+        <!--
+          ☰ on the left, SkinAI + "Bienvenido, Claudio" stacked on the right.
+          items-start keeps the burger aligned with the SkinAI row; mt-1 fine-tunes it.
+        -->
+        <div class="flex items-start gap-3 relative">
           <button
-            id="ham-btn"
-            class="flex flex-col gap-1 p-1.5 bg-transparent border-none cursor-pointer flex-shrink-0"
+            class="ham-btn flex flex-col gap-1 p-1.5 bg-transparent border-none cursor-pointer flex-shrink-0 mt-1"
             onclick="toggleDrawer()"
             aria-label="Abrir menú"
             aria-expanded="false"
@@ -23,34 +26,49 @@
             <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
             <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
           </button>
-          <span class="font-display text-lg text-bark">SkinAI</span>
+          <div>
+            <p class="font-display text-lg text-bark leading-tight">SkinAI</p>
+            <p class="font-display text-base text-white whitespace-nowrap mt-0.5">
+              <span class="italic text-white/55">Bienvenido, </span><span class="font-semibold" id="dash-name-mobile">--</span>
+            </p>
+          </div>
         </div>
-        <p class="text-xs text-white/55 relative">Bienvenido,</p>
-        <p id="dash-name-mobile" class="font-display text-lg font-medium relative">--</p>
       </header>
 
       <!-- Desktop top bar -->
-      <header class="hidden lg:flex bg-forest text-white px-6 py-4 items-center justify-between">
-        <div class="flex items-center gap-4">
-          <!-- Botón restore: solo visible cuando el sidebar está oculto -->
-          <button
+      <header class="hidden lg:flex bg-forest text-white px-4 h-14 items-center justify-between border-b border-white/10 gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <!--
+            Restore section — visible only when the sidebar is collapsed.
+            Shows ☰ + SkinAI + separator so branding is never lost.
+            toggleDesktopSidebar() sets display:flex / none on this element.
+          -->
+          <div
             id="desktop-ham-restore"
+            class="flex items-center gap-3 flex-shrink-0"
             style="display:none"
-            class="flex-col gap-1 p-1.5 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
-            onclick="toggleDesktopSidebar()"
-            aria-label="Abrir menú lateral"
           >
-            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
-            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
-            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
-          </button>
-          <div>
-            <p class="text-xs text-white/55">Bienvenido,</p>
-            <p id="dash-name-desktop" class="font-display text-xl font-medium">--</p>
+            <button
+              class="flex flex-col gap-[5px] p-1.5 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity flex-shrink-0"
+              onclick="toggleDesktopSidebar()"
+              aria-label="Abrir menú lateral"
+            >
+              <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+              <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+              <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+            </button>
+            <span class="font-display text-lg text-bark tracking-tight">SkinAI</span>
+            <span class="border-l border-white/20 h-5 self-center mx-0.5"></span>
           </div>
+
+          <!-- Welcome text — always visible, single line -->
+          <p class="font-display text-lg text-white whitespace-nowrap">
+            <span class="italic text-white/55">Bienvenido, </span><span class="font-semibold" id="dash-name-desktop">--</span>
+          </p>
         </div>
+
         <button
-          class="flex items-center gap-2 text-xs font-semibold bg-bark text-ink px-4 py-2 rounded-full hover:bg-bark/90 transition-colors"
+          class="flex items-center gap-2 text-xs font-semibold bg-bark text-ink px-4 py-2 rounded-full hover:bg-bark/90 transition-colors flex-shrink-0"
           onclick="openPdfModal()"
         >
           Exportar PDF

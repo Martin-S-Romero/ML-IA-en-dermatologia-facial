@@ -71,8 +71,34 @@ async function bootstrap() {
   bindOptionButtons()
   bindFitzDots()
 
-  // 7. Navigate to landing page (first screen)
-  await navigate('landing')
+  // 7. Verificar sesión y sincronizar estado de perfil antes de navegar
+  const resetToken = new URLSearchParams(window.location.search).get('reset_token')
+  if (!resetToken) {
+    const token = getToken()
+    if (token) {
+      try {
+        const meRes = await fetch('http://localhost:8000/api/users/me', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+        if (meRes.status === 401) {
+          // Token expirado — limpiar sesión
+          localStorage.removeItem('skinai_token')
+          localStorage.removeItem('skinai_user')
+          localStorage.removeItem('skinai_profile_complete')
+        } else if (meRes.ok) {
+          const me = await meRes.json()
+          if (me.has_profile) {
+            localStorage.setItem('skinai_profile_complete', '1')
+          } else {
+            localStorage.removeItem('skinai_profile_complete')
+          }
+        }
+      } catch {
+        // Error de red — conservar estado en caché
+      }
+    }
+  }
+  await navigate(resetToken ? 'reset-password' : 'landing')
 
   // 8. Flush queued go() calls
   window._goReady = true
@@ -121,8 +147,34 @@ function registerGlobals() {
   window.closePdfModal   = closePdfModal
   window.generatePdf     = generatePdf
 
-  // Account
-  window.deleteAccount    = deleteAccount
+  // Account — defined here so está disponible desde el arranque sin depender de imports dinámicos
+  window.deleteAccount = async function () {
+    if (!confirm('¿Estás seguro? Esta acción no se puede deshacer.')) return
+    const btn = document.getElementById('btn-delete-account')
+    if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...' }
+    const token = localStorage.getItem('skinai_token')
+    try {
+      const res = await fetch('http://localhost:8000/api/users/me', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      if (res.status === 401) {
+        // Token expirado — limpiar sesión y redirigir a login
+        localStorage.clear()
+        window.location.reload()
+        return
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.detail || `Error ${res.status}`)
+      }
+      localStorage.clear()
+      window.location.reload()
+    } catch (err) {
+      alert('Error al eliminar la cuenta: ' + err.message)
+      if (btn) { btn.disabled = false; btn.textContent = 'Eliminar cuenta' }
+    }
+  }
 
   // Capture states
   window.showCaptureError = showCaptureError

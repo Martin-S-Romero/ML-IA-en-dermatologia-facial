@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -10,15 +10,26 @@ class Analysis(Base):
 
     id                 = Column(Integer, primary_key=True, index=True)
     user_id            = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    original_filename  = Column(String(255), nullable=False)
-    censored_filename  = Column(String(255), nullable=True)
 
-    # processing / completed / failed
+    # Archivos
+    original_filename  = Column(String(255), nullable=True)   # se borra tras procesar (GDPR)
+    censored_filename  = Column(String(255), nullable=True)
+    face_censored      = Column(Boolean, default=False, nullable=False)
+
+    # Contexto capturado desde el frontend
+    lighting           = Column(String(50), nullable=True)    # natural / artificial / low / unknown
+    device             = Column(String(255), nullable=True)
+
+    # Estado: processing / completed / failed
     status             = Column(String(20), default="processing", nullable=False)
     error_message      = Column(String(500), nullable=True)
 
-    # Resultado del análisis: dict libre por ahora.
-    # Cuando el modelo DL esté integrado, se agrega una migración con campos tipados.
+    # Columnas dedicadas para consultas rápidas (sin parsear JSONB)
+    top1_label         = Column(String(50), nullable=True)    # ej. "acne-excoriated"
+    top1_confidence    = Column(Float, nullable=True)          # ej. 0.351
+    model_version      = Column(String(50), nullable=True)    # ej. "opcionA"
+
+    # Resultado completo del modelo: all_scores{}, tta_passes, compute
     result             = Column(JSONB, nullable=True)
 
     created_at         = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

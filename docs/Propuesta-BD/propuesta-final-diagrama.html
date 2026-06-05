@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkinAI — Modelo Relacional</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0f11;
+    --bg2: #17171a;
+    --bg3: #1e1e23;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #e8e6f0;
+    --text2: #9490a8;
+    --text3: #5f5c72;
+    --accent: #7c6af7;
+    --accent2: #a897ff;
+
+    --c-auth: #4a7fff;
+    --c-auth-bg: rgba(74,127,255,0.12);
+    --c-auth-border: rgba(74,127,255,0.35);
+
+    --c-ia: #f97316;
+    --c-ia-bg: rgba(249,115,22,0.12);
+    --c-ia-border: rgba(249,115,22,0.35);
+
+    --c-routine: #22c55e;
+    --c-routine-bg: rgba(34,197,94,0.12);
+    --c-routine-border: rgba(34,197,94,0.35);
+
+    --c-products: #e879f9;
+    --c-products-bg: rgba(232,121,249,0.12);
+    --c-products-border: rgba(232,121,249,0.35);
+
+    --c-clinic: #f59e0b;
+    --c-clinic-bg: rgba(245,158,11,0.12);
+    --c-clinic-border: rgba(245,158,11,0.35);
+
+    --pk: #fbbf24;
+    --fk: #60a5fa;
+    --uk: #34d399;
+
+    --row-h: 22px;
+    --header-h: 36px;
+    --card-w: 230px;
+    --pad: 10px;
+    --font: 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #toolbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    z-index: 100;
+  }
+
+  #toolbar h1 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+
+  #toolbar span.sep { color: var(--text3); }
+
+  .filter-btn {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--font);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { border-color: var(--border2); background: var(--bg3); color: var(--text); }
+  .filter-btn.active { color: #fff; border-color: transparent; }
+  .filter-btn[data-group="all"].active     { background: var(--accent); }
+  .filter-btn[data-group="auth"].active    { background: var(--c-auth); }
+  .filter-btn[data-group="ia"].active      { background: var(--c-ia); }
+  .filter-btn[data-group="routine"].active { background: var(--c-routine); }
+  .filter-btn[data-group="products"].active{ background: var(--c-products); }
+  .filter-btn[data-group="clinic"].active  { background: var(--c-clinic); }
+
+  #controls {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ctrl-btn {
+    width: 30px; height: 30px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .ctrl-btn:hover { background: var(--bg3); color: var(--text); }
+
+  #canvas {
+    position: fixed;
+    top: 52px; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+    cursor: grab;
+  }
+  #canvas.dragging { cursor: grabbing; }
+
+  svg#diagram {
+    width: 100%;
+    height: 100%;
+  }
+
+  .link {
+    fill: none;
+    stroke-width: 1.5;
+    opacity: 0.35;
+    transition: opacity .2s;
+  }
+  .link:hover, .link.highlight { opacity: 1; stroke-width: 2; }
+
+  .link-label {
+    font-size: 9px;
+    font-family: var(--font);
+    fill: var(--text3);
+    pointer-events: none;
+  }
+
+  .table-group { cursor: grab; }
+  .table-group:active { cursor: grabbing; }
+
+  .table-card {
+    rx: 6;
+    stroke-width: 1;
+    transition: filter .2s;
+  }
+  .table-group:hover .table-card { filter: brightness(1.2); }
+  .table-group.selected .table-card { stroke-width: 2; }
+
+  .table-header { rx: 6; }
+  .table-header-bottom { rx: 0; }
+
+  .col-row { opacity: 0.85; }
+  .col-row:hover { opacity: 1; }
+
+  .col-name {
+    font-family: var(--font);
+    font-size: 11px;
+    fill: var(--text);
+  }
+  .col-type {
+    font-family: var(--font);
+    font-size: 10px;
+    fill: var(--text3);
+  }
+  .col-pk { fill: var(--pk); font-size: 9px; font-weight: bold; }
+  .col-fk { fill: var(--fk); font-size: 9px; font-weight: bold; }
+  .col-uk { fill: var(--uk); font-size: 9px; font-weight: bold; }
+
+  .table-name {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: bold;
+    fill: #fff;
+  }
+  .table-count {
+    font-family: var(--font);
+    font-size: 10px;
+    fill: rgba(255,255,255,0.5);
+  }
+
+  #detail-panel {
+    position: fixed;
+    top: 52px; right: 0; bottom: 0;
+    width: 280px;
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    padding: 16px;
+    overflow-y: auto;
+    display: none;
+    z-index: 90;
+  }
+  #detail-panel.open { display: block; }
+
+  #detail-panel h2 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  #detail-panel .group-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-bottom: 14px;
+  }
+  #detail-panel table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  #detail-panel th {
+    text-align: left;
+    color: var(--text3);
+    font-weight: normal;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.05em;
+  }
+  #detail-panel td {
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  #detail-panel td:first-child { color: var(--text2); width: 38%; word-break: break-all; }
+  #detail-panel td:nth-child(2) { color: var(--text3); width: 30%; }
+  #detail-panel td:nth-child(3) { width: 32%; }
+  .badge-pk { color: var(--pk); font-weight: bold; font-size: 9px; }
+  .badge-fk { color: var(--fk); font-weight: bold; font-size: 9px; }
+  .badge-uk { color: var(--uk); font-weight: bold; font-size: 9px; }
+
+  #detail-close {
+    position: absolute; top: 12px; right: 12px;
+    background: none; border: none; color: var(--text3);
+    cursor: pointer; font-size: 18px; line-height: 1;
+  }
+  #detail-close:hover { color: var(--text); }
+
+  #legend {
+    position: fixed;
+    bottom: 16px; left: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 10px;
+    color: var(--text3);
+    z-index: 90;
+  }
+  #legend div { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  #legend div:last-child { margin-bottom: 0; }
+  .leg-line { width: 20px; height: 2px; display: inline-block; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+  #zoom-info {
+    position: fixed;
+    bottom: 16px; right: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--text3);
+    z-index: 90;
+  }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>SKINAI — MODELO RELACIONAL</h1>
+  <span class="sep">|</span>
+  <button class="filter-btn active" data-group="all">Todas (21)</button>
+  <button class="filter-btn" data-group="auth">Autenticación (4)</button>
+  <button class="filter-btn" data-group="ia">Análisis IA (2)</button>
+  <button class="filter-btn" data-group="routine">Rutina (3)</button>
+  <button class="filter-btn" data-group="products">Productos (3)</button>
+  <button class="filter-btn" data-group="clinic">Clínico (9)</button>
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-fit" title="Ajustar a pantalla">⊡</button>
+    <button class="ctrl-btn" id="btn-zin" title="Zoom +">+</button>
+    <button class="ctrl-btn" id="btn-zout" title="Zoom −">−</button>
+  </div>
+</div>
+
+<div id="canvas">
+  <svg id="diagram">
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="rgba(255,255,255,0.25)"/>
+      </marker>
+      <marker id="arrow-many" markerWidth="8" markerHeight="8" refX="0" refY="3" orient="auto">
+        <path d="M8,0 L0,3 L8,6" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+      </marker>
+    </defs>
+    <g id="links-layer"></g>
+    <g id="nodes-layer"></g>
+  </svg>
+</div>
+
+<div id="detail-panel">
+  <button id="detail-close">×</button>
+  <h2 id="dp-name"></h2>
+  <span id="dp-group" class="group-tag"></span>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Clave</th></tr></thead>
+    <tbody id="dp-rows"></tbody>
+  </table>
+</div>
+
+<div id="legend">
+  <div><span class="leg-dot" style="background:var(--pk)"></span> PK — Primary Key</div>
+  <div><span class="leg-dot" style="background:var(--fk)"></span> FK — Foreign Key</div>
+  <div><span class="leg-dot" style="background:var(--uk)"></span> UK — Unique Key</div>
+  <div><span class="leg-line" style="background:rgba(255,255,255,0.3)"></span> Relación FK</div>
+</div>
+
+<div id="zoom-info">100%</div>
+
+<script>
+const GROUPS = {
+  auth:     { label: 'Autenticación',  color: '#4a7fff', bg: 'rgba(74,127,255,0.15)',  border: 'rgba(74,127,255,0.5)' },
+  ia:       { label: 'Análisis IA',    color: '#f97316', bg: 'rgba(249,115,22,0.15)',  border: 'rgba(249,115,22,0.5)' },
+  routine:  { label: 'Rutina',         color: '#22c55e', bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.5)'  },
+  products: { label: 'Productos',      color: '#e879f9', bg: 'rgba(232,121,249,0.15)', border: 'rgba(232,121,249,0.5)'},
+  clinic:   { label: 'Clínico',        color: '#f59e0b', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.5)' },
+};
+
+const TABLES = [
+  { id:'users', group:'auth', x:80, y:80, cols:[
+    {n:'id',              t:'SERIAL',      k:'PK'},
+    {n:'email',           t:'VARCHAR(255)',k:'UK'},
+    {n:'hashed_password', t:'VARCHAR(255)',k:''},
+    {n:'full_name',       t:'VARCHAR(255)',k:''},
+    {n:'is_active',       t:'BOOLEAN',     k:''},
+    {n:'created_at',      t:'TIMESTAMPTZ', k:''},
+    {n:'updated_at',      t:'TIMESTAMPTZ', k:''},
+  ]},
+  { id:'consents', group:'auth', x:400, y:80, cols:[
+    {n:'id',              t:'SERIAL',     k:'PK'},
+    {n:'user_id',         t:'INTEGER',    k:'FK'},
+    {n:'gdpr_accepted',   t:'BOOLEAN',    k:''},
+    {n:'data_processing', t:'BOOLEAN',    k:''},
+    {n:'image_storage',   t:'BOOLEAN',    k:''},
+    {n:'ai_analysis',     t:'BOOLEAN',    k:''},
+    {n:'ip_address',      t:'INET',       k:''},
+    {n:'accepted_at',     t:'TIMESTAMPTZ',k:''},
+  ]},
+  { id:'password_reset_tokens', group:'auth', x:700, y:80, cols:[
+    {n:'id',         t:'SERIAL',     k:'PK'},
+    {n:'user_id',    t:'INTEGER',    k:'FK'},
+    {n:'token',      t:'VARCHAR(64)',k:'UK'},
+    {n:'used',       t:'BOOLEAN',    k:''},
+    {n:'expires_at', t:'TIMESTAMPTZ',k:''},
+    {n:'created_at', t:'TIMESTAMPTZ',k:''},
+  ]},
+  { id:'skin_profiles', group:'auth', x:1000, y:80, cols:[
+    {n:'id',                       t:'SERIAL',     k:'PK'},
+    {n:'user_id',                  t:'INTEGER',    k:'FK UK'},
+    {n:'birth_date',               t:'DATE',       k:''},
+    {n:'sex',                      t:'VARCHAR(20)',k:''},
+    {n:'fitzpatrick',              t:'VARCHAR(5)', k:''},
+    {n:'skin_type',                t:'VARCHAR(20)',k:''},
+    {n:'skin_conditions',          t:'JSONB',      k:''},
+    {n:'allergies',                t:'JSONB',      k:''},
+    {n:'allergy_fragrance',        t:'BOOLEAN',    k:''},
+    {n:'allergy_paraben',          t:'BOOLEAN',    k:''},
+    {n:'allergy_salicylic_acid',   t:'BOOLEAN',    k:''},
+    {n:'allergy_lanolin',          t:'BOOLEAN',    k:''},
+    {n:'allergy_benzoyl_peroxide', t:'BOOLEAN',    k:''},
+    {n:'allergy_propylene_glycol', t:'BOOLEAN',    k:''},
+    {n:'allergy_chemical_uv_filter',t:'BOOLEAN',   k:''},
+    {n:'is_pregnant',              t:'BOOLEAN',    k:''},
+    {n:'is_breastfeeding',         t:'BOOLEAN',    k:''},
+    {n:'has_menstrual_cycle',      t:'BOOLEAN',    k:''},
+    {n:'has_pcos',                 t:'BOOLEAN',    k:''},
+    {n:'is_menopausal',            t:'BOOLEAN',    k:''},
+    {n:'is_smoker',                t:'BOOLEAN',    k:''},
+    {n:'is_immunocompromised',     t:'BOOLEAN',    k:''},
+    {n:'sun_exposure',             t:'VARCHAR(20)',k:''},
+    {n:'hydration_level',          t:'VARCHAR(20)',k:''},
+    {n:'ac_exposure',              t:'VARCHAR(20)',k:''},
+    {n:'country',                  t:'VARCHAR(100)',k:''},
+    {n:'city',                     t:'VARCHAR(100)',k:''},
+    {n:'updated_at',               t:'TIMESTAMPTZ',k:''},
+  ]},
+
+  { id:'analyses', group:'ia', x:80, y:560, cols:[
+    {n:'id',                  t:'SERIAL',     k:'PK'},
+    {n:'user_id',             t:'INTEGER',    k:'FK'},
+    {n:'censored_filename',   t:'VARCHAR(255)',k:''},
+    {n:'face_censored',       t:'BOOLEAN',    k:''},
+    {n:'lighting',            t:'VARCHAR(50)',k:''},
+    {n:'device',              t:'VARCHAR(255)',k:''},
+    {n:'status',              t:'VARCHAR(20)',k:''},
+    {n:'error_message',       t:'VARCHAR(500)',k:''},
+    {n:'top1_label',          t:'VARCHAR(50)',k:''},
+    {n:'top1_confidence',     t:'NUMERIC',    k:''},
+    {n:'top_n_predictions',   t:'JSONB',      k:''},
+    {n:'severity_score',      t:'NUMERIC',    k:''},
+    {n:'worst_zone',          t:'VARCHAR(50)',k:''},
+    {n:'affected_zones_count',t:'SMALLINT',   k:''},
+    {n:'profile_consistency', t:'NUMERIC',    k:''},
+    {n:'condition_key',       t:'VARCHAR(50)',k:'FK'},
+    {n:'condition_phase_key', t:'VARCHAR(80)',k:''},
+    {n:'model_version',       t:'VARCHAR(50)',k:''},
+    {n:'tta_passes',          t:'SMALLINT',   k:''},
+    {n:'zone_schema_version', t:'VARCHAR(10)',k:''},
+    {n:'result_raw',          t:'JSONB',      k:''},
+    {n:'created_at',          t:'TIMESTAMPTZ',k:''},
+    {n:'completed_at',        t:'TIMESTAMPTZ',k:''},
+  ]},
+  { id:'analysis_zone_metrics', group:'ia', x:400, y:560, cols:[
+    {n:'id',          t:'SERIAL',     k:'PK'},
+    {n:'analysis_id', t:'INTEGER',    k:'FK'},
+    {n:'zone_name',   t:'VARCHAR(50)',k:''},
+    {n:'zone_type',   t:'VARCHAR(20)',k:''},
+    {n:'erythema',    t:'NUMERIC',    k:''},
+    {n:'comedones',   t:'NUMERIC',    k:''},
+    {n:'scales',      t:'NUMERIC',    k:''},
+    {n:'severity',    t:'NUMERIC',    k:''},
+  ]},
+
+  { id:'routines', group:'routine', x:700, y:560, cols:[
+    {n:'id',                  t:'SERIAL',     k:'PK'},
+    {n:'user_id',             t:'INTEGER',    k:'FK'},
+    {n:'analysis_id',         t:'INTEGER',    k:'FK'},
+    {n:'condition_key',       t:'VARCHAR(50)',k:'FK'},
+    {n:'condition_phase_key', t:'VARCHAR(80)',k:''},
+    {n:'is_active',           t:'BOOLEAN',    k:''},
+    {n:'locked',              t:'BOOLEAN',    k:''},
+    {n:'created_at',          t:'TIMESTAMPTZ',k:''},
+    {n:'updated_at',          t:'TIMESTAMPTZ',k:''},
+  ]},
+  { id:'routine_steps', group:'routine', x:1000, y:560, cols:[
+    {n:'id',                       t:'SERIAL',      k:'PK'},
+    {n:'routine_id',               t:'INTEGER',     k:'FK'},
+    {n:'step_order',               t:'SMALLINT',    k:''},
+    {n:'time_of_day',              t:'VARCHAR(10)', k:''},
+    {n:'product_category',         t:'VARCHAR(50)', k:''},
+    {n:'ingredient_key',           t:'VARCHAR(100)',k:'FK'},
+    {n:'product_id',               t:'INTEGER',     k:'FK'},
+    {n:'product_name',             t:'VARCHAR(255)',k:''},
+    {n:'reason',                   t:'VARCHAR(500)',k:''},
+    {n:'concentration_suggested',  t:'NUMERIC',     k:''},
+    {n:'ai_suggested',             t:'BOOLEAN',     k:''},
+    {n:'user_replaced',            t:'BOOLEAN',     k:''},
+    {n:'replaced_with_product_id', t:'INTEGER',     k:'FK'},
+    {n:'replaced_with_name',       t:'VARCHAR(255)',k:''},
+    {n:'is_active',                t:'BOOLEAN',     k:''},
+  ]},
+  { id:'skin_checks', group:'routine', x:1300, y:560, cols:[
+    {n:'id',              t:'SERIAL',      k:'PK'},
+    {n:'user_id',         t:'INTEGER',     k:'FK'},
+    {n:'routine_id',      t:'INTEGER',     k:'FK'},
+    {n:'followed_routine',t:'BOOLEAN',     k:''},
+    {n:'notes',           t:'VARCHAR(500)',k:''},
+    {n:'created_at',      t:'TIMESTAMPTZ', k:''},
+  ]},
+
+  { id:'products', group:'products', x:80, y:1080, cols:[
+    {n:'id',                   t:'SERIAL',      k:'PK'},
+    {n:'name',                 t:'VARCHAR(255)',k:''},
+    {n:'brand',                t:'VARCHAR(100)',k:''},
+    {n:'category',             t:'VARCHAR(50)', k:''},
+    {n:'description',          t:'TEXT',        k:''},
+    {n:'highlights',           t:'JSONB',       k:''},
+    {n:'suitable_for',         t:'JSONB',       k:''},
+    {n:'suitable_conditions',  t:'JSONB',       k:''},
+    {n:'fragrance_free',       t:'BOOLEAN',     k:''},
+    {n:'alcohol_free',         t:'BOOLEAN',     k:''},
+    {n:'non_comedogenic',      t:'BOOLEAN',     k:''},
+    {n:'spf_value',            t:'SMALLINT',    k:''},
+    {n:'spf_type',             t:'VARCHAR(20)', k:''},
+    {n:'comedogenic_index_max',t:'NUMERIC',     k:''},
+    {n:'pregnancy_safe',       t:'BOOLEAN',     k:''},
+    {n:'source_url',           t:'VARCHAR(512)',k:'UK'},
+    {n:'last_scraped_at',      t:'TIMESTAMPTZ', k:''},
+    {n:'created_at',           t:'TIMESTAMPTZ', k:''},
+  ]},
+  { id:'ingredients', group:'products', x:400, y:1080, cols:[
+    {n:'id',              t:'SERIAL',      k:'PK'},
+    {n:'inci_name',       t:'VARCHAR(255)',k:'UK'},
+    {n:'common_name',     t:'VARCHAR(255)',k:''},
+    {n:'function',        t:'VARCHAR(255)',k:''},
+    {n:'rating',          t:'VARCHAR(50)', k:''},
+    {n:'comedogenic_index',t:'NUMERIC',   k:''},
+    {n:'is_fragrance',    t:'BOOLEAN',    k:''},
+    {n:'is_alcohol',      t:'BOOLEAN',    k:''},
+    {n:'is_paraben',      t:'BOOLEAN',    k:''},
+    {n:'pregnancy_risk',  t:'VARCHAR(20)',k:''},
+    {n:'avoid_reason_key',t:'VARCHAR(80)',k:'FK'},
+    {n:'description',     t:'TEXT',       k:''},
+    {n:'created_at',      t:'TIMESTAMPTZ',k:''},
+  ]},
+  { id:'product_ingredients', group:'products', x:700, y:1080, cols:[
+    {n:'id',           t:'SERIAL',   k:'PK'},
+    {n:'product_id',   t:'INTEGER',  k:'FK'},
+    {n:'ingredient_id',t:'INTEGER',  k:'FK'},
+    {n:'position',     t:'SMALLINT', k:''},
+    {n:'irr_com',      t:'VARCHAR(20)',k:''},
+  ]},
+
+  { id:'conditions', group:'clinic', x:1000, y:1080, cols:[
+    {n:'id',                        t:'SERIAL',      k:'PK'},
+    {n:'condition_key',             t:'VARCHAR(50)', k:'UK'},
+    {n:'model_label',               t:'VARCHAR(50)', k:'UK'},
+    {n:'model_index',               t:'SMALLINT',    k:'UK'},
+    {n:'condition_name',            t:'VARCHAR(100)',k:''},
+    {n:'severity_level',            t:'VARCHAR(20)', k:''},
+    {n:'is_inflammatory',           t:'BOOLEAN',     k:''},
+    {n:'requires_medical_referral', t:'BOOLEAN',     k:''},
+    {n:'has_psychological_component',t:'BOOLEAN',    k:''},
+    {n:'restriction_level',         t:'VARCHAR(20)', k:''},
+  ]},
+  { id:'condition_repercussions', group:'clinic', x:1300, y:880, cols:[
+    {n:'id',                      t:'SERIAL',      k:'PK'},
+    {n:'condition_key',           t:'VARCHAR(50)', k:'FK'},
+    {n:'repercussion_key',        t:'VARCHAR(100)',k:''},
+    {n:'label',                   t:'VARCHAR(200)',k:''},
+    {n:'is_reversible',           t:'BOOLEAN',     k:''},
+    {n:'fototipo_risk',           t:'VARCHAR(20)', k:''},
+    {n:'occurs_without_treatment',t:'BOOLEAN',     k:''},
+  ]},
+  { id:'condition_symptoms', group:'clinic', x:1600, y:880, cols:[
+    {n:'id',           t:'SERIAL',      k:'PK'},
+    {n:'condition_key',t:'VARCHAR(50)', k:'FK'},
+    {n:'symptom_key',  t:'VARCHAR(100)',k:''},
+    {n:'label',        t:'VARCHAR(200)',k:''},
+    {n:'is_primary',   t:'BOOLEAN',     k:''},
+    {n:'intensity',    t:'VARCHAR(20)', k:''},
+    {n:'is_physical',  t:'BOOLEAN',     k:''},
+  ]},
+  { id:'condition_phases', group:'clinic', x:1300, y:1150, cols:[
+    {n:'id',               t:'SERIAL',     k:'PK'},
+    {n:'condition_key',    t:'VARCHAR(50)',k:'FK'},
+    {n:'phase_key',        t:'VARCHAR(80)',k:''},
+    {n:'label',            t:'VARCHAR(150)',k:''},
+    {n:'phase_order',      t:'SMALLINT',   k:''},
+    {n:'trigger_condition',t:'TEXT',       k:''},
+    {n:'protocol_summary', t:'TEXT',       k:''},
+    {n:'spf_minimum',      t:'SMALLINT',   k:''},
+  ]},
+  { id:'treatment_needs', group:'clinic', x:1600, y:1150, cols:[
+    {n:'id',            t:'SERIAL',      k:'PK'},
+    {n:'condition_key', t:'VARCHAR(50)', k:'FK'},
+    {n:'need_key',      t:'VARCHAR(100)',k:''},
+    {n:'label',         t:'VARCHAR(200)',k:''},
+    {n:'priority',      t:'VARCHAR(20)', k:''},
+    {n:'evidence_level',t:'VARCHAR(20)', k:''},
+    {n:'is_action',     t:'BOOLEAN',     k:''},
+  ]},
+  { id:'recommended_ingredients', group:'clinic', x:1900, y:880, cols:[
+    {n:'id',                         t:'SERIAL',      k:'PK'},
+    {n:'condition_key',              t:'VARCHAR(50)', k:'FK'},
+    {n:'need_key',                   t:'VARCHAR(100)',k:'FK'},
+    {n:'ingredient_key',             t:'VARCHAR(100)',k:''},
+    {n:'label',                      t:'VARCHAR(150)',k:''},
+    {n:'concentration_min',          t:'NUMERIC',     k:''},
+    {n:'concentration_max',          t:'NUMERIC',     k:''},
+    {n:'application_time',           t:'VARCHAR(10)', k:''},
+    {n:'contraindicated_if_pregnant',t:'BOOLEAN',     k:''},
+    {n:'phase_restriction',          t:'VARCHAR(30)', k:''},
+  ]},
+  { id:'avoided_ingredients', group:'clinic', x:1900, y:1150, cols:[
+    {n:'id',                       t:'SERIAL',      k:'PK'},
+    {n:'condition_key',            t:'VARCHAR(50)', k:'FK'},
+    {n:'ingredient_key',           t:'VARCHAR(100)',k:''},
+    {n:'label',                    t:'VARCHAR(200)',k:''},
+    {n:'avoid_reason_key',         t:'VARCHAR(80)', k:'FK'},
+    {n:'comedogenic_index',        t:'NUMERIC',     k:''},
+    {n:'severity',                 t:'VARCHAR(20)', k:''},
+    {n:'applies_only_if_skin_type',t:'VARCHAR(30)', k:''},
+    {n:'applies_only_if_pregnant', t:'BOOLEAN',     k:''},
+    {n:'phase_restriction',        t:'VARCHAR(30)', k:''},
+  ]},
+  { id:'avoid_reasons', group:'clinic', x:2200, y:1080, cols:[
+    {n:'id',         t:'SERIAL',     k:'PK'},
+    {n:'reason_key', t:'VARCHAR(80)',k:'UK'},
+    {n:'label',      t:'VARCHAR(150)',k:''},
+    {n:'description',t:'TEXT',       k:''},
+  ]},
+  { id:'comedogenic_index_scale', group:'clinic', x:2200, y:880, cols:[
+    {n:'id',                   t:'SERIAL',     k:'PK'},
+    {n:'index_value',          t:'NUMERIC',    k:'UK'},
+    {n:'risk_level',           t:'VARCHAR(20)',k:''},
+    {n:'recommendation',       t:'VARCHAR(30)',k:''},
+    {n:'max_allowed_skin_type',t:'TEXT',       k:''},
+    {n:'example_ingredients',  t:'TEXT',       k:''},
+  ]},
+];
+
+const RELATIONS = [
+  { from:'users',           to:'consents',                 label:'1:N' },
+  { from:'users',           to:'password_reset_tokens',    label:'1:N' },
+  { from:'users',           to:'skin_profiles',            label:'1:1' },
+  { from:'users',           to:'analyses',                 label:'1:N' },
+  { from:'users',           to:'routines',                 label:'1:N' },
+  { from:'users',           to:'skin_checks',              label:'1:N' },
+  { from:'analyses',        to:'analysis_zone_metrics',    label:'1:N' },
+  { from:'analyses',        to:'routines',                 label:'1:N' },
+  { from:'conditions',      to:'analyses',                 label:'1:N' },
+  { from:'conditions',      to:'routines',                 label:'1:N' },
+  { from:'routines',        to:'routine_steps',            label:'1:N' },
+  { from:'routines',        to:'skin_checks',              label:'1:N' },
+  { from:'products',        to:'routine_steps',            label:'1:N' },
+  { from:'products',        to:'product_ingredients',      label:'1:N' },
+  { from:'ingredients',     to:'product_ingredients',      label:'1:N' },
+  { from:'avoid_reasons',   to:'ingredients',              label:'1:N' },
+  { from:'avoid_reasons',   to:'avoided_ingredients',      label:'1:N' },
+  { from:'conditions',      to:'condition_repercussions',  label:'1:N' },
+  { from:'conditions',      to:'condition_symptoms',       label:'1:N' },
+  { from:'conditions',      to:'condition_phases',         label:'1:N' },
+  { from:'conditions',      to:'treatment_needs',          label:'1:N' },
+  { from:'conditions',      to:'recommended_ingredients',  label:'1:N' },
+  { from:'conditions',      to:'avoided_ingredients',      label:'1:N' },
+  { from:'treatment_needs', to:'recommended_ingredients',  label:'1:N' },
+  { from:'recommended_ingredients', to:'routine_steps',   label:'1:N' },
+];
+
+const ROW_H = 22;
+const HEADER_H = 36;
+const CARD_W = 230;
+const PAD = 10;
+
+function tableHeight(t) { return HEADER_H + t.cols.length * ROW_H; }
+
+const tableMap = {};
+TABLES.forEach(t => { tableMap[t.id] = t; });
+
+const svg = d3.select('#diagram');
+const linksLayer = svg.select('#links-layer');
+const nodesLayer = svg.select('#nodes-layer');
+
+let currentZoom = 1;
+let currentFilter = 'all';
+
+const zoom = d3.zoom()
+  .scaleExtent([0.1, 2.5])
+  .on('zoom', e => {
+    linksLayer.attr('transform', e.transform);
+    nodesLayer.attr('transform', e.transform);
+    currentZoom = e.transform.k;
+    document.getElementById('zoom-info').textContent = Math.round(e.transform.k * 100) + '%';
+  });
+
+svg.call(zoom);
+
+function getGroupColor(group) { return GROUPS[group] ? GROUPS[group].color : '#888'; }
+function getGroupBg(group)    { return GROUPS[group] ? GROUPS[group].bg : 'rgba(100,100,100,0.1)'; }
+function getGroupBorder(group){ return GROUPS[group] ? GROUPS[group].border : 'rgba(100,100,100,0.3)'; }
+
+function drawLinks() {
+  linksLayer.selectAll('*').remove();
+
+  RELATIONS.forEach(rel => {
+    const from = tableMap[rel.from];
+    const to   = tableMap[rel.to];
+    if (!from || !to) return;
+
+    const visible = currentFilter === 'all' || from.group === currentFilter || to.group === currentFilter;
+    if (!visible) return;
+
+    const fx = from.x + CARD_W / 2;
+    const fy = from.y + tableHeight(from) / 2;
+    const tx = to.x + CARD_W / 2;
+    const ty = to.y + tableHeight(to) / 2;
+
+    const dx = tx - fx, dy = ty - fy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const cx = (fx + tx) / 2 + dy * 0.15;
+    const cy = (fy + ty) / 2 - dx * 0.15;
+
+    const groupColor = getGroupColor(from.group);
+
+    linksLayer.append('path')
+      .attr('class', 'link')
+      .attr('d', `M${fx},${fy} Q${cx},${cy} ${tx},${ty}`)
+      .attr('stroke', groupColor)
+      .attr('marker-end', 'url(#arrow)');
+
+    if (dist > 100) {
+      const mt = 0.5;
+      const mx = (1-mt)*(1-mt)*fx + 2*(1-mt)*mt*cx + mt*mt*tx;
+      const my = (1-mt)*(1-mt)*fy + 2*(1-mt)*mt*cy + mt*mt*ty;
+      linksLayer.append('text')
+        .attr('class', 'link-label')
+        .attr('x', mx).attr('y', my - 4)
+        .attr('text-anchor', 'middle')
+        .text(rel.label);
+    }
+  });
+}
+
+function drawTables() {
+  nodesLayer.selectAll('.table-group').remove();
+
+  const visible = currentFilter === 'all'
+    ? TABLES
+    : TABLES.filter(t => t.group === currentFilter);
+
+  const groups = nodesLayer.selectAll('.table-group')
+    .data(visible, d => d.id)
+    .enter()
+    .append('g')
+    .attr('class', 'table-group')
+    .attr('transform', d => `translate(${d.x},${d.y})`)
+    .call(
+      d3.drag()
+        .on('start', function(e, d) {
+          d3.select(this).raise();
+          document.getElementById('canvas').classList.add('dragging');
+        })
+        .on('drag', function(e, d) {
+          d.x += e.dx;
+          d.y += e.dy;
+          d3.select(this).attr('transform', `translate(${d.x},${d.y})`);
+          drawLinks();
+        })
+        .on('end', () => {
+          document.getElementById('canvas').classList.remove('dragging');
+        })
+    )
+    .on('click', function(e, d) {
+      e.stopPropagation();
+      openDetail(d);
+      nodesLayer.selectAll('.table-group').classed('selected', false);
+      d3.select(this).classed('selected', true);
+    });
+
+  groups.each(function(d) {
+    const g = d3.select(this);
+    const h = tableHeight(d);
+    const gColor = getGroupColor(d.group);
+    const gBg    = getGroupBg(d.group);
+    const gBorder= getGroupBorder(d.group);
+
+    g.append('rect')
+      .attr('class', 'table-card')
+      .attr('width', CARD_W)
+      .attr('height', h)
+      .attr('rx', 6)
+      .attr('fill', '#1a1a20')
+      .attr('stroke', gBorder);
+
+    g.append('rect')
+      .attr('class', 'table-header')
+      .attr('width', CARD_W)
+      .attr('height', HEADER_H)
+      .attr('rx', 6)
+      .attr('fill', gBg);
+
+    g.append('rect')
+      .attr('class', 'table-header-bottom')
+      .attr('x', 0).attr('y', HEADER_H - 6)
+      .attr('width', CARD_W).attr('height', 6)
+      .attr('fill', gBg);
+
+    g.append('line')
+      .attr('x1', 0).attr('y1', HEADER_H)
+      .attr('x2', CARD_W).attr('y2', HEADER_H)
+      .attr('stroke', gBorder).attr('stroke-width', 1);
+
+    g.append('text')
+      .attr('class', 'table-name')
+      .attr('x', PAD).attr('y', 20)
+      .attr('fill', gColor)
+      .text(d.id);
+
+    g.append('text')
+      .attr('class', 'table-count')
+      .attr('x', PAD).attr('y', 32)
+      .text(`${d.cols.length} campos · ${GROUPS[d.group]?.label || d.group}`);
+
+    d.cols.forEach((col, i) => {
+      const rowY = HEADER_H + i * ROW_H;
+      const rowG = g.append('g').attr('class', 'col-row');
+
+      rowG.append('rect')
+        .attr('x', 1).attr('y', rowY)
+        .attr('width', CARD_W - 2).attr('height', ROW_H)
+        .attr('fill', i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent');
+
+      const badges = col.k.split(' ').filter(Boolean);
+
+      let bx = PAD;
+      badges.forEach(b => {
+        rowG.append('text')
+          .attr('class', `col-${b.toLowerCase()}`)
+          .attr('x', bx).attr('y', rowY + 15)
+          .text(b);
+        bx += b.length * 6 + 4;
+      });
+
+      const nameX = badges.length > 0 ? PAD + badges.reduce((s,b) => s + b.length * 6 + 4, 0) : PAD;
+
+      rowG.append('text')
+        .attr('class', 'col-name')
+        .attr('x', nameX).attr('y', rowY + 15)
+        .text(col.n);
+
+      rowG.append('text')
+        .attr('class', 'col-type')
+        .attr('x', CARD_W - PAD).attr('y', rowY + 15)
+        .attr('text-anchor', 'end')
+        .text(col.t);
+    });
+  });
+}
+
+function openDetail(d) {
+  const panel = document.getElementById('detail-panel');
+  const g = GROUPS[d.group];
+  document.getElementById('dp-name').textContent = d.id;
+  const tag = document.getElementById('dp-group');
+  tag.textContent = g ? g.label : d.group;
+  tag.style.background = getGroupBg(d.group);
+  tag.style.color = getGroupColor(d.group);
+  tag.style.border = `1px solid ${getGroupBorder(d.group)}`;
+  tag.style.padding = '2px 8px';
+  tag.style.borderRadius = '3px';
+  tag.style.fontSize = '10px';
+
+  const tbody = document.getElementById('dp-rows');
+  tbody.innerHTML = '';
+  d.cols.forEach(col => {
+    const tr = document.createElement('tr');
+    const badges = col.k.split(' ').filter(Boolean);
+    const badgeHTML = badges.map(b => `<span class="badge-${b.toLowerCase()}">${b}</span>`).join(' ');
+    tr.innerHTML = `<td>${col.n}</td><td>${col.t}</td><td>${badgeHTML}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  panel.classList.add('open');
+}
+
+document.getElementById('detail-close').addEventListener('click', () => {
+  document.getElementById('detail-panel').classList.remove('open');
+  nodesLayer.selectAll('.table-group').classed('selected', false);
+});
+
+svg.on('click', () => {
+  document.getElementById('detail-panel').classList.remove('open');
+  nodesLayer.selectAll('.table-group').classed('selected', false);
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.group;
+    document.getElementById('detail-panel').classList.remove('open');
+    drawLinks();
+    drawTables();
+  });
+});
+
+document.getElementById('btn-zin').addEventListener('click', () => {
+  svg.transition().duration(250).call(zoom.scaleBy, 1.3);
+});
+document.getElementById('btn-zout').addEventListener('click', () => {
+  svg.transition().duration(250).call(zoom.scaleBy, 0.77);
+});
+document.getElementById('btn-fit').addEventListener('click', fitToScreen);
+
+function fitToScreen() {
+  const visible = currentFilter === 'all' ? TABLES : TABLES.filter(t => t.group === currentFilter);
+  if (!visible.length) return;
+
+  const minX = d3.min(visible, d => d.x) - 40;
+  const minY = d3.min(visible, d => d.y) - 40;
+  const maxX = d3.max(visible, d => d.x + CARD_W) + 40;
+  const maxY = d3.max(visible, d => d.y + tableHeight(d)) + 40;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight - 52;
+  const scaleX = vw / (maxX - minX);
+  const scaleY = vh / (maxY - minY);
+  const scale = Math.min(scaleX, scaleY, 1.5);
+  const tx = (vw - (maxX - minX) * scale) / 2 - minX * scale;
+  const ty = (vh - (maxY - minY) * scale) / 2 - minY * scale;
+
+  svg.transition().duration(500).call(
+    zoom.transform,
+    d3.zoomIdentity.translate(tx, ty).scale(scale)
+  );
+}
+
+drawLinks();
+drawTables();
+setTimeout(fitToScreen, 100);
+</script>
+</body>
+</html>

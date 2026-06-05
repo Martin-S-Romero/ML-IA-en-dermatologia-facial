@@ -39,6 +39,13 @@ function _wireCameraButton() {
 
 // ── UPLOAD ────────────────────────────────────────────────────────────────
 
+function _detectDevice() {
+  const ua = navigator.userAgent
+  if (/Mobi|Android/i.test(ua)) return 'mobile'
+  if (/Tablet|iPad/i.test(ua))  return 'tablet'
+  return 'desktop'
+}
+
 async function _uploadFile(file) {
   const token = localStorage.getItem('skinai_token')
   if (!token) { window._goFull('auth'); return }
@@ -48,7 +55,10 @@ async function _uploadFile(file) {
 
   try {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file',    file)
+    formData.append('device',  _detectDevice())
+    // lighting se puede agregar desde el HTML si hay selector; por ahora 'unknown'
+    formData.append('lighting', 'unknown')
 
     const res = await fetch(`${API}/analysis/upload`, {
       method:  'POST',

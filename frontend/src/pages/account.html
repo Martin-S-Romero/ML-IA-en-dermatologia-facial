@@ -1,77 +1,145 @@
 <section
   id="page-account"
-  class="page-enter min-h-[calc(100vh-44px)] bg-bg"
+  class="page-enter min-h-[calc(100vh-44px)]"
   aria-label="Cuenta del usuario"
 >
-  <div class="max-w-2xl mx-auto px-4 py-6 lg:py-10">
+  <div class="flex min-h-[calc(100vh-44px)]">
 
-    <button class="btn-back-dark mb-5 text-sm" data-go="dashboard">← Volver al Dashboard</button>
+    <div id="account-sidebar"></div>
 
-    <!-- Avatar + nombre -->
-    <div class="flex flex-col items-center text-center mb-6">
-      <div id="account-avatar" class="w-16 h-16 rounded-full bg-gradient-to-br from-bark to-rose flex items-center justify-center text-2xl font-bold text-white mb-2.5">--</div>
-      <h1 id="account-name" class="font-display text-xl text-ink">--</h1>
-      <p id="account-email" class="text-xs text-slate">--</p>
-    </div>
+    <div class="flex-1 flex flex-col bg-bg overflow-hidden">
 
-    <!-- Acceso -->
-    <div class="mb-5">
-      <p class="section-label mb-2">Acceso</p>
-      <div class="card divide-y divide-sand">
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-xs text-ink">Correo electrónico</span>
-          <span id="account-email-field" class="text-[11px] text-slate">--</span>
+      <!-- Mobile top bar -->
+      <header class="bg-forest text-white px-4 pt-4 pb-4 relative overflow-hidden lg:hidden">
+        <div class="flex items-start gap-3 relative">
+          <button
+            class="ham-btn flex flex-col gap-1 p-1.5 bg-transparent border-none cursor-pointer flex-shrink-0 mt-1"
+            onclick="toggleDrawer()"
+            aria-label="Abrir menú"
+            aria-expanded="false"
+          >
+            <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+            <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+            <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+          </button>
+          <div>
+            <p class="font-display text-lg text-bark leading-tight">SkinAI</p>
+            <p class="font-display text-base text-white whitespace-nowrap mt-0.5">
+              <span class="italic text-white/55">Mi cuenta</span>
+            </p>
+          </div>
         </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-xs text-ink">Contraseña</span>
-          <span class="text-[11px] text-slate">••••••••</span>
+      </header>
+
+      <!-- Desktop top bar -->
+      <header class="hidden lg:flex bg-forest text-white px-4 h-14 items-center border-b border-white/10 gap-3">
+        <div
+          id="desktop-ham-restore"
+          class="flex items-center gap-3 flex-shrink-0"
+          style="display:none"
+        >
+          <button
+            class="flex flex-col gap-[5px] p-1.5 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity flex-shrink-0"
+            onclick="toggleDesktopSidebar()"
+            aria-label="Abrir menú lateral"
+          >
+            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+            <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
+          </button>
+          <span class="font-display text-lg text-bark tracking-tight">SkinAI</span>
+          <span class="border-l border-white/20 h-5 self-center mx-0.5"></span>
+        </div>
+        <p class="font-display text-lg text-white whitespace-nowrap">
+          <span class="italic text-white/55">Mi cuenta</span>
+        </p>
+      </header>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-y-auto bg-bg min-w-0">
+        <div class="max-w-2xl mx-auto px-4 py-6 lg:px-8 lg:py-8">
+
+          <!-- Avatar + nombre -->
+          <div class="flex flex-col items-center text-center mb-6">
+            <div
+              id="account-avatar"
+              class="w-16 h-16 rounded-full bg-gradient-to-br from-bark to-rose flex items-center justify-center text-2xl font-bold text-white mb-2.5"
+            >--</div>
+            <h1 id="account-name" class="font-display text-xl text-ink">--</h1>
+            <p id="account-email" class="text-xs text-slate">--</p>
+          </div>
+
+          <!-- Acceso -->
+          <div class="mb-5">
+            <p class="section-label mb-2">Acceso</p>
+            <div class="card divide-y divide-sand">
+              <div class="flex items-center justify-between px-4 py-3">
+                <span class="text-xs text-ink">Correo electrónico</span>
+                <span id="account-email-field" class="text-[11px] text-slate">--</span>
+              </div>
+              <div class="flex items-center justify-between px-4 py-3">
+                <span class="text-xs text-ink">Contraseña</span>
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] text-slate">••••••••</span>
+                  <button
+                    id="btn-change-password"
+                    class="text-[10px] text-bark underline font-semibold bg-none border-none cursor-pointer hover:text-ink transition-colors"
+                    onclick="window.openChangePasswordModal()"
+                  >Cambiar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Perfil de piel -->
+          <div class="mb-5">
+            <p class="section-label mb-2">Perfil de piel</p>
+            <div class="card divide-y divide-sand">
+              <div class="flex items-center justify-between px-4 py-3">
+                <span class="text-xs text-ink">Edad</span>
+                <span id="account-age" class="text-[11px] text-slate">--</span>
+              </div>
+              <div class="flex items-center justify-between px-4 py-3">
+                <span class="text-xs text-ink">Sexo biológico</span>
+                <span id="account-gender" class="text-[11px] text-slate">--</span>
+              </div>
+              <div class="flex items-center justify-between px-4 py-3">
+                <span class="text-xs text-ink">Fototipo Fitzpatrick</span>
+                <span id="account-fitz" class="text-[11px] text-slate">--</span>
+              </div>
+              <div class="flex items-center justify-between px-4 py-3">
+                <span class="text-xs text-ink">Tipo de piel</span>
+                <span id="account-skintype" class="text-[11px] text-slate">--</span>
+              </div>
+              <div class="flex items-center justify-between px-4 py-3">
+                <span class="text-xs text-ink">Alergias</span>
+                <span id="account-allergies" class="text-[11px] text-slate">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-box mb-6 text-[11px]">
+            Los productos de tu rutina se editan desde la pestaña Rutina en el Dashboard.
+          </div>
+
+          <!-- Zona de riesgo -->
+          <div class="bg-[#FFF5F5] border-[1.5px] border-[#FED7D7] rounded-card p-4 mb-5">
+            <h2 class="text-xs font-semibold text-rose mb-1">Zona de riesgo</h2>
+            <p class="text-[11px] text-slate mb-3">
+              Eliminar tu cuenta borrará permanentemente tu historial, análisis e imágenes.
+            </p>
+            <button
+              id="btn-delete-account"
+              class="bg-transparent text-rose border-[1.5px] border-rose px-4 py-2 rounded-full text-xs font-semibold cursor-pointer hover:bg-rose hover:text-white transition-all"
+              onclick="window.deleteAccount()"
+            >Eliminar cuenta</button>
+          </div>
+
+          <button class="btn-secondary" data-go="dashboard">← Volver al Dashboard</button>
+
         </div>
       </div>
-    </div>
 
-    <!-- Perfil de piel -->
-    <div class="mb-5">
-      <p class="section-label mb-2">Perfil de piel</p>
-      <div class="card divide-y divide-sand">
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-xs text-ink">Edad</span>
-          <span id="account-age" class="text-[11px] text-slate">--</span>
-        </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-xs text-ink">Sexo biológico</span>
-          <span id="account-gender" class="text-[11px] text-slate">--</span>
-        </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-xs text-ink">Fototipo Fitzpatrick</span>
-          <span id="account-fitz" class="text-[11px] text-slate">--</span>
-        </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-xs text-ink">Tipo de piel</span>
-          <span id="account-skintype" class="text-[11px] text-slate">--</span>
-        </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-xs text-ink">Alergias</span>
-          <span id="account-allergies" class="text-[11px] text-slate">--</span>
-        </div>
-      </div>
     </div>
-
-    <div class="info-box mb-6 text-[11px]">
-      Los productos de tu rutina se editan desde la pestaña Rutina en el Dashboard.
-    </div>
-
-    <!-- Zona de riesgo -->
-    <div class="bg-[#FFF5F5] border-[1.5px] border-[#FED7D7] rounded-card p-4 mb-5">
-      <h2 class="text-xs font-semibold text-rose mb-1">Zona de riesgo</h2>
-      <p class="text-[11px] text-slate mb-3">Eliminar tu cuenta borrará permanentemente tu historial, análisis e imágenes.</p>
-      <button
-        id="btn-delete-account"
-        class="bg-transparent text-rose border-[1.5px] border-rose px-4 py-2 rounded-full text-xs font-semibold cursor-pointer hover:bg-rose hover:text-white transition-all"
-      >
-        Eliminar cuenta
-      </button>
-    </div>
-
-    <button class="btn-secondary" data-go="dashboard">← Volver al Dashboard</button>
   </div>
 </section>

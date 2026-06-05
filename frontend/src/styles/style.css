@@ -135,11 +135,17 @@
     @apply bg-cream rounded-sm p-3.5 border-l-4 border-bark;
   }
 
-  /* Drawer overlay */
+  /* Drawer overlay — dark scrim on mobile/tablet, pointer-events gate on desktop */
   .drawer-overlay {
-    @apply fixed inset-0 bg-ink/50 z-50 hidden backdrop-blur-sm;
+    @apply fixed inset-0 z-50;
+    background: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    transition: background-color 0.3s ease-in-out;
   }
-  .drawer-overlay.open { @apply block; }
+  .drawer-overlay.open {
+    background: rgba(0, 0, 0, 0.45);
+    pointer-events: auto;
+  }
 
   /* Side drawer — abre desde la izquierda */
   .side-drawer {

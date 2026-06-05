@@ -6,13 +6,15 @@
 
 // ── DESKTOP SIDEBAR TOGGLE ────────────────────────────────────────────────
 export function toggleDesktopSidebar() {
-  const sidebarWrap  = document.getElementById('dashboard-sidebar')
-  const restoreBtn   = document.getElementById('desktop-ham-restore')
+  if (window.innerWidth < 1024) return
+  const sidebarWrap = document.getElementById('dashboard-sidebar')
+                   || document.getElementById('account-sidebar')
+  const restoreBtn  = document.getElementById('desktop-ham-restore')
   if (!sidebarWrap) return
 
   const isNowHidden = sidebarWrap.classList.toggle('desktop-sidebar-hidden')
 
-  // Mostrar el botón de reapertura en el top bar solo cuando el sidebar está oculto
+  // Show/hide the restore button in the top bar
   if (restoreBtn) {
     restoreBtn.style.display = isNowHidden ? 'flex' : 'none'
   }
@@ -22,25 +24,27 @@ export function toggleDesktopSidebar() {
 export function toggleDrawer() {
   const drawer  = document.getElementById('side-drawer')
   const overlay = document.getElementById('drawer-overlay')
-  const hamBtn  = document.getElementById('ham-btn')
   if (!drawer || !overlay) return
 
   const isOpen = drawer.classList.contains('open')
   drawer.classList.toggle('open', !isOpen)
   overlay.classList.toggle('open', !isOpen)
-  if (hamBtn) {
-    hamBtn.setAttribute('aria-expanded', String(!isOpen))
-    hamBtn.classList.toggle('open', !isOpen)
-  }
+  // Update all hamburger buttons (multiple can exist: navbar, mobile page headers)
+  document.querySelectorAll('.ham-btn').forEach(btn => {
+    btn.setAttribute('aria-expanded', String(!isOpen))
+    btn.classList.toggle('open', !isOpen)
+  })
 }
 
 export function closeDrawer() {
   const drawer  = document.getElementById('side-drawer')
   const overlay = document.getElementById('drawer-overlay')
-  const hamBtn  = document.getElementById('ham-btn')
   if (drawer)  drawer.classList.remove('open')
   if (overlay) overlay.classList.remove('open')
-  if (hamBtn)  { hamBtn.setAttribute('aria-expanded', 'false'); hamBtn.classList.remove('open') }
+  document.querySelectorAll('.ham-btn').forEach(btn => {
+    btn.setAttribute('aria-expanded', 'false')
+    btn.classList.remove('open')
+  })
 }
 
 // ── TERMS MODAL ───────────────────────────────────────────────────────────

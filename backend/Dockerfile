@@ -14,6 +14,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir \
+    torch torchvision \
+    --index-url https://download.pytorch.org/whl/cpu
+
+RUN pip install --no-cache-dir \
     fastapi uvicorn sqlalchemy psycopg2-binary \
     passlib[argon2] python-jose[cryptography] python-multipart \
     email-validator slowapi Pillow requests \
@@ -22,6 +26,7 @@ RUN pip install --no-cache-dir \
     numpy==1.24.3 \
     httpx beautifulsoup4 lxml \
     celery redis \
-    alembic
+    alembic \
+    timm
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

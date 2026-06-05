@@ -2,8 +2,9 @@ import io
 import json
 import os
 import uuid
+from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from PIL import Image
@@ -53,23 +54,25 @@ def _validate_image(contents: bytes, content_type: str) -> None:
 
 @router.post("/upload", response_model=schemas.AnalysisCreated, status_code=status.HTTP_202_ACCEPTED)
 async def upload_image(
-    file: UploadFile = File(...),
-    current_user: models.User = Depends(deps.get_current_user),
-    db: Session = Depends(deps.get_db),
+    file:         UploadFile       = File(...),
+    lighting:     Optional[str]    = Form(None),   # capturado por el frontend
+    device:       Optional[str]    = Form(None),
+    current_user: models.User      = Depends(deps.get_current_user),
+    db:           Session          = Depends(deps.get_db),
 ):
     """
     Recibe una imagen, la valida, crea un registro Analysis en estado 'processing'
-    y lanza la censura facial como tarea de Celery en un Worker aislado.
+    y lanza el procesamiento como tarea de Celery.
     Devuelve el analysis_id para hacer polling de estado.
     """
     contents = await file.read()
     _validate_image(contents, file.content_type)
 
-    ext              = (file.filename or "image").rsplit(".", 1)[-1].lower()
-    original_name    = f"{uuid.uuid4()}.{ext}"
-    censored_name    = f"{uuid.uuid4()}_censored.{ext}"
-    input_path       = os.path.join(UPLOAD_DIR, original_name)
-    output_path      = os.path.join(PROCESSED_DIR, censored_name)
+    ext           = (file.filename or "image").rsplit(".", 1)[-1].lower()
+    original_name = f"{uuid.uuid4()}.{ext}"
+    censored_name = f"{uuid.uuid4()}_censored.{ext}"
+    input_path    = os.path.join(UPLOAD_DIR, original_name)
+    output_path   = os.path.join(PROCESSED_DIR, censored_name)
 
     with open(input_path, "wb") as f:
         f.write(contents)
@@ -77,6 +80,8 @@ async def upload_image(
     analysis = models.Analysis(
         user_id           = current_user.id,
         original_filename = original_name,
+        lighting          = lighting,
+        device            = device,
         status            = "processing",
     )
     db.add(analysis)

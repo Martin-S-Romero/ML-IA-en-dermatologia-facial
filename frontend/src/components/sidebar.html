@@ -4,7 +4,7 @@
   aria-label="Navegación del dashboard"
 >
   <!-- Top bar: hamburger + logo -->
-  <div class="flex items-center gap-3 px-4 py-3 border-b border-white/10 flex-shrink-0">
+  <div class="flex items-center gap-3 px-4 h-14 border-b border-white/10 flex-shrink-0">
     <button
       onclick="toggleDesktopSidebar()"
       class="flex flex-col gap-1 p-1 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity flex-shrink-0"
@@ -17,7 +17,7 @@
     <span class="font-display text-lg text-bark tracking-tight">SkinAI</span>
   </div>
   <nav class="flex-1 p-3 pt-4" aria-label="Menú del dashboard">
-    <button class="sidebar-nav-item active w-full text-left" id="sidebar-dash-btn" onclick="dtab('dd')">Dashboard</button>
+    <button class="sidebar-nav-item active w-full text-left" id="sidebar-dash-btn" onclick="sidebarNav('dd')" data-go="dashboard">Dashboard</button>
     <div class="h-px bg-white/10 my-3"></div>
     <button class="sidebar-nav-item w-full text-left" data-go="account">Mi cuenta</button>
     <button class="sidebar-nav-item w-full text-left" onclick="openPdfModal()">Exportar PDF</button>

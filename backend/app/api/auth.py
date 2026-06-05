@@ -1,11 +1,15 @@
-from datetime import timedelta
+import secrets
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app import db_scheme as models, schemas
 from app.core import security
+from app.core.email_service import send_password_reset_email
 from app.api import deps
 from app.core.ratelimit import limiter
 from app.core.logger import logger
+
+_RESET_TOKEN_EXPIRE_HOURS = 1
 
 router = APIRouter()
 
@@ -27,6 +31,19 @@ def register(request: Request, user: schemas.UserCreate, db: Session = Depends(d
         gdpr_accepted=user.gdpr_accepted,
     )
     db.add(new_user)
+    db.flush()   # obtener new_user.id sin commit aún
+
+    # Registro de consentimiento granular (GDPR)
+    ip = request.client.host if request.client else None
+    consent = models.Consent(
+        user_id=new_user.id,
+        gdpr_accepted=user.gdpr_accepted,
+        data_processing=user.data_processing,
+        image_storage=user.image_storage,
+        ai_analysis=user.ai_analysis,
+        ip_address=ip,
+    )
+    db.add(consent)
     db.commit()
     db.refresh(new_user)
 
@@ -53,8 +70,22 @@ def login(request: Request, user: schemas.UserLogin, db: Session = Depends(deps.
         data={"sub": db_user.email},
         expires_delta=timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
+
+    has_profile = db.query(models.SkinProfile).filter(
+        models.SkinProfile.user_id == db_user.id
+    ).first() is not None
+
+    user_data = {
+        "id":          db_user.id,
+        "email":       db_user.email,
+        "full_name":   db_user.full_name,
+        "is_active":   db_user.is_active,
+        "created_at":  db_user.created_at,
+        "has_profile": has_profile,
+    }
+
     logger.info(f"User logged in: {db_user.email}")
-    return {"access_token": access_token, "token_type": "bearer", "user": db_user}
+    return {"access_token": access_token, "token_type": "bearer", "user": user_data}
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
@@ -72,10 +103,59 @@ def forgot_password(request: Request, body: dict, db: Session = Depends(deps.get
     if not email:
         raise HTTPException(status_code=400, detail="El correo es requerido.")
 
-    # No revelar si el correo existe o no (buena práctica de seguridad)
     user = db.query(models.User).filter(models.User.email == email).first()
     if user:
-        # TODO: enviar email con enlace de recuperación cuando haya servidor de correo configurado
-        logger.info(f"Password reset requested for: {email}")
+        # Eliminar tokens previos no usados para este usuario
+        db.query(models.PasswordResetToken).filter(
+            models.PasswordResetToken.user_id == user.id,
+            models.PasswordResetToken.used == False,  # noqa: E712
+        ).delete()
+
+        token_value = secrets.token_urlsafe(32)
+        expires_at  = datetime.now(timezone.utc) + timedelta(hours=_RESET_TOKEN_EXPIRE_HOURS)
+
+        reset_token = models.PasswordResetToken(
+            user_id    = user.id,
+            token      = token_value,
+            expires_at = expires_at,
+        )
+        db.add(reset_token)
+        db.commit()
+
+        send_password_reset_email(user.email, token_value)
+        logger.info(f"Password reset email sent to: {email}")
 
     return {"message": "Si el correo está registrado, recibirás un enlace en los próximos minutos."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
+def reset_password(request: Request, body: schemas.ResetPasswordRequest, db: Session = Depends(deps.get_db)):
+    now = datetime.now(timezone.utc)
+
+    reset_token = (
+        db.query(models.PasswordResetToken)
+        .filter(
+            models.PasswordResetToken.token      == body.token,
+            models.PasswordResetToken.used       == False,  # noqa: E712
+            models.PasswordResetToken.expires_at >  now,
+        )
+        .first()
+    )
+
+    if not reset_token:
+        raise HTTPException(status_code=400, detail="El enlace es inválido o ha expirado.")
+
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres.")
+
+    user = db.query(models.User).filter(models.User.id == reset_token.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
+    user.hashed_password = security.get_password_hash(body.new_password)
+    reset_token.used     = True
+    db.commit()
+
+    logger.info(f"Password reset completed for: {user.email}")
+    return {"message": "Contraseña actualizada correctamente. Ya puedes iniciar sesión."}

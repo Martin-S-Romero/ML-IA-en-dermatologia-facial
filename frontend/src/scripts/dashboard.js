@@ -85,10 +85,6 @@ function _populateDashTab(analyses) {
         class="bg-bark text-ink text-xs font-semibold py-2 px-4 rounded-full hover:bg-bark/90 transition-colors"
         onclick="dtab('dh')"
       >Ver historial</button>
-      <button
-        class="bg-white/15 text-white text-xs font-semibold py-2 px-4 rounded-full hover:bg-white/25 transition-colors"
-        data-go="capture"
-      >Nuevo análisis</button>
     </div>
   `
 }
@@ -229,6 +225,84 @@ export async function openDetail(id) {
   }
 }
 
+const _LABEL_ES = {
+  'acne-comedonal':       'Acné comedonal',
+  'acne-excoriated':      'Acné excoriado',
+  'acne-inflammatory':    'Acné inflamatorio',
+  'perioral-dermatitis':  'Dermatitis perioral',
+  'rosacea-etr':          'Rosácea ETR',
+  'rosacea-inflammatory': 'Rosácea inflamatoria',
+  'seborrheic-dermatitis':'Dermatitis seborreica',
+}
+
+const _ZONA_ES = {
+  'acne-comedonal':       'Zona T — puntos negros y blancos',
+  'acne-excoriated':      'Mejillas y mentón — marcas de rascado',
+  'acne-inflammatory':    'Cara — pústulas y nódulos',
+  'perioral-dermatitis':  'Alrededor de la boca',
+  'rosacea-etr':          'Mejillas simétricas',
+  'rosacea-inflammatory': 'Centro facial',
+  'seborrheic-dermatitis':'Cejas, nariz y zona T',
+}
+
+function _renderMLResults(a) {
+  if (a.status !== 'completed' || !a.top1_label) {
+    return `<div class="info-box text-[11px]">Resultados no disponibles.</div>`
+  }
+
+  const topConf  = Math.round(a.top1_confidence * 100)
+  const topLabel = _LABEL_ES[a.top1_label]  || a.top1_label
+  const zona     = _ZONA_ES[a.top1_label]   || ''
+
+  let top5HTML = ''
+  if (a.result?.all_scores) {
+    const sorted = Object.entries(a.result.all_scores)
+      .sort((x, y) => y[1] - x[1])
+      .slice(0, 5)
+
+    top5HTML = `
+      <p class="text-[10px] text-slate uppercase tracking-widest mb-2">Top 5 condiciones</p>
+      ${sorted.map(([lbl, conf], i) => {
+        const pct   = Math.round(conf * 100)
+        const name  = _LABEL_ES[lbl] || lbl
+        const isTop = i === 0
+        return `
+          <div class="flex items-center gap-2 py-1.5 ${i < sorted.length - 1 ? 'border-b border-sand' : ''}">
+            <span class="text-[10px] text-slate/60 w-5 flex-shrink-0">#${i + 1}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-[11px] ${isTop ? 'font-semibold text-ink' : 'text-ink/70'} truncate">${name}</p>
+              <div class="w-full bg-sand rounded-full h-1 mt-0.5">
+                <div class="${isTop ? 'bg-forest' : 'bg-slate/40'} h-1 rounded-full" style="width:${pct}%"></div>
+              </div>
+            </div>
+            <span class="text-[11px] ${isTop ? 'font-semibold text-forest' : 'text-slate'} flex-shrink-0 w-9 text-right">${pct}%</span>
+          </div>`
+      }).join('')}`
+  }
+
+  const excoriatedNote = a.top1_label === 'acne-excoriated'
+    ? `<div class="info-box text-[11px] mt-3">
+         Este patrón puede beneficiarse de apoyo profesional para el manejo
+         del hábito de rascado. Consulta a tu médico.
+       </div>`
+    : ''
+
+  return `
+    <div class="bg-forest/5 border border-forest/20 rounded-xl p-3 mb-4">
+      <p class="text-[10px] text-slate uppercase tracking-widest mb-1">Diagnóstico principal</p>
+      <p class="text-base font-semibold text-ink leading-snug">${topLabel}</p>
+      ${zona ? `<p class="text-[11px] text-slate mt-0.5">${zona}</p>` : ''}
+      <p class="text-[13px] font-bold text-forest mt-1.5">${topConf}% de confianza</p>
+    </div>
+    ${top5HTML}
+    ${excoriatedNote}
+    <p class="text-[10px] text-slate/50 mt-3">
+      Modelo: ${a.result?.model_version || 'EfficientNet-B3'} ·
+      TTA ×${a.result?.tta_passes ?? 5} ·
+      ${a.result?.compute || 'cpu'}
+    </p>`
+}
+
 function _renderDetail(a, container) {
   const dateStr = _formatDate(a.created_at)
 
@@ -243,10 +317,10 @@ function _renderDetail(a, container) {
     ? `<img
          src="${API}/analysis/${a.id}/image"
          alt="Imagen procesada análisis #${a.id}"
-         class="w-full h-full object-cover"
-         onerror="this.parentElement.innerHTML='<span class=\\'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl opacity-30 select-none\\'></span>'"
+         class="w-full h-auto block"
+         onerror="this.parentElement.innerHTML='<p class=\\'text-xs text-slate text-center py-8\\'>Imagen no disponible</p>'"
        >`
-    : '<span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl opacity-30 select-none"></span>'
+    : '<p class="text-xs text-slate text-center py-8">Sin imagen</p>'
 
   container.innerHTML = `
     <!-- Volver -->
@@ -269,23 +343,19 @@ function _renderDetail(a, container) {
     <!-- Imagen procesada -->
     <div class="card card-body mb-4">
       <p class="section-label mb-2">Imagen procesada</p>
-      <div class="relative h-48 bg-ink rounded-xl overflow-hidden mb-2 flex items-center justify-center">
+      <div class="rounded-xl overflow-hidden mb-2">
         ${imgSection}
       </div>
       <p class="text-[10px] text-slate leading-relaxed">
-        La imagen fue censurada automáticamente (ojos y boca difuminados) para
-        proteger tu privacidad antes de ser procesada.
+        Los ojos fueron difuminados automáticamente para proteger tu privacidad
+        antes de ser procesada por el modelo.
       </p>
     </div>
 
     <!-- Resultados ML -->
     <div class="card card-body mb-4">
-      <p class="section-label mb-2">Resultados del modelo ML</p>
-      <div class="info-box text-[11px]">
-        La clasificación automática de condiciones dérmicas (acné, rosácea, manchas)
-        estará disponible en la Fase 8 del proyecto cuando el modelo ONNX esté integrado.
-        La imagen ya fue procesada y anonimizada correctamente.
-      </div>
+      <p class="section-label mb-3">Resultados del modelo ML</p>
+      ${_renderMLResults(a)}
     </div>
 
     ${a.error_message ? `

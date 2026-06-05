@@ -1,14 +1,26 @@
 <nav
-  class="bg-ink text-cream sticky top-0 z-40 flex items-center gap-3 px-4 py-2.5 flex-wrap"
+  class="bg-forest text-white sticky top-0 z-40 flex items-center gap-3 px-4 py-3 border-b border-white/10"
   role="navigation"
   aria-label="Navegación principal"
 >
-  <!-- Logo — goes to landing (router redirects to dashboard if logged in) -->
+  <!-- Hamburger — opens side drawer -->
+  <button
+    id="ham-btn"
+    class="ham-btn flex flex-col gap-[5px] p-1.5 bg-transparent border-none cursor-pointer flex-shrink-0"
+    onclick="toggleDrawer()"
+    aria-label="Abrir menú"
+    aria-expanded="false"
+    aria-controls="side-drawer"
+  >
+    <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+    <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+    <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
+  </button>
+
+  <!-- Logo -->
   <button
     class="font-display text-lg text-bark tracking-tight cursor-pointer bg-transparent border-none hover:opacity-80 transition-opacity"
     data-go="landing"
     aria-label="Ir a inicio"
   >SkinAI</button>
-
-
 </nav>

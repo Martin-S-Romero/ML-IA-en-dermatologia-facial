@@ -75,7 +75,16 @@ function _startPolling(analysisId) {
       const res = await fetch(`${API}/analysis/${analysisId}/status`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
-      if (!res.ok) return   // error de red — reintentar en el próximo tick
+
+      // 404 = registro borrado porque no se detectó rostro
+      if (res.status === 404) {
+        clearInterval(_pollTimer)
+        sessionStorage.removeItem('skinai_analysis_id')
+        _failStep(6)
+        _showFailedState()
+        return
+      }
+      if (!res.ok) return   // error de red transitorio — reintentar en el próximo tick
 
       const data = await res.json()
 

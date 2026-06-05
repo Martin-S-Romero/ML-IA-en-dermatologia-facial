@@ -84,7 +84,6 @@ storage/uploads/
 ############################
 # Modelos de IA / pesos
 ############################
-models/
 weights/
 *.onnx
 *.pt

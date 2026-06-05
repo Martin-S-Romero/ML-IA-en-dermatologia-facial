@@ -1,5 +1,4 @@
 import os
-import uuid
 import logging
 from datetime import datetime, timezone
 
@@ -8,8 +7,8 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.celery_app import celery_app
 from app import db_scheme as models
-from app.core.face_censor import FaceCensor
-from app.core.skin_analysis import run_mock_skin_analysis
+from app.core.face_censor_v2 import FaceCensor
+from app.core.ai_runner import run_inference
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
@@ -24,11 +23,10 @@ logger = logging.getLogger(__name__)
 @celery_app.task(name="app.worker.tasks.process_image_task", bind=True, max_retries=3)
 def process_image_task(self, analysis_id: int, input_path: str, output_path: str, user_id: int):
     """
-    Tarea de Celery: censura facial + análisis de piel.
+    Tarea de Celery: censura facial + análisis de piel con modelo real.
     Corre en el contenedor ai_worker, aislado del proceso principal de FastAPI.
     """
     db = SessionLocal()
-    original_deleted = False
 
     try:
         db.execute(
@@ -47,42 +45,48 @@ def process_image_task(self, analysis_id: int, input_path: str, output_path: str
         result = censor.process_image(input_path, output_path)
 
         if result is None:
-            analysis.status = "failed"
-            analysis.error_message = "No se detectó rostro o la resolución es insuficiente."
+            # Borrar el registro completo — no aparece en historial
+            db.delete(analysis)
             db.commit()
+            if os.path.exists(input_path):
+                os.remove(input_path)
+            logger.info(f"Analysis {analysis_id} deleted: no face detected.")
             return
 
         analysis.censored_filename = os.path.basename(output_path)
+        analysis.face_censored     = True
 
-        # 2. Análisis de piel (mock hasta integrar el modelo DL real)
-        analysis_result = run_mock_skin_analysis(output_path)
-        analysis_result["mode"] = "blur"
+        # 2. Análisis de piel con modelo EfficientNet-B3 + TTA
+        logger.info(f"Running AI inference for analysis {analysis_id}")
+        inference = run_inference(output_path, n_aug=5)
 
-        # Con JSONB, se asigna el dict directamente — sin json.dumps
-        analysis.result       = analysis_result
-        analysis.status       = "completed"
-        analysis.completed_at = datetime.now(timezone.utc)
+        analysis.top1_label      = inference["top1_label"]
+        analysis.top1_confidence = inference["top1_confidence"]
+        analysis.model_version   = inference["model_version"]
+        analysis.result          = inference          # JSONB — dict directo
+        analysis.status          = "completed"
+        analysis.completed_at    = datetime.now(timezone.utc)
 
         db.commit()
-        logger.info(f"Analysis {analysis_id} completed successfully.")
+        logger.info(
+            f"Analysis {analysis_id} completed: {inference['top1_label']} "
+            f"({inference['top1_confidence']*100:.1f}%)"
+        )
 
         # 3. Borrar original SOLO después del commit exitoso (GDPR)
-        # No va en finally para que los reintentos de Celery encuentren el archivo
         if os.path.exists(input_path):
             os.remove(input_path)
-            original_deleted = True
-            logger.info(f"Original image deleted for GDPR compliance: {input_path}")
+            logger.info(f"Original image deleted (GDPR): {input_path}")
 
     except Exception as exc:
         logger.error(f"Task failed for analysis {analysis_id}: {exc}", exc_info=True)
         db.rollback()
 
-        # Marcar como fallido solo en el último reintento
         if self.request.retries >= self.max_retries:
             try:
                 analysis = db.query(models.Analysis).filter(models.Analysis.id == analysis_id).first()
                 if analysis:
-                    analysis.status = "failed"
+                    analysis.status        = "failed"
                     analysis.error_message = str(exc)[:500]
                     db.commit()
             except Exception:

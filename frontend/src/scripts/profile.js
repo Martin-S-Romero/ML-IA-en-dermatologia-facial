@@ -16,6 +16,10 @@ const FITZ_LABELS = {
 }
 
 export function initProfile() {
+  // Mostrar "Volver al Dashboard" solo si el perfil ya fue completado antes
+  if (localStorage.getItem('skinai_profile_complete') === '1') {
+    document.getElementById('btn-back-profile')?.classList.remove('hidden')
+  }
   initFitzpatrickInteraction()
   initAllergyToggle()
   initMultiSelect()

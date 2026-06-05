@@ -13,9 +13,11 @@ class Product(Base):
     brand       = Column(String(100), index=True)
     category    = Column(String(50), index=True)    # cleanser, moisturizer, spf, serum…
     description = Column(Text)
-    highlights  = Column(JSONB)                     # ["#alcohol-free", "#fragrance-free"]
-    source_url  = Column(String(512), unique=True, nullable=False)
-    created_at  = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    highlights      = Column(JSONB)                  # ["#alcohol-free", "#fragrance-free"]
+    suitable_for    = Column(JSONB, nullable=True)   # ["seca", "sensible", "acne"]
+    source_url      = Column(String(512), unique=True, nullable=False)
+    last_scraped_at = Column(DateTime(timezone=True), nullable=True)
+    created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     product_ingredients = relationship(
         "ProductIngredient",

@@ -1,0 +1,10 @@
+{
+  "acne-comedonal": 0,
+  "acne-excoriated": 1,
+  "acne-inflammatory": 2,
+  "healthy-skin": 3,
+  "perioral-dermatitis": 4,
+  "rosacea-etr": 5,
+  "rosacea-inflammatory": 6,
+  "seborrheic-dermatitis": 7
+}
