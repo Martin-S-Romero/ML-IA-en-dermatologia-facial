@@ -38,6 +38,18 @@ def create_routine(
     Desactiva la anterior si existe.
     Recibe los pasos generados (por IA o por el frontend).
     """
+    # Validar analysis_id si se proporciona
+    if body.analysis_id is not None:
+        analysis = db.query(models.Analysis).filter(
+            models.Analysis.id == body.analysis_id,
+            models.Analysis.user_id == current_user.id,
+        ).first()
+        if not analysis:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Análisis {body.analysis_id} no encontrado o no pertenece al usuario."
+            )
+
     # Desactivar rutina anterior
     db.query(models.Routine).filter(
         models.Routine.user_id  == current_user.id,
@@ -55,11 +67,11 @@ def create_routine(
     for step_data in body.steps:
         step = models.RoutineStep(
             routine_id       = routine.id,
-            step_order       = step_data.get("step_order", 0),
-            time_of_day      = step_data.get("time_of_day", "am"),
-            product_name     = step_data.get("product_name", ""),
-            product_category = step_data.get("product_category"),
-            reason           = step_data.get("reason"),
+            step_order       = step_data.step_order,
+            time_of_day      = step_data.time_of_day,
+            product_name     = step_data.product_name,
+            product_category = step_data.product_category,
+            reason           = step_data.reason,
             is_active        = True,
         )
         db.add(step)

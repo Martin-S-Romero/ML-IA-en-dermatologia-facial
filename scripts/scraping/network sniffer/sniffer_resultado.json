@@ -1,0 +1,89 @@
+{
+  "barcode": "7310617311936",
+  "network_endpoint": "https://inciapi.com/api/web/products/7310617311936",
+  "network_body": {
+    "product": {
+      "barcode": "7310617311936",
+      "name": "Lano",
+      "brand": "Orkla",
+      "manufacturer": "",
+      "category": [],
+      "country": "norway",
+      "imageUrls": [],
+      "weight": null,
+      "volume": null,
+      "packaging": null,
+      "dataSources": [
+        "open_beauty_facts"
+      ],
+      "qualityScore": 50,
+      "vertical": "skincare",
+      "createdAt": "2026-03-25T21:46:15.296Z",
+      "updatedAt": "2026-06-01T03:01:27.149Z"
+    },
+    "details": {
+      "barcode": "7310617311936",
+      "inci": [],
+      "skinType": [],
+      "spf": null,
+      "certifications": [],
+      "usage": "",
+      "warnings": null,
+      "periodAfterOpening": null,
+      "analysis": null
+    }
+  },
+  "dom_json": {
+    "overallSafetyScore": 50,
+    "cleanBeautyScore": 50,
+    "ingredients": [],
+    "allergenWarnings": [],
+    "pregnancySafe": true,
+    "pregnancyWarnings": [],
+    "skinCompatibility": [
+      {
+        "skinType": "sensitive",
+        "compatible": true,
+        "score": 50
+      },
+      {
+        "skinType": "oily",
+        "compatible": true,
+        "score": 50
+      },
+      {
+        "skinType": "dry",
+        "compatible": true,
+        "score": 50
+      },
+      {
+        "skinType": "combination",
+        "compatible": true,
+        "score": 50
+      },
+      {
+        "skinType": "acne-prone",
+        "compatible": true,
+        "score": 50
+      },
+      {
+        "skinType": "normal",
+        "compatible": true,
+        "score": 50
+      }
+    ],
+    "environmentalProfile": {
+      "veganCount": 0,
+      "nonVeganCount": 0,
+      "reefSafeCount": 0,
+      "nonReefSafeCount": 0,
+      "cleanBeautyCount": 0,
+      "nonCleanBeautyCount": 0,
+      "averageNaturalOrigin": 0,
+      "endocrineDisruptors": [],
+      "iarcClassified": [],
+      "totalIngredients": 0
+    }
+  },
+  "dom_selector": "pre"
+}

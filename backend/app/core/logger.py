@@ -17,8 +17,8 @@ class JsonFormatter(logging.Formatter):
             log_record["exception"] = self.formatException(record.exc_info)
             
         # Merge extra fields if any
-        if hasattr(record, "extra"):
-            log_record.update(record.extra)
+        if hasattr(record, "extra"):  # type: ignore[attr-defined]
+            log_record.update(record.extra)  # type: ignore[attr-defined]
             
         return json.dumps(log_record)
 

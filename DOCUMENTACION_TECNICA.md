@@ -52,38 +52,40 @@ El sistema adopta una **arquitectura modular basada en contenedores**, organizad
 
 ### 2.2 Diagrama Lógico de Componentes
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        CLIENTE                              │
-│   Navegador web — HTML + Vite + Tailwind CSS                │
-│   Puerto 3000                                               │
-│   SPA con router propio, JWT en localStorage                │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTP/REST (JSON)
-                           │ Authorization: Bearer <JWT>
-┌──────────────────────────▼──────────────────────────────────┐
-│                    API GATEWAY / BACKEND                    │
-│   FastAPI (Python) — Puerto 8000                            │
-│   /api/auth/   /api/users/   /api/analysis/                 │
-│   /api/routines/   /api/products/                           │
-│   Rate Limiting · CORS · JWT · Logs · BackgroundTasks       │
-└──────┬─────────────────────────┬───────────────────────────┘
-       │                         │
-       ▼                         ▼
-┌─────────────┐       ┌──────────────────────────┐
-│  PostgreSQL │       │  Sistema de Archivos      │
-│  Puerto 5432│       │  /app/uploads  (originales│
-│  Base de    │       │  /app/processed (censuradas│
-│  datos SQL  │       │  /app/logs     (logs JSON) │
-└─────────────┘       └──────────────────────────┘
-       │
-       ▼
-┌──────────────────────────────────────────────┐
-│          Módulo de IA / Visión por Computador │
-│  OpenCV + MediaPipe FaceMesh                  │
-│  Censura facial (blur, black, pixelate)       │
-│  [Futuro] Modelos ONNX para análisis cutáneo  │
-└──────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph CLIENTE
+        A[Navegador web<br/>HTML + Vite + Tailwind CSS<br/>Puerto 3000<br/>SPA con router propio<br/>JWT en localStorage]
+    end
+
+    subgraph BACKEND
+        B[API Gateway / Backend<br/>FastAPI Python - Puerto 8000<br/>/api/auth/ /api/users/<br/>/api/analysis/ /api/routines/<br/>/api/products/<br/>Rate Limiting · CORS · JWT<br/>Logs · Celery]
+    end
+
+    subgraph INFRASTRUCTURE
+        C[PostgreSQL<br/>Puerto 5432<br/>Base de datos SQL]
+        D[Sistema de Archivos<br/>/app/uploads originales<br/>/app/processed censuradas<br/>/app/logs logs JSON]
+        E[Redis<br/>Puerto 6379<br/>Cola de mensajes Celery]
+    end
+
+    subgraph AI_WORKER
+        F[AI Worker<br/>Celery Worker<br/>OpenCV + MediaPipe FaceMesh<br/>Censura facial blur/black/pixelate<br/>Futuro Modelos ONNX]
+    end
+
+    A -->|HTTP/REST JSON<br/>Authorization Bearer JWT| B
+    B -->|SQLAlchemy ORM| C
+    B -->|Escritura directa| D
+    B -->|Celery| E
+    E --> F
+    F -->|Actualización BD| C
+    F -->|Escritura| D
+
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#e8f5e9
+    style D fill:#fce4ec
+    style E fill:#f3e5f5
+    style F fill:#fff3e0
 ```
 
 Todos los componentes se orquestan dentro de una **red Docker interna** (`tesis-network`), lo que garantiza aislamiento y comunicación segura entre servicios.
@@ -102,6 +104,8 @@ El sistema define tres servicios en `docker-compose.yml`:
 | Servicio | Imagen base | Puerto | Rol |
 |----------|-------------|--------|-----|
 | `backend` | `python:3.10-slim` | 8000 | API FastAPI + módulo IA |
+| `ai_worker` | `python:3.10-slim` | — | Worker Celery para procesamiento asíncrono |
+| `redis` | `redis:7-alpine` | 6379 | Cola de mensajes para Celery |
 | `db` | `postgres:15-alpine` | 5432 | Base de datos relacional |
 | `frontend` | `node:18-alpine` | 3000 | Servidor Vite (desarrollo) |
 
@@ -313,9 +317,9 @@ Todos los endpoints están agrupados bajo el prefijo `/api/` y organizados por d
 | Método | Ruta | Descripción | Auth |
 |--------|------|-------------|------|
 | `GET` | `/me` | Devuelve datos básicos del usuario autenticado | Sí |
-| `PUT` | `/me` | Actualiza nombre y/o campos del perfil de piel | Sí |
+| `PUT` | `/me` | Actualiza nombre completo del usuario | Sí |
 | `DELETE` | `/me` | Elimina cuenta y todos sus datos (irreversible) | Sí |
-| `POST` | `/profile` | Guarda o reemplaza el perfil de piel completo | Sí |
+| `PUT` | `/profile` | Guarda o actualiza el perfil de piel completo | Sí |
 | `GET` | `/profile` | Devuelve el perfil de piel del usuario | Sí |
 
 #### Análisis — `/api/analysis/`
@@ -323,8 +327,9 @@ Todos los endpoints están agrupados bajo el prefijo `/api/` y organizados por d
 | Método | Ruta | Descripción | Auth |
 |--------|------|-------------|------|
 | `POST` | `/upload` | Recibe imagen, la valida, inicia análisis en background, devuelve `analysis_id` | Sí |
-| `GET` | `/{id}/status` | Estado del análisis: `processing` / `completed` / `failed` | Sí |
+| `GET` | `/{id}/status` | Estado del análisis: `processing` / `completed` / `failed` (incluye `error_message` si falló) | Sí |
 | `GET` | `/{id}` | Documento completo del análisis con resultado | Sí |
+| `GET` | `/{id}/image` | Sirve la imagen censurada del análisis (autenticación obligatoria) | Sí |
 | `GET` | `/history` | Lista paginada de análisis del usuario (`skip`, `limit`) | Sí |
 
 #### Rutinas — `/api/routines/`
@@ -413,45 +418,36 @@ Los landmarks utilizados para la censura son:
 
 ### 5.4 Flujo de Procesamiento de Imagen
 
-```
-ENTRADA: Imagen original (JPEG/PNG, min. ~720p de píxeles totales)
-    │
-    ▼
-1. Lectura con OpenCV (cv2.imread) → Array NumPy BGR
-    │
-    ▼
-2. Validación de resolución
-   - Mínimo: 1280×720 píxeles totales (~921,600 px)
-   - Permite imágenes portrait (ej: 798×1200 = 957,600 px)
-   - Si falla → status "failed", mensaje de error
-    │
-    ▼
-3. Conversión BGR → RGB para MediaPipe
-    │
-    ▼
-4. FaceMesh.process(frame_rgb)
-   - Detecta 468 landmarks en el rostro
-   - Si no detecta rostro → devuelve frame sin modificar
-    │
-    ▼
-5. Para cada región (ojo izquierdo, ojo derecho, boca):
-   a. Calcular bounding box a partir de los landmarks
-   b. Expandir el área según parámetro `expand`
-   c. Extraer Region of Interest (ROI)
-   d. Aplicar censura según modo:
-      - blur:      GaussianBlur(roi, (k,k), 30)
-      - black:     roi[:] = (0,0,0)
-      - pixelate:  resize a pixel_size → resize de vuelta
-   e. Reinyectar ROI censurada en la imagen
-    │
-    ▼
-6. [Opcional] Si cut=True: recortar imagen al bounding box del rostro completo
-    │
-    ▼
-7. Guardar imagen procesada con cv2.imwrite
-    │
-    ▼
-SALIDA: Imagen censurada en /app/processed/<uuid>_censored.<ext>
+```mermaid
+flowchart TD
+    A[ENTRADA<br/>Imagen original JPEG/PNG<br/>min 720p píxeles] --> B[Lectura OpenCV<br/>cv2.imread → Array NumPy BGR]
+    B --> C{Validación<br/>resolución}
+    C -->|Mínimo 1280x720<br/>921600 px| D[Conversión BGR → RGB<br/>para MediaPipe]
+    C -->|Falla validación| E[Status failed<br/>Mensaje de error]
+    D --> F[FaceMesh.process<br/>Detecta 468 landmarks]
+    F --> G{Rostro<br/>detectado?}
+    G -->|No| H[Devuelve frame<br/>sin modificar]
+    G -->|Sí| I[Para cada región<br/>ojo izquierdo, ojo derecho, boca]
+    I --> J[Calcular bounding box<br/>desde landmarks]
+    J --> K[Expandir área<br/>según parámetro expand]
+    K --> L[Extraer ROI<br/>Region of Interest]
+    L --> M{Modo de<br/>censura}
+    M -->|blur| N[GaussianBlur<br/>roi k,k 30]
+    M -->|black| O[roi = 0,0,0]
+    M -->|pixelate| P[Resize pixel_size<br/>→ resize vuelta]
+    N --> Q[Reinyectar ROI<br/>censurada]
+    O --> Q
+    P --> Q
+    Q --> R{cut=True?}
+    R -->|Sí| S[Recortar al bounding box<br/>del rostro completo]
+    R -->|No| T[Guardar imagen<br/>cv2.imwrite]
+    S --> T
+    T --> U[SALIDA<br/>Imagen censurada<br/>/app/processed/uuid_censored.ext]
+
+    style A fill:#e1f5ff
+    style E fill:#ffcdd2
+    style H fill:#ffcdd2
+    style U fill:#c8e6c9
 ```
 
 **Principio de privacidad por diseño:** La imagen original se guarda temporalmente en `/app/uploads/` pero **nunca se persiste de forma permanente ni se muestra al usuario**. Solo la imagen censurada llega a la base de datos y al frontend.
@@ -472,22 +468,108 @@ El sistema está preparado para incorporar modelos ONNX para el análisis real d
 
 El esquema está compuesto por **9 tablas** con las siguientes relaciones:
 
-```
-users (1) ─────────────── (1) skin_profiles
-  │
-  ├── (1) ─── (N) analyses
-  │                 │
-  │                 └── referenciada por routines
-  │
-  ├── (1) ─── (N) routines
-  │                 │
-  │                 ├── (1) ─── (N) routine_steps
-  │                 │
-  │                 └── (1) ─── (N) skin_checks
-  │
-  └── (1) ─── (N) skin_checks
-
-products (1) ─── (N) product_ingredients (N) ─── (1) ingredients
+```mermaid
+erDiagram
+    users ||--|| skin_profiles : "1:1"
+    users ||--o{ analyses : "1:N"
+    users ||--o{ routines : "1:N"
+    users ||--o{ skin_checks : "1:N"
+    
+    analyses ||--o| routines : "referenciada por"
+    routines ||--o{ routine_steps : "1:N"
+    routines ||--o{ skin_checks : "1:N"
+    
+    products ||--o{ product_ingredients : "1:N"
+    ingredients ||--o{ product_ingredients : "1:N"
+    
+    users {
+        int id PK
+        string email UK
+        string hashed_password
+        string full_name
+        boolean gdpr_accepted
+        boolean is_active
+        datetime created_at
+    }
+    
+    skin_profiles {
+        int id PK
+        int user_id FK
+        int age
+        string gender
+        string fitzpatrick
+        string skin_type
+        text skin_conditions
+        text allergies
+        string country
+        string city
+        datetime updated_at
+    }
+    
+    analyses {
+        int id PK
+        int user_id FK
+        string original_filename
+        string censored_filename
+        string status
+        text result
+        string error_message
+        datetime created_at
+    }
+    
+    routines {
+        int id PK
+        int user_id FK
+        int analysis_id FK
+        boolean is_active
+        datetime created_at
+    }
+    
+    routine_steps {
+        int id PK
+        int routine_id FK
+        int step_order
+        string time_of_day
+        string product_name
+        string product_category
+        string reason
+        boolean is_active
+    }
+    
+    skin_checks {
+        int id PK
+        int user_id FK
+        int routine_id FK
+        boolean followed_routine
+        string notes
+        datetime created_at
+    }
+    
+    products {
+        int id PK
+        string name
+        string brand
+        string category
+        text description
+        text highlights
+        string source_url UK
+        datetime created_at
+    }
+    
+    ingredients {
+        int id PK
+        string inci_name UK
+        string function
+        string rating
+        text description
+    }
+    
+    product_ingredients {
+        int product_id FK
+        int ingredient_id FK
+        int position
+        string irr_com
+    }
 ```
 
 ### 6.3 Descripción de Tablas
@@ -604,32 +686,32 @@ products (1) ─── (N) product_ingredients (N) ─── (1) ingredients
 
 ### 7.1 Mecanismo Utilizado
 
-El sistema utiliza **`BackgroundTasks`** de FastAPI para ejecutar operaciones de larga duración sin bloquear la respuesta HTTP. Cuando el usuario sube una imagen, el endpoint devuelve inmediatamente un `analysis_id` con estado `"processing"`, mientras la tarea de censura facial se ejecuta en segundo plano.
+El sistema utiliza **Celery** con Redis como broker para ejecutar operaciones de larga duración sin bloquear la respuesta HTTP. Cuando el usuario sube una imagen, el endpoint devuelve inmediatamente un `analysis_id` con estado `"processing"`, mientras la tarea de censura facial se ejecuta en un worker separado (contenedor `ai_worker`).
 
 ### 7.2 Implementación
 
 ```python
 @router.post("/upload")
 async def upload_image(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     ...
 ):
     # 1. Validar y guardar imagen
     # 2. Crear registro Analysis con status="processing"
-    # 3. Lanzar tarea en background
-    background_tasks.add_task(
-        _run_censorship,
+    # 3. Lanzar tarea de Celery al worker
+    process_image_task.delay(
         analysis.id,
         input_path,
         output_path,
-        DATABASE_URL,
+        current_user.id,
+        censor_mode,
+        ...
     )
     # 4. Responder inmediatamente con el analysis_id
     return {"analysis_id": analysis.id, "status": "processing"}
 ```
 
-La función `_run_censorship` crea su propia sesión de base de datos (ya que BackgroundTasks se ejecuta fuera del ciclo de vida de la petición HTTP), ejecuta `FaceCensor.process_image()` y actualiza el registro con el resultado o el error.
+La función `process_image_task` se ejecuta en el contenedor `ai_worker`, crea su propia sesión de base de datos, ejecuta `FaceCensor.process_image()` y actualiza el registro con el resultado o el error. Redis actúa como broker de mensajes entre el backend y el worker.
 
 ### 7.3 Polling desde el Frontend
 
@@ -775,52 +857,80 @@ Los schemas Pydantic sirven como Data Transfer Objects: definen la estructura ex
 
 ## 10. Flujo Completo del Sistema
 
-```
-USUARIO                     FRONTEND                    BACKEND                     BD / FS
-   │                            │                           │                          │
-   │── Accede a la web ────────►│                           │                          │
-   │                            │── GET / (Vite) ──────────►│                          │
-   │                            │◄── index.html ────────────│                          │
-   │                            │── fetch navbar/modals ────►│ (archivos estáticos)     │
-   │                            │                           │                          │
-   │── Clic "Comenzar" ────────►│── navigate('auth') ───────►│                          │
-   │                            │── fetch auth.html ─────────►│                          │
-   │                            │                           │                          │
-   │── Completa registro ───────►│── POST /api/auth/register ►│                          │
-   │                            │                           │── INSERT users ──────────►│
-   │                            │                           │◄── User + JWT ────────────│
-   │                            │◄── {access_token, user} ──│                          │
-   │                            │── localStorage token/user  │                          │
-   │                            │── navigate('profile') ─────►│                          │
-   │                            │                           │                          │
-   │── Completa perfil ─────────►│── POST /api/users/profile ►│                          │
-   │                            │   (Bearer token)           │── INSERT skin_profiles ──►│
-   │                            │◄── SkinProfileOut ─────────│                          │
-   │                            │── navigate('capture') ──────►│                          │
-   │                            │                           │                          │
-   │── Sube foto ───────────────►│── POST /api/analysis/upload►│                          │
-   │                            │   (multipart/form-data)    │── Validar imagen         │
-   │                            │                           │── INSERT analyses (proc.)►│
-   │                            │                           │── BackgroundTask:        │
-   │                            │                           │   FaceCensor.process()   │
-   │                            │◄── {analysis_id, status}──│                          │
-   │                            │── navigate('analyzing') ───►│                          │
-   │                            │                           │                          │
-   │                            │── [POLLING] ───────────────►│                          │
-   │                            │── GET /api/analysis/{id}/status                       │
-   │                            │                           │   [Background completado] │
-   │                            │                           │── UPDATE analyses ────────►│
-   │                            │                           │── Guardar img censurada ──►│(FS)
-   │                            │◄── {status: "completed"}──│                          │
-   │                            │── navigate('dashboard') ───►│                          │
-   │                            │                           │                          │
-   │── Ve resultados ───────────►│── GET /api/analysis/{id} ─►│── SELECT analyses ───────►│
-   │                            │── GET /api/routines/active ►│── SELECT routines ────────►│
-   │                            │◄── Análisis + Rutina ──────│                          │
-   │                            │── Renderiza dashboard      │                          │
-   │                            │   (tabs: diagnóstico,      │                          │
-   │                            │    rutina, gráficas,       │                          │
-   │                            │    historial)              │                          │
+```mermaid
+sequenceDiagram
+    participant U as USUARIO
+    participant F as FRONTEND
+    participant B as BACKEND
+    participant W as AI_WORKER
+    participant R as REDIS
+    participant DB as BD/FS
+
+    U->>F: Accede a la web
+    F->>B: GET / (Vite)
+    B-->>F: index.html
+    F->>B: fetch navbar/modals
+    B-->>F: Componentes estáticos
+
+    U->>F: Clic "Comenzar"
+    F->>F: navigate('auth')
+    F->>B: fetch auth.html
+    B-->>F: auth.html
+
+    U->>F: Completa registro
+    F->>B: POST /api/auth/register
+    B->>DB: INSERT users
+    DB-->>B: User + JWT
+    B-->>F: {access_token, user}
+    F->>F: localStorage token/user
+    F->>F: navigate('profile')
+
+    U->>F: Completa perfil
+    F->>B: POST /api/users/profile<br/>(Bearer token)
+    B->>DB: INSERT skin_profiles
+    DB-->>B: SkinProfileOut
+    B-->>F: SkinProfileOut
+    F->>F: navigate('capture')
+
+    U->>F: Sube foto
+    F->>B: POST /api/analysis/upload<br/>(multipart/form-data)
+    B->>B: Validar imagen
+    B->>DB: INSERT analyses (processing)
+    B->>R: process_image_task.delay()<br/>(Celery)
+    R-->>B: Task queued
+    B-->>F: {analysis_id, status}
+    F->>F: navigate('analyzing')
+
+    loop POLLING (cada 2s)
+        F->>B: GET /api/analysis/{id}/status
+        B->>DB: SELECT analyses
+        DB-->>B: {status: processing}
+        B-->>F: {status: processing}
+    end
+
+    R->>W: Task received
+    W->>W: FaceCensor.process()
+    W->>DB: UPDATE analyses<br/>status=completed
+    W->>DB: Guardar img censurada
+    DB-->>W: OK
+    W-->>R: Task completed
+
+    F->>B: GET /api/analysis/{id}/status
+    B->>DB: SELECT analyses
+    DB-->>B: {status: completed}
+    B-->>F: {status: completed}
+    F->>F: navigate('dashboard')
+
+    U->>F: Ve resultados
+    F->>B: GET /api/analysis/{id}
+    B->>DB: SELECT analyses
+    DB-->>B: Análisis
+    B-->>F: Análisis
+    F->>B: GET /api/routines/active
+    B->>DB: SELECT routines
+    DB-->>B: Rutina
+    B-->>F: Rutina
+    F->>F: Renderiza dashboard<br/>(tabs: diagnóstico, rutina, gráficas, historial)
 ```
 
 ---

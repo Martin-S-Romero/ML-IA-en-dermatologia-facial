@@ -9,13 +9,13 @@ from app.core.logger import logger
 router = APIRouter()
 
 
-@router.post("/profile", response_model=schemas.SkinProfileOut, status_code=status.HTTP_201_CREATED)
-def save_profile(
+@router.put("/profile", response_model=schemas.SkinProfileOut)
+def update_profile(
     profile: schemas.SkinProfileCreate,
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
 ):
-    """Guarda o reemplaza el perfil de piel del usuario tras el registro."""
+    """Actualiza el perfil de piel del usuario."""
     existing = db.query(models.SkinProfile).filter(
         models.SkinProfile.user_id == current_user.id
     ).first()
@@ -107,7 +107,7 @@ def update_me(
 
     db.commit()
     db.refresh(current_user)
-    logger.info(f"User {current_user.id} updated their profile.")
+    logger.info(f"User {current_user.id} updated their account.")
     return current_user
 
 

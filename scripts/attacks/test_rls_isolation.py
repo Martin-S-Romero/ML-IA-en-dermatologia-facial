@@ -62,9 +62,12 @@ def test_rls():
     print(f"\n[*] ATAQUE 2: Solicitud sin autenticación a GET /analysis/{analysis_id}/image")
     res_attack_2 = requests.get(f"{API_URL}/analysis/{analysis_id}/image")
     print(f"    Resultado HTTP: {res_attack_2.status_code}")
-    if res_attack_2.status_code == 404:
-        print("    [EXITO] Defensa exitosa! RLS oculto el registro a nivel de Base de Datos.")
-        print("        (Nota: Esto significa que debes enviar el Token en el frontend para ver la imagen, lo cual es mas seguro).")
+    if res_attack_2.status_code in [401, 404]:
+        print(f"    [EXITO] Defensa exitosa! Acceso bloqueado con HTTP {res_attack_2.status_code}.")
+        if res_attack_2.status_code == 404:
+            print("        (Nota: RLS oculto el registro a nivel de Base de Datos).")
+        else:
+            print("        (Nota: FastAPI bloqueo la solicitud a nivel de aplicacion).")
     else:
         print("    [PELIGRO] Falla de seguridad! Imagen expuesta:", res_attack_2.status_code)
 

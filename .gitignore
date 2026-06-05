@@ -17,6 +17,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+.conda
 
 ############################
 # Python tooling
@@ -135,7 +136,7 @@ coverage/
 ############################
 docs/_build/
 .env.example
-README.md
+# README.md
 ARCHITECTURE.md
 AI_RULES.md
 TEST_LOG.md
@@ -144,3 +145,9 @@ TEST_LOG.md
 # *.sh
 # *.bat
 # Fin de archivos a ignorar
+
+*.csv
+*.jsonl
+
+scripts/scraping/**/*.csv
+scripts/scraping/**/*.jsonl

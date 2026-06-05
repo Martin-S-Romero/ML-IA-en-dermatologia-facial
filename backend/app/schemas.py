@@ -18,6 +18,10 @@ class UserLogin(BaseModel):
     email:    EmailStr
     password: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
 class UserOut(BaseModel):
     id:          int
     email:       EmailStr
@@ -27,7 +31,7 @@ class UserOut(BaseModel):
     has_profile: bool = False
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -91,9 +95,10 @@ class SkinProfileOut(SkinProfileCreate):
         return date.today().year - bd.year if bd else None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserUpdate(BaseModel):
+<<<<<<< HEAD
     full_name:       Optional[str]       = None
     birth_date:      Optional[date]      = None
     gender:          Optional[str]       = None
@@ -110,6 +115,9 @@ class UserUpdate(BaseModel):
         if age is not None and values.get('birth_date') is None:
             values['birth_date'] = date(date.today().year - int(age), 1, 1)
         return values
+=======
+    full_name: Optional[str] = None
+>>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
 
 
 # ── ANALYSIS ──────────────────────────────────────────────────────────────────
@@ -120,10 +128,15 @@ class AnalysisCreated(BaseModel):
 
 class AnalysisStatusOut(BaseModel):
     analysis_id: int
+<<<<<<< HEAD
     status:      str
+=======
+    status: str
+    error_message: Optional[str] = None
+>>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class AnalysisOut(BaseModel):
     id:                int
@@ -141,7 +154,7 @@ class AnalysisOut(BaseModel):
     completed_at:      Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class AnalysisSnapshot(BaseModel):
     id:                int
@@ -152,7 +165,7 @@ class AnalysisSnapshot(BaseModel):
     created_at:        datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ── ROUTINES ──────────────────────────────────────────────────────────────────
@@ -170,7 +183,7 @@ class RoutineStepOut(BaseModel):
     is_active:        bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class RoutineOut(BaseModel):
     id:          int
@@ -180,11 +193,22 @@ class RoutineOut(BaseModel):
     steps:       List[RoutineStepOut]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class RoutineStepCreate(BaseModel):
+    step_order: int
+    time_of_day: str
+    product_name: str
+    product_category: Optional[str] = None
+    reason: Optional[str] = None
 
 class RoutineCreate(BaseModel):
     analysis_id: Optional[int] = None
+<<<<<<< HEAD
     steps:       List[dict]
+=======
+    steps: List[RoutineStepCreate]
+>>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
 
 class StepUpdate(BaseModel):
     step_id:      int
@@ -205,7 +229,7 @@ class SkinCheckOut(BaseModel):
     created_at:       datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ── PRODUCTS ──────────────────────────────────────────────────────────────────
@@ -218,7 +242,7 @@ class ProductOut(BaseModel):
     description: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class IngredientOut(BaseModel):
     id:        int
@@ -227,7 +251,7 @@ class IngredientOut(BaseModel):
     rating:    Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProductIngredientOut(BaseModel):
     position:   int
@@ -235,13 +259,10 @@ class ProductIngredientOut(BaseModel):
     ingredient: IngredientOut
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProductDetailOut(ProductOut):
     highlights:          Optional[Any]
     suitable_for:        Optional[Any]
     source_url:          str
     product_ingredients: List[ProductIngredientOut]
-
-    class Config:
-        orm_mode = True

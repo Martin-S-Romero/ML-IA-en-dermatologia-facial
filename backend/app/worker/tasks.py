@@ -21,9 +21,22 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name="app.worker.tasks.process_image_task", bind=True, max_retries=3)
-def process_image_task(self, analysis_id: int, input_path: str, output_path: str, user_id: int):
+def process_image_task(
+    self,
+    analysis_id: int,
+    input_path: str,
+    output_path: str,
+    user_id: int,
+    censor_mode: str = "blur",
+    blur_strength: int = 55,
+    pixel_size: int = 10,
+    expand: int = 10,
+):
     """
+<<<<<<< HEAD
     Tarea de Celery: censura facial + análisis de piel con modelo real.
+=======
+>>>>>>> c81be0d2805a5c3c85a3b2d26d6b57df4695a085
     Corre en el contenedor ai_worker, aislado del proceso principal de FastAPI.
     """
     db = SessionLocal()
@@ -39,9 +52,13 @@ def process_image_task(self, analysis_id: int, input_path: str, output_path: str
             logger.error(f"Analysis {analysis_id} not found in DB.")
             return
 
-        # 1. Censura facial con MediaPipe
-        logger.info(f"Starting face censorship for analysis {analysis_id}")
-        censor = FaceCensor(mode="blur", blur_strength=55, expand=10)
+        logger.info(f"Starting censorship for analysis {analysis_id} with mode='{censor_mode}'")
+        censor = FaceCensor(
+            mode=censor_mode,
+            blur_strength=blur_strength,
+            expand=expand,
+            pixel_size=pixel_size,
+        )
         result = censor.process_image(input_path, output_path)
 
         if result is None:
