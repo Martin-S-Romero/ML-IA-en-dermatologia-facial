@@ -146,3 +146,9 @@ TEST_LOG.md
 # *.sh
 # *.bat
 # Fin de archivos a ignorar
+
+*.csv
+*.jsonl
+
+scripts/scraping/**/*.csv
+scripts/scraping/**/*.jsonl
