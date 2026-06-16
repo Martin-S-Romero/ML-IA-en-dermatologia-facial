@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(docker exec tesis20-db-1 psql -U postgres -d tesis_db -c \"SELECT id, user_id, status, top1_label, top1_confidence FROM analyses ORDER BY created_at DESC LIMIT 5;\")"
+    ]
+  }
+}

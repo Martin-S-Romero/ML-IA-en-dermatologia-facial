@@ -17,26 +17,52 @@ from db_writer import save_product, already_scraped
 
 # ── Marcas prioritarias para el modo "priority" ────────────────────────────────
 PRIORITY_BRANDS = [
+    # ── Dermatología clínica (recomendadas por dermatólogos) ───────────────────
     "cerave",
     "la-roche-posay",
-    "neutrogena",
     "cetaphil",
+    "eucerin",
+    "aveeno",
+    "skinceuticals",
+    "eltamd",
+    "elta-md",
+    "isdin",
+    "uriage",
+    "svr",
+    "avene",
+    "bioderma",
+    "vichy",
+    "sesderma",
+
+    # ── Activos / evidencia científica ────────────────────────────────────────
     "the-ordinary",
+    "ordinary",
     "paulas-choice",
     "paula-s-choice",
     "differin",
-    "mario-badescu",
-    "eltamd",
-    "elta-md",
-    "skinceuticals",
-    "vichy",
-    "bioderma",
-    "avene",
+    "inkey",          # The INKEY List
+
+    # ── Masivas / farmacias y supermercados ───────────────────────────────────
+    "neutrogena",
+    "olay",
+    "nivea",
+    "garnier",
+    "loreal",         # L'Oréal Paris
+    "ponds",          # Pond's
+    "roc",            # RoC Retinol
+
+    # ── Premium / tiendas departamentales ─────────────────────────────────────
+    "clinique",
+    "kiehls",         # Kiehl's
     "drunk-elephant",
+    "mario-badescu",
+
+    # ── K-beauty (popular en acné y piel sensible) ────────────────────────────
     "cosrx",
     "purito",
-    "inkey",          # The INKEY List
-    "ordinary",
+    "some-by-mi",
+    "skin1004",
+    "beauty-of-joseon",
 ]
 
 

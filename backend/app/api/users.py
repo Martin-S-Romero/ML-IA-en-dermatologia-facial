@@ -88,9 +88,12 @@ def update_me(
     if body.full_name is not None:
         current_user.full_name = body.full_name
 
-    profile_fields = ["birth_date", "gender", "fitzpatrick", "skin_type",
+    profile_fields = ["gender", "fitzpatrick", "skin_type",
                       "skin_conditions", "allergies", "country", "city"]
     profile_data = {k: getattr(body, k) for k in profile_fields if getattr(body, k) is not None}
+    if body.age is not None:
+        from datetime import date as _date
+        profile_data['birth_date'] = _date(_date.today().year - body.age, 1, 1)
 
     if profile_data:
         profile = db.query(models.SkinProfile).filter(

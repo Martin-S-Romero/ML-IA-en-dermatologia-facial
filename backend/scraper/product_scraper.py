@@ -8,6 +8,7 @@ import httpx
 import time
 import random
 from dataclasses import dataclass, field
+from typing import Optional
 from bs4 import BeautifulSoup
 
 HEADERS = {
@@ -52,7 +53,7 @@ def _rate_limit():
 
 # ── Extractor principal ────────────────────────────────────────────────────────
 
-def scrape_product(url: str) -> ScrapedProduct | None:
+def scrape_product(url: str) -> Optional[ScrapedProduct]:
     """
     Descarga y parsea una página de producto de INCIDecoder.
 

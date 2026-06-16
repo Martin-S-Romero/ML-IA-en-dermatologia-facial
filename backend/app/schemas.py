@@ -78,6 +78,10 @@ class SkinProfileCreate(BaseModel):
 
     @root_validator(pre=True)
     def accept_age_field(cls, values):
+        # Pydantic v1 puede pasar el objeto ORM directamente al validator pre=True
+        # cuando se usa from_orm(). En ese caso no es dict y birth_date viene del ORM.
+        if not isinstance(values, dict):
+            return values
         age = values.pop('age', None)
         if age is not None and values.get('birth_date') is None:
             values['birth_date'] = date(date.today().year - int(age), 1, 1)
@@ -260,3 +264,24 @@ class ProductDetailOut(ProductOut):
     suitable_for:        Optional[Any]
     source_url:          str
     product_ingredients: List[ProductIngredientOut]
+
+
+# ── RECOMMENDATIONS (Opción C) ─────────────────────────────────────────────────
+
+class ScoredProductOut(BaseModel):
+    product_id:          int
+    name:                str
+    brand:               Optional[str] = None
+    category:            Optional[str] = None
+    score:               float
+    matched_ingredients: List[str]     = []
+    highlights:          Optional[Any] = None
+
+    class Config:
+        from_attributes = True
+
+class RecommendationsOut(BaseModel):
+    analysis_id:     int
+    condition:       str
+    severity_score:  float
+    recommendations: dict  # category -> List[ScoredProductOut]

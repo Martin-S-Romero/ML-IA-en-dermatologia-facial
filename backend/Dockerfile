@@ -3,6 +3,9 @@ FROM python:3.10-slim
 WORKDIR /app
 
 COPY ./app /app/app
+COPY ./data /app/data
+COPY ./scripts /app/scripts
+COPY ./entrypoint.sh /app/entrypoint.sh
 
 RUN apt-get update && apt-get install -y \
     libsm6 \
@@ -11,7 +14,9 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     libgl1 \
     libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && chmod +x /app/entrypoint.sh
 
 RUN pip install --no-cache-dir \
     torch torchvision \
