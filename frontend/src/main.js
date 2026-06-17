@@ -237,7 +237,7 @@ function injectNavStyles() {
 
     /* Dashboard tab pages */
     .dpage { display: none; }
-    .dpage.active { display: block; }
+    .dpage.active { display: block; flex: 1 1 0%; min-height: 0; overflow-y: auto; }
 
     /* Zone labels on image */
     .zone-lbl {

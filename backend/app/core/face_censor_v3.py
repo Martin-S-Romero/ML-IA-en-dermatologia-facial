@@ -29,6 +29,7 @@ from app.core.skinai_config import (
     PENALTY_ROSACEA_SCALE, PENALTY_ROSACEA_MAX,
     BOOST_PERIORAL, BOOST_ACNE_EXCORIATED_ZONA, BOOST_HEALTHY_SKIN,
     BOOST_ACNE_INFL_MANDIBULA, BOOST_PERIORAL_DIRECT,
+    UMBRAL_EVIDENCIA_PATOLOGICA, HEALTHY_SKIN_CAP_FACTOR,
     # mediapipe
     FACEMESH_MAX_FACES, FACEMESH_DETECTION_CONFIDENCE, FACEMESH_TRACKING_CONFIDENCE,
     LANDMARK_LEFT_EYE, LANDMARK_RIGHT_EYE,
@@ -440,9 +441,26 @@ def ajustar_por_zona(probs_dict, analisis_zonal, verbose=False):
     if e_mejillas_media >= ERYTHEMA_MIN_EXCORIATED and c_mejillas_media < ERYTHEMA_THRESHOLD_MILD:
         _boost('acne-excoriated', BOOST_ACNE_EXCORIATED_ZONA, 'eritema difuso sin comedones marcados')
 
-    # Piel sana: eritema global bajo en todas las zonas
-    if all(v < ERYTHEMA_MIN_HEALTHY for v in eritema.values()):
-        _boost('healthy-skin', BOOST_HEALTHY_SKIN, 'eritema global bajo')
+    # Piel sana: eritema global bajo en todas las zonas, solo si el modelo ya la prioriza.
+    # Sin esta guarda, lesiones focales (pápulas aisladas) promedian erythema bajo por zona
+    # y el boost 1.5× fuerza healthy-skin al top incluso cuando el modelo detectó patología.
+    if (all(v < ERYTHEMA_MIN_HEALTHY for v in eritema.values()) and
+            max(probs_dict, key=probs_dict.get) == 'healthy-skin'):
+        _boost('healthy-skin', BOOST_HEALTHY_SKIN, 'eritema global bajo (confirmado por modelo)')
+
+    # Diagnóstico de exclusión: healthy-skin no puede ser top-1 si hay evidencia
+    # patológica suficiente. Evita que lesiones focales con eritema promedio bajo
+    # (que no activan boosts patológicos) eleven healthy-skin al primer lugar.
+    _PATOLOGICAS = {
+        'acne-excoriated', 'acne-inflammatory', 'acne-comedonal',
+        'rosacea-etr', 'rosacea-inflammatory',
+        'seborrheic-dermatitis', 'perioral-dermatitis',
+    }
+    max_patologica = max((probs.get(c, 0.0) for c in _PATOLOGICAS), default=0.0)
+    if max_patologica >= UMBRAL_EVIDENCIA_PATOLOGICA:
+        cap = max_patologica * HEALTHY_SKIN_CAP_FACTOR
+        if probs.get('healthy-skin', 0.0) > cap:
+            probs['healthy-skin'] = cap
 
     # Renormalizar a suma = 1
     total = sum(probs.values())

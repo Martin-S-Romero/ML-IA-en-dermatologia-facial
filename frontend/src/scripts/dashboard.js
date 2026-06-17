@@ -9,8 +9,57 @@
 const API = 'http://localhost:8000/api'
 
 // Caché de la sesión actual (se reinicia cuando se navega al dashboard)
-let _analyses = []
-let _routine  = null
+let _analyses       = []
+let _routine        = null
+let _analysisUserNum = {}   // map: db_id → número relativo al usuario
+
+// ── TRADUCCIONES ──────────────────────────────────────────────────────────────
+
+const _LABEL_ES = {
+  'acne-comedonal':        'Acné comedonal',
+  'acne-excoriated':       'Acné excoriado',
+  'acne-inflammatory':     'Acné inflamatorio',
+  'perioral-dermatitis':   'Dermatitis perioral',
+  'rosacea-etr':           'Rosácea ETR',
+  'rosacea-inflammatory':  'Rosácea inflamatoria',
+  'seborrheic-dermatitis': 'Dermatitis seborreica',
+  'healthy-skin':          'Piel saludable',
+}
+
+const _DESCRIPCIONES = {
+  'acne-comedonal':        'Acné comedonal — puntos negros/blancos, zona T',
+  'acne-excoriated':       'Acné excoriado — marcas de rascado, mejillas/mentón',
+  'acne-inflammatory':     'Acné inflamatorio — pústulas/nódulos, cara',
+  'perioral-dermatitis':   'Dermatitis perioral — zona alrededor de la boca',
+  'rosacea-etr':           'Rosácea eritematotelangiectásica — mejillas simétricas',
+  'rosacea-inflammatory':  'Rosácea inflamatoria — centro facial',
+  'seborrheic-dermatitis': 'Dermatitis seborreica — cejas, nariz, zona T',
+  'healthy-skin':          'Piel sin lesiones detectables',
+}
+
+const _MENSAJES_ALERTA = {
+  'acne-excoriated': 'Este patrón puede beneficiarse de apoyo profesional para el manejo del hábito de rascado. Consulta a tu médico.',
+  'perioral-dermatitis': 'La dermatitis perioral puede agravarse con corticosteroides tópicos. Consulta a un dermatólogo antes de aplicar cualquier tratamiento.',
+  'rosacea-inflammatory': 'La rosácea inflamatoria requiere evaluación médica. Evita desencadenantes como calor, alcohol y productos con fragancia.',
+  'seborrheic-dermatitis': 'La dermatitis seborreica crónica o severa puede confundirse con psoriasis. Consulta a un dermatólogo si los síntomas persisten o se extienden.',
+}
+
+const _ZONE_ES = {
+  // Zonas principales (zones_display)
+  frente:        'Frente',
+  mejilla_izq:   'Mejilla izquierda',
+  mejilla_der:   'Mejilla derecha',
+  nariz:         'Nariz',
+  menton:        'Mentón',
+  // Subzonas diagnósticas (zones_diagnostic)
+  ceja_izq:      'Ceja izquierda',
+  ceja_der:      'Ceja derecha',
+  nariz_lat_izq: 'Lat. nasal izq.',
+  nariz_lat_der: 'Lat. nasal der.',
+  mandibula_izq: 'Mandíbula izq.',
+  mandibula_der: 'Mandíbula der.',
+  zona_perioral: 'Zona perioral',
+}
 
 // ── INICIALIZACIÓN PRINCIPAL ──────────────────────────────────────────────
 
@@ -65,21 +114,26 @@ function _populateDashTab(analyses) {
   const latestEl = document.getElementById('dash-latest')
   if (!latestEl) return
 
-  // Buscar el análisis completado más reciente
-  const latest = analyses.find(a => a.status === 'completed') || analyses[0]
+  // El historial ya viene filtrado a completados; el primero es el más reciente
+  const latest = analyses[0]
   if (!latest) return  // mantener el estado por defecto "Sin análisis aún"
 
+  const userNum = analyses.length
   const dateStr = _formatDate(latest.created_at)
+  const label   = _LABEL_ES[latest.top1_label] || 'Análisis completado'
+  const confPct = latest.top1_confidence != null
+    ? Math.round(latest.top1_confidence * 100)
+    : null
 
   latestEl.innerHTML = `
     <p class="text-[10px] text-white/55 uppercase tracking-widest mb-3">
-      Análisis #${latest.id} · ${dateStr}
+      Análisis #${userNum} · ${dateStr}
     </p>
-    <h2 class="font-display text-lg text-cream mb-1">Análisis de piel</h2>
-    <p class="text-xs text-white/70 mb-1">Estado: ${_statusLabel(latest.status)}</p>
-    <p class="text-[11px] text-white/50 mb-4">
-      La clasificación ML de condiciones dérmicas se activará en la Fase 8 del proyecto.
-    </p>
+    <h2 class="font-display text-lg text-cream mb-1">${label}</h2>
+    ${confPct !== null
+      ? `<p class="text-xs text-white/70 mb-4">Confianza: ${confPct}%</p>`
+      : `<p class="text-xs text-white/50 mb-4">Estado: ${_statusLabel(latest.status)}</p>`
+    }
     <div class="flex gap-2 flex-wrap">
       <button
         class="bg-bark text-ink text-xs font-semibold py-2 px-4 rounded-full hover:bg-bark/90 transition-colors"
@@ -106,27 +160,27 @@ function _populateHistoryTab(analyses) {
     return
   }
 
-  container.innerHTML = analyses.map((a) => {
-    const dateStr    = _formatDate(a.created_at)
-    const statusLbl  = _statusLabel(a.status)
-    const statusCls  = a.status === 'completed' ? 'text-ok'
-                     : a.status === 'failed'    ? 'text-rose'
-                     :                            'text-warn'
+  _analysisUserNum = {}
+  container.innerHTML = analyses.map((a, i) => {
+    const userNum = analyses.length - i   // oldest = #1, newest = #N
+    _analysisUserNum[a.id] = userNum
+    const dateStr = _formatDate(a.created_at)
+    const label   = _LABEL_ES[a.top1_label] || 'Análisis de piel'
 
     return `
       <div
         class="card card-body mb-3 cursor-pointer hover:shadow-md transition-shadow"
         onclick="openDetail(${a.id})"
         role="button"
-        aria-label="Abrir análisis #${a.id}"
+        aria-label="Abrir análisis #${userNum}"
       >
         <div class="flex items-center justify-between mb-1">
           <span class="text-[10px] font-bold text-forest bg-forest/10 rounded px-2 py-0.5">
-            Análisis #${a.id}
+            Análisis #${userNum}
           </span>
-          <span class="text-[10px] ${statusCls} font-semibold">${statusLbl}</span>
+          <span class="text-[10px] text-ok font-semibold">Completado</span>
         </div>
-        <p class="text-xs font-semibold text-ink mb-0.5">Análisis de piel</p>
+        <p class="text-xs font-semibold text-ink mb-0.5">${label}</p>
         <p class="text-[10px] text-slate">${dateStr}</p>
         <div class="flex justify-end mt-2">
           <span class="text-[10px] text-forest font-semibold">Ver detalle →</span>
@@ -162,7 +216,6 @@ function _populateRoutineTab(routine) {
   if (amEl) amEl.innerHTML = _renderSteps(amSteps)
   if (pmEl) pmEl.innerHTML = _renderSteps(pmSteps)
 
-  // Grid de productos actuales
   if (curEl) {
     const active = routine.steps.filter(s => s.is_active)
     curEl.innerHTML = active.length
@@ -201,9 +254,10 @@ function _renderSteps(steps) {
 // ── DETALLE DE ANÁLISIS ───────────────────────────────────────────────────
 
 export async function openDetail(id) {
-  const token  = localStorage.getItem('skinai_token')
-  const list   = document.getElementById('hist-list')
-  const detail = document.getElementById('hist-detail')
+  const token   = localStorage.getItem('skinai_token')
+  const list    = document.getElementById('hist-list')
+  const detail  = document.getElementById('hist-detail')
+  const userNum = _analysisUserNum[id] || '?'
   if (!list || !detail) return
 
   list.classList.add('hidden')
@@ -217,7 +271,7 @@ export async function openDetail(id) {
     })
     if (!res.ok) throw new Error('No se pudo cargar el análisis.')
     const analysis = await res.json()
-    _renderDetail(analysis, detail)
+    _renderDetail(analysis, detail, userNum)
   } catch (err) {
     detail.innerHTML = `
       <button class="btn-back-dark mb-4 text-sm" onclick="closeDetail()">← Volver al historial</button>
@@ -225,85 +279,183 @@ export async function openDetail(id) {
   }
 }
 
-const _LABEL_ES = {
-  'acne-comedonal':       'Acné comedonal',
-  'acne-excoriated':      'Acné excoriado',
-  'acne-inflammatory':    'Acné inflamatorio',
-  'perioral-dermatitis':  'Dermatitis perioral',
-  'rosacea-etr':          'Rosácea ETR',
-  'rosacea-inflammatory': 'Rosácea inflamatoria',
-  'seborrheic-dermatitis':'Dermatitis seborreica',
-}
-
-const _ZONA_ES = {
-  'acne-comedonal':       'Zona T — puntos negros y blancos',
-  'acne-excoriated':      'Mejillas y mentón — marcas de rascado',
-  'acne-inflammatory':    'Cara — pústulas y nódulos',
-  'perioral-dermatitis':  'Alrededor de la boca',
-  'rosacea-etr':          'Mejillas simétricas',
-  'rosacea-inflammatory': 'Centro facial',
-  'seborrheic-dermatitis':'Cejas, nariz y zona T',
-}
+// ── RENDERIZADO DE RESULTADOS ML ──────────────────────────────────────────
 
 function _renderMLResults(a) {
   if (a.status !== 'completed' || !a.top1_label) {
     return `<div class="info-box text-[11px]">Resultados no disponibles.</div>`
   }
 
-  const topConf  = Math.round(a.top1_confidence * 100)
-  const topLabel = _LABEL_ES[a.top1_label]  || a.top1_label
-  const zona     = _ZONA_ES[a.top1_label]   || ''
+  const r          = a.result || {}
+  const condition  = r.condition  || a.top1_label
+  const confidence = r.confidence ?? a.top1_confidence ?? 0
+  const confPct    = Math.round(confidence * 100)
+  const condLabel  = _LABEL_ES[condition] || condition
+  const desc       = _DESCRIPCIONES[condition] || ''
+  const severity   = r.severity_score ?? 0
+  const sevPct     = Math.round(severity * 100)
+  const worstZone  = r.worst_zone ? (_ZONE_ES[r.worst_zone] || r.worst_zone) : '—'
+  const zonesCount = r.affected_zones_count ?? 0
 
-  let top5HTML = ''
-  if (a.result?.all_scores) {
-    const sorted = Object.entries(a.result.all_scores)
-      .sort((x, y) => y[1] - x[1])
-      .slice(0, 5)
+  const _sevBg    = v => v < 0.25 ? 'bg-ok'    : v < 0.5 ? 'bg-warn'    : 'bg-rose'
+  const _sevText  = v => v < 0.25 ? 'text-ok'  : v < 0.5 ? 'text-warn'  : 'text-rose'
+  const _sevLabel = v => v < 0.25 ? 'Leve'     : v < 0.5 ? 'Moderado'   : 'Alto'
+  const confBg    = confPct >= 60  ? 'bg-forest' : confPct >= 40 ? 'bg-warn' : 'bg-slate/40'
+  const confText  = confPct >= 60  ? 'text-forest' : confPct >= 40 ? 'text-warn' : 'text-slate'
 
-    top5HTML = `
-      <p class="text-[10px] text-slate uppercase tracking-widest mb-2">Top 5 condiciones</p>
-      ${sorted.map(([lbl, conf], i) => {
-        const pct   = Math.round(conf * 100)
-        const name  = _LABEL_ES[lbl] || lbl
-        const isTop = i === 0
-        return `
-          <div class="flex items-center gap-2 py-1.5 ${i < sorted.length - 1 ? 'border-b border-sand' : ''}">
-            <span class="text-[10px] text-slate/60 w-5 flex-shrink-0">#${i + 1}</span>
-            <div class="flex-1 min-w-0">
-              <p class="text-[11px] ${isTop ? 'font-semibold text-ink' : 'text-ink/70'} truncate">${name}</p>
-              <div class="w-full bg-sand rounded-full h-1 mt-0.5">
-                <div class="${isTop ? 'bg-forest' : 'bg-slate/40'} h-1 rounded-full" style="width:${pct}%"></div>
+  // ── 1. Diagnóstico principal ─────────────────────────────────────────────
+  const diagHTML = `
+    <div class="bg-gradient-to-br from-forest/8 to-forest/3 border border-forest/20 rounded-2xl p-4 mb-3">
+      <p class="text-[9px] text-forest uppercase tracking-widest font-semibold mb-2">
+        Diagnóstico principal
+      </p>
+      <p class="text-[17px] font-bold text-ink leading-snug">${condLabel}</p>
+      ${desc ? `<p class="text-[11px] text-slate mt-1 leading-relaxed">${desc}</p>` : ''}
+      <div class="mt-3">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-[10px] text-slate">Confianza del modelo</span>
+          <span class="text-[13px] font-bold ${confText}">${confPct}%</span>
+        </div>
+        <div class="w-full bg-sand rounded-full h-2">
+          <div class="${confBg} h-2 rounded-full transition-all" style="width:${confPct}%"></div>
+        </div>
+      </div>
+    </div>`
+
+  // ── 2. Severidad + zona + conteo ─────────────────────────────────────────
+  const statsHTML = `
+    <div class="grid grid-cols-3 gap-2 mb-3">
+      <div class="bg-sand/50 rounded-xl p-3 text-center">
+        <p class="text-[9px] text-slate uppercase tracking-widest mb-1">Severidad</p>
+        <p class="text-[18px] font-bold ${_sevText(severity)}">${sevPct}%</p>
+        <p class="text-[9px] ${_sevText(severity)} font-medium mt-0.5">${_sevLabel(severity)}</p>
+        <div class="w-full bg-sand rounded-full h-1 mt-1.5">
+          <div class="${_sevBg(severity)} h-1 rounded-full" style="width:${sevPct}%"></div>
+        </div>
+      </div>
+      <div class="bg-sand/50 rounded-xl p-3 text-center col-span-2 flex flex-col justify-center">
+        <p class="text-[9px] text-slate uppercase tracking-widest mb-1">Zona más afectada</p>
+        <p class="text-[13px] font-bold text-ink leading-tight">${worstZone}</p>
+        <p class="text-[9px] text-slate mt-1.5">
+          ${zonesCount} zona${zonesCount !== 1 ? 's' : ''} activa${zonesCount !== 1 ? 's' : ''}
+        </p>
+      </div>
+    </div>`
+
+  // ── 3. Top N condiciones ──────────────────────────────────────────────────
+  let topNHTML = ''
+  if (r.top_n?.length) {
+    topNHTML = `
+      <div class="bg-sand/30 rounded-2xl p-3 mb-3">
+        <p class="text-[9px] text-slate uppercase tracking-widest font-semibold mb-2">
+          Condiciones detectadas
+        </p>
+        ${r.top_n.map((item, i) => {
+          const pct   = Math.round(item.prob * 100)
+          const name  = _LABEL_ES[item.label] || item.label
+          const isTop = i === 0
+          return `
+            <div class="flex items-center gap-2 py-1.5 ${i < r.top_n.length - 1 ? 'border-b border-sand' : ''}">
+              <span class="text-[9px] text-slate/50 w-4 flex-shrink-0">${i + 1}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-[11px] ${isTop ? 'font-semibold text-ink' : 'text-ink/65'} truncate">${name}</p>
+                <div class="w-full bg-sand rounded-full h-1 mt-0.5">
+                  <div class="${isTop ? 'bg-forest' : 'bg-slate/30'} h-1 rounded-full" style="width:${pct}%"></div>
+                </div>
               </div>
-            </div>
-            <span class="text-[11px] ${isTop ? 'font-semibold text-forest' : 'text-slate'} flex-shrink-0 w-9 text-right">${pct}%</span>
-          </div>`
-      }).join('')}`
+              <span class="text-[11px] ${isTop ? 'font-bold text-forest' : 'text-slate'} w-8 text-right flex-shrink-0">
+                ${pct}%
+              </span>
+            </div>`
+        }).join('')}
+      </div>`
   }
 
-  const excoriatedNote = a.top1_label === 'acne-excoriated'
-    ? `<div class="info-box text-[11px] mt-3">
-         Este patrón puede beneficiarse de apoyo profesional para el manejo
-         del hábito de rascado. Consulta a tu médico.
-       </div>`
-    : ''
+  // ── 4. Zonas principales ─────────────────────────────────────────────────
+  let zonesDisplayHTML = ''
+  const zonesDisp = r.zones_display || {}
+  if (Object.keys(zonesDisp).length) {
+    zonesDisplayHTML = `
+      <div class="mb-3">
+        <p class="text-[9px] text-slate uppercase tracking-widest font-semibold mb-2">
+          Zonas principales
+        </p>
+        <div class="space-y-2">
+          ${Object.entries(zonesDisp).map(([zona, m]) => {
+            const name    = _ZONE_ES[zona] || zona
+            const zSev    = Math.round(m.severity * 100)
+            const eritPct = Math.round((m.erythema  ?? 0) * 100)
+            const comPct  = Math.round((m.comedones ?? 0) * 100)
+            const scaPct  = Math.round((m.scaling ?? m.descamacion ?? 0) * 100)
+            return `
+              <div class="bg-sand/40 rounded-xl p-3">
+                <div class="flex justify-between items-center mb-1.5">
+                  <span class="text-[11px] font-medium text-ink">${name}</span>
+                  <span class="text-[11px] font-bold ${_sevText(m.severity)}">${_sevLabel(m.severity)} · ${zSev}%</span>
+                </div>
+                <div class="w-full bg-sand rounded-full h-1.5 mb-2">
+                  <div class="${_sevBg(m.severity)} h-1.5 rounded-full" style="width:${zSev}%"></div>
+                </div>
+                <div class="flex gap-1.5 flex-wrap">
+                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">
+                    eritema ${eritPct}%
+                  </span>
+                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">
+                    comedones ${comPct}%
+                  </span>
+                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">
+                    escamas ${scaPct}%
+                  </span>
+                </div>
+              </div>`
+          }).join('')}
+        </div>
+      </div>`
+  }
 
-  return `
-    <div class="bg-forest/5 border border-forest/20 rounded-xl p-3 mb-4">
-      <p class="text-[10px] text-slate uppercase tracking-widest mb-1">Diagnóstico principal</p>
-      <p class="text-base font-semibold text-ink leading-snug">${topLabel}</p>
-      ${zona ? `<p class="text-[11px] text-slate mt-0.5">${zona}</p>` : ''}
-      <p class="text-[13px] font-bold text-forest mt-1.5">${topConf}% de confianza</p>
-    </div>
-    ${top5HTML}
-    ${excoriatedNote}
-    <p class="text-[10px] text-slate/50 mt-3">
-      Modelo: ${a.result?.model_version || 'EfficientNet-B3'} ·
-      TTA ×${a.result?.tta_passes ?? 5} ·
-      ${a.result?.compute || 'cpu'}
-    </p>`
+  // ── 5. Subzonas diagnósticas ─────────────────────────────────────────────
+  let zonesDiagHTML = ''
+  const zonesDiag = r.zones_diagnostic || {}
+  if (Object.keys(zonesDiag).length) {
+    zonesDiagHTML = `
+      <div class="mb-1">
+        <p class="text-[9px] text-slate uppercase tracking-widest font-semibold mb-2">
+          Subzonas diagnósticas
+        </p>
+        <div class="grid grid-cols-2 gap-1.5">
+          ${Object.entries(zonesDiag).map(([zona, m]) => {
+            const name    = _ZONE_ES[zona] || zona
+            const zSev    = Math.round(m.severity * 100)
+            const eritPct = Math.round((m.erythema  ?? 0) * 100)
+            const comPct  = Math.round((m.comedones ?? 0) * 100)
+            return `
+              <div class="bg-sand/40 rounded-xl p-2.5">
+                <p class="text-[10px] font-medium text-ink leading-tight mb-1.5">${name}</p>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-[9px] text-slate">Sev.</span>
+                  <span class="text-[10px] font-bold ${_sevText(m.severity)}">${zSev}%</span>
+                </div>
+                <div class="w-full bg-sand rounded-full h-1 mb-1.5">
+                  <div class="${_sevBg(m.severity)} h-1 rounded-full" style="width:${zSev}%"></div>
+                </div>
+                <div class="flex gap-1 flex-wrap">
+                  <span class="text-[8px] bg-white/70 rounded-full px-1.5 py-0.5 text-slate/70">
+                    er ${eritPct}%
+                  </span>
+                  <span class="text-[8px] bg-white/70 rounded-full px-1.5 py-0.5 text-slate/70">
+                    co ${comPct}%
+                  </span>
+                </div>
+              </div>`
+          }).join('')}
+        </div>
+      </div>`
+  }
+
+  return `${diagHTML}${statsHTML}${topNHTML}${zonesDisplayHTML}${zonesDiagHTML}`
 }
 
-function _renderDetail(a, container) {
+function _renderDetail(a, container, userNum) {
   const token = localStorage.getItem('skinai_token')
   const dateStr = _formatDate(a.created_at)
 
@@ -313,11 +465,10 @@ function _renderDetail(a, container) {
     ? '<span class="bg-rose/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Error</span>'
     : '<span class="bg-warn/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Procesando</span>'
 
-  // Imagen: usa el endpoint con token para autenticarse de forma segura
   const imgSection = a.censored_filename || a.original_filename
     ? `<img
          src="${API}/analysis/${a.id}/image?token=${token}"
-         alt="Imagen procesada análisis #${a.id}"
+         alt="Imagen procesada análisis #${userNum}"
          class="w-full h-auto block"
          onerror="this.parentElement.innerHTML='<p class=\\'text-xs text-slate text-center py-8\\'>Imagen no disponible</p>'"
        >`
@@ -333,11 +484,13 @@ function _renderDetail(a, container) {
     <div class="bg-gradient-diag rounded-card p-4 text-white mb-4">
       <div class="flex items-center justify-between mb-1.5">
         <span class="bg-white/15 rounded-md px-2 py-0.5 text-[11px] font-bold">
-          Análisis #${a.id}
+          Análisis #${userNum}
         </span>
         ${statusBadge}
       </div>
-      <h2 class="font-display text-lg text-cream mb-0.5">Análisis de piel</h2>
+      <h2 class="font-display text-lg text-cream mb-0.5">
+        ${_LABEL_ES[a.top1_label] || 'Análisis de piel'}
+      </h2>
       <p class="text-[11px] text-white/55">${dateStr}</p>
     </div>
 

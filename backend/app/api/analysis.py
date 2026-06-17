@@ -7,7 +7,14 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from PIL import Image
+from PIL import Image, ImageOps
+
+try:
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+    _HEIC_SUPPORT = True
+except ImportError:
+    _HEIC_SUPPORT = False
 
 from app import db_scheme as models, schemas
 from app.api import deps
@@ -22,7 +29,11 @@ os.makedirs(UPLOAD_DIR,    exist_ok=True)
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
 MAX_FILE_SIZE        = 10 * 1024 * 1024          # 10 MB
-ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png"]
+ALLOWED_CONTENT_TYPES = [
+    "image/jpeg", "image/png", "image/webp",
+    "image/bmp", "image/tiff",
+    "image/heic", "image/heif",
+]
 
 
 # ── HELPERS ───────────────────────────────────────────────────────────────
@@ -36,7 +47,12 @@ def _validate_image(contents: bytes, content_type: str) -> None:
     if content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Formato no permitido. Solo JPEG y PNG.",
+            detail="Formato no permitido. Se aceptan: JPEG, PNG, WebP, BMP, TIFF y HEIC.",
+        )
+    if content_type in ("image/heic", "image/heif") and not _HEIC_SUPPORT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato HEIC no compatible en este servidor. Convierte la imagen a JPEG antes de subir.",
         )
     try:
         Image.open(io.BytesIO(contents)).verify()
@@ -45,6 +61,18 @@ def _validate_image(contents: bytes, content_type: str) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El archivo no es una imagen válida o está corrupto.",
         )
+
+
+def _normalize_to_jpeg(contents: bytes) -> bytes:
+    """Convierte cualquier formato aceptado a JPEG y aplica la orientación EXIF.
+    Garantiza que cv2.imread pueda leer el archivo sin importar el origen del dispositivo."""
+    img = Image.open(io.BytesIO(contents))
+    img = ImageOps.exif_transpose(img)
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=92)
+    return buf.getvalue()
 
 
 # ── LA LÓGICA DE PROCESAMIENTO SE MOVIÓ A CELERY (app.worker.tasks) ──────────
@@ -82,10 +110,10 @@ async def upload_image(
 
     contents = await file.read()
     _validate_image(contents, file.content_type)
+    contents = _normalize_to_jpeg(contents)
 
-    ext           = (file.filename or "image").rsplit(".", 1)[-1].lower()
-    original_name = f"{uuid.uuid4()}.{ext}"
-    censored_name = f"{uuid.uuid4()}_censored.{ext}"
+    original_name = f"{uuid.uuid4()}.jpg"
+    censored_name = f"{uuid.uuid4()}_censored.jpg"
     input_path    = os.path.join(UPLOAD_DIR, original_name)
     output_path   = os.path.join(PROCESSED_DIR, censored_name)
 
@@ -126,10 +154,13 @@ def get_history(
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db),
 ):
-    """Lista paginada de análisis del usuario, del más reciente al más antiguo."""
+    """Lista paginada de análisis completados del usuario, del más reciente al más antiguo."""
     return (
         db.query(models.Analysis)
-        .filter(models.Analysis.user_id == current_user.id)
+        .filter(
+            models.Analysis.user_id == current_user.id,
+            models.Analysis.status == "completed",
+        )
         .order_by(models.Analysis.created_at.desc())
         .offset(skip)
         .limit(limit)
@@ -176,14 +207,15 @@ def get_analysis(
 @router.get("/{analysis_id}/image")
 def get_analysis_image(
     analysis_id: int,
-    current_user: models.User = Depends(deps.get_current_user),
+    current_user: models.User = Depends(deps.get_current_user_optional),
     db: Session = Depends(deps.get_db),
 ):
     """
     Sirve la imagen censurada del análisis.
-    Requiere autenticación obligatoria para garantizar que solo el propietario
-    pueda acceder a sus imágenes.
+    Acepta el token vía header Authorization o query param ?token= (necesario para <img src>).
     """
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Autenticación requerida.")
     analysis = db.query(models.Analysis).filter(
         models.Analysis.id == analysis_id,
         models.Analysis.user_id == current_user.id,

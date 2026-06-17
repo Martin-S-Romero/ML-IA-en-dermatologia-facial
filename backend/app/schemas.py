@@ -78,6 +78,8 @@ class SkinProfileCreate(BaseModel):
 
     @root_validator(pre=True)
     def accept_age_field(cls, values):
+        if not isinstance(values, dict):
+            return values
         age = values.pop('age', None)
         if age is not None and values.get('birth_date') is None:
             values['birth_date'] = date(date.today().year - int(age), 1, 1)
@@ -146,6 +148,7 @@ class AnalysisSnapshot(BaseModel):
     censored_filename: Optional[str]   = None
     top1_label:        Optional[str]   = None
     top1_confidence:   Optional[float] = None
+    result:            Optional[Any]   = None
     created_at:        datetime
 
     class Config:

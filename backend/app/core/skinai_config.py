@@ -262,6 +262,18 @@ BOOST_PERIORAL_DIRECT      = 1.6   # eritema en zona perioral directa (más espe
 # tiene mayor probabilidad de persistir (condiciones crónicas).
 # Factor proporcional a la confianza previa: boost = 1 + conf_previa * BASE
 # Con conf=0.90 → boost ×1.45 | conf=0.56 → boost ×1.28 | conf=0.25 → boost ×1.125
+# =============================================================================
+# DIAGNÓSTICO DE EXCLUSIÓN DE PIEL SANA
+# =============================================================================
+
+# Si alguna condición patológica supera este umbral después de los boosts zonales,
+# healthy-skin no puede quedar como diagnóstico principal.
+UMBRAL_EVIDENCIA_PATOLOGICA    = 0.20
+
+# Cap: healthy-skin no puede superar este factor × la mejor condición patológica.
+# 0.8 → healthy-skin queda ~20 % por debajo de la condición más probable.
+HEALTHY_SKIN_CAP_FACTOR        = 0.80
+
 BOOST_CONTINUIDAD_BASE       = 0.5
 
 # Umbral mínimo de confianza previa para aplicar el boost de continuidad.
