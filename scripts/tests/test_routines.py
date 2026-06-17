@@ -29,14 +29,16 @@ def test_routines_endpoints():
                 "time_of_day": "am",
                 "product_name": "Limpiador Suave",
                 "product_category": "cleanser",
-                "reason": "Limpieza matutina"
+                "reason": "Limpieza matutina",
+                "is_active": True
             },
             {
                 "step_order": 2,
                 "time_of_day": "am",
                 "product_name": "Protector Solar FPS 50",
                 "product_category": "spf",
-                "reason": "Proteccion solar"
+                "reason": "Proteccion solar",
+                "is_active": True
             }
         ]
     }

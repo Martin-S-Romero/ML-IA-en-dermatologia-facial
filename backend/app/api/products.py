@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 from app import db_scheme as models, schemas
 from app.api import deps
+from app.core.recommendation_engine import get_recommendations
 
 router = APIRouter()
 
@@ -13,6 +14,38 @@ Los datos provienen del scraper de INCIDecoder (backend/scraper/).
 """
 
 # ── ENDPOINTS ─────────────────────────────────────────────────────────────────
+
+@router.get("/recommendations/{analysis_id}", response_model=schemas.RecommendationsOut)
+def get_product_recommendations(
+    analysis_id: int,
+    categories: List[str] = Query(
+        default=['cleanser', 'moisturizer', 'spf', 'serum'],
+        description="Categorías a rankear. Valores válidos: cleanser | moisturizer | spf | serum | exfoliant | retinoid | spot | toner | eye | mask | oil | other",
+    ),
+    top_n: int = Query(default=5, ge=1, le=20, description="Productos a retornar por categoría"),
+    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db),
+):
+    """
+    Retorna los mejores productos por categoría para la condición detectada
+    en el análisis indicado. Usa scoring de ingredientes (Opción C).
+
+    - Productos con ingredientes contraindicados para la condición son excluidos.
+    - El score refleja: posición en fórmula, rating INCIDecoder, highlights compatibles,
+      comedogenicidad/irritancia, y un boost por severidad alta.
+    - El score solo es comparable dentro de la misma categoría.
+    """
+    result = get_recommendations(
+        db=db,
+        analysis_id=analysis_id,
+        user_id=current_user.id,
+        categories=categories,
+        top_n=top_n,
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Análisis no encontrado")
+    return result
+
 
 @router.get("/search", response_model=list[schemas.ProductOut])
 def search_products(
