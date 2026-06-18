@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.celery_app import celery_app
 from app import db_scheme as models
-from app.core.face_censor_v3 import FaceCensor
+from app.core.face_censor import FaceCensor
 from app.core.ai_runner import run_inference
 from app.core.skinai_config import EDAD_DEFAULT
 

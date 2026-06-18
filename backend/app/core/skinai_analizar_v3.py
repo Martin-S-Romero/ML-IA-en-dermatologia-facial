@@ -1,48 +1,47 @@
 """
-skinai_analizar_v3.py  —  SkinAI
-==================================
-Módulo de pipeline clínico: ajuste de probabilidades, construcción de resultado
-y cálculo de delta entre análisis consecutivos.
+skinai_analizar_v3.py  —  SkinAI  (librería de lógica clínica)
+==============================================================
+Modelo v12 · EfficientNetB2 · 7 clases.
 
-Exporta:
-    ajustar_por_perfil()           — boosts por perfil clínico y continuidad diagnóstica
-    construir_resultado_completo() — ensambla el dict de resultado que se guarda en BD
-    calcular_delta()               — compara resultado actual vs análisis anterior
+Este módulo NO carga el modelo ni ejecuta TTA: eso vive en ai_runner.py.
+Aquí solo residen las funciones de lógica clínica y los diccionarios de
+datos por condición. ai_runner.py importa y orquesta estas tres funciones:
 
-Constantes de texto (útiles para el frontend):
-    DESCRIPCIONES   — descripción legible por condición
-    MENSAJES_ALERTA — advertencias clínicas por condición
+    - ajustar_por_perfil()           ajuste por perfil + continuidad diagnóstica
+    - construir_resultado_completo() arma el dict que se guarda en la BD
+    - calcular_delta()               compara dos análisis consecutivos
 
-El pipeline completo de inferencia (carga de modelo, TTA, censura) vive en ai_runner.py.
 """
 
 import numpy as np
 from datetime import datetime
 
-from app.core.skinai_config import (
-    # inferencia
+from .skinai_config import (
+    # inferencia / salida
     CONFIDENCE_THRESHOLD, SEVERITY_TREND_THRESHOLD,
+    DIAGNOSTIC_NOTE_LOW_CONF_FACTOR,
+    # modelo / zonas (para metadata del resultado)
+    MODEL_ARCH, ZONAS_DISPLAY, ZONE_SCHEMA_VERSION,
     # boosts de perfil
     BOOST_PERFIL_ROSACEA_ETR, BOOST_PERFIL_ROSACEA_INFL,
     BOOST_PERFIL_ACNE_INFL, BOOST_PERFIL_ACNE_COMEDONAL, BOOST_PERFIL_ACNE_EXCORIADO,
-    BOOST_PERFIL_DERMATITIS,
-    BOOST_PIEL_SENSIBLE_ROSACEA, BOOST_PIEL_SENSIBLE_SEBORRHEIC,
-    BOOST_PIEL_GRASA_COMEDONAL, BOOST_PIEL_GRASA_INFL, BOOST_PIEL_SECA_SEBORRHEIC,
+    BOOST_PERFIL_PERIORAL,
+    BOOST_PIEL_SENSIBLE_ROSACEA,
+    BOOST_PIEL_GRASA_COMEDONAL, BOOST_PIEL_GRASA_INFL,
     BOOST_FOTOTIPO_BAJO_ROSACEA, BOOST_FOTOTIPO_BAJO_ROSACEA_INFL, BOOST_FOTOTIPO_ALTO_ROSACEA,
     EDAD_UMBRAL_JOVEN, EDAD_UMBRAL_ADULTO, EDAD_DEFAULT,
     BOOST_EDAD_JOVEN_INFL, BOOST_EDAD_JOVEN_COMEDONAL,
     BOOST_EDAD_ADULTO_ROSACEA, BOOST_EDAD_ADULTO_ROSACEA_INFL,
-    BOOST_AC_SEBORRHEIC, BOOST_FEMENINO_EXCORIATED,
-    # modelo y zonas
-    MODEL_ARCH, ZONAS_DISPLAY, ZONE_SCHEMA_VERSION,
+    BOOST_FEMENINO_EXCORIATED,
     # continuidad diagnóstica
     BOOST_CONTINUIDAD_BASE, BOOST_CONTINUIDAD_MIN_CONF,
     PENALTY_TRANSICION_IMPROBABLE, TRANSICIONES_IMPROBABLES,
-    DIAGNOSTIC_NOTE_LOW_CONF_FACTOR,
 )
 
 
-# ── Datos clínicos por condición ──────────────────────────────────────────────
+# =============================================================================
+# DATOS CLÍNICOS POR CONDICIÓN  (7 clases — v12)
+# =============================================================================
 
 DESCRIPCIONES = {
     'acne-comedonal':        'Acné comedonal — puntos negros/blancos, zona T',
@@ -51,7 +50,6 @@ DESCRIPCIONES = {
     'perioral-dermatitis':   'Dermatitis perioral — zona alrededor de la boca',
     'rosacea-etr':           'Rosácea eritematotelangiectásica — mejillas simétricas',
     'rosacea-inflammatory':  'Rosácea inflamatoria — centro facial',
-    'seborrheic-dermatitis': 'Dermatitis seborreica — cejas, nariz, zona T',
     'healthy-skin':          'Piel sin lesiones detectables',
 }
 
@@ -68,15 +66,11 @@ MENSAJES_ALERTA = {
         'La rosácea inflamatoria requiere evaluación médica. Evita desencadenantes '
         'como calor, alcohol y productos con fragancia.'
     ),
-    'seborrheic-dermatitis': (
-        'La dermatitis seborreica crónica o severa puede confundirse con psoriasis. '
-        'Consulta a un dermatólogo si los síntomas persisten o se extienden.'
-    ),
 }
 
 
 # =============================================================================
-# AJUSTE POR PERFIL CLÍNICO
+# AJUSTE POR PERFIL CLÍNICO + CONTINUIDAD DIAGNÓSTICA
 # =============================================================================
 
 def ajustar_por_perfil(probs_raw: np.ndarray, perfil: dict,
@@ -85,14 +79,6 @@ def ajustar_por_perfil(probs_raw: np.ndarray, perfil: dict,
     """
     Aplica multiplicadores a las probabilidades según el perfil del usuario
     y, si existe, el resultado del análisis anterior (continuidad diagnóstica).
-
-    Capas de ajuste:
-    1. Perfil clínico declarado: historial, tipo de piel, fototipo, edad, AC, sexo.
-    2. Continuidad diagnóstica: la condición previa actúa como prior bayesiano.
-       - Boost de continuidad proporcional a la confianza del análisis anterior.
-       - Penalización de transiciones clínicamente improbables entre sesiones.
-
-    Los factores y sus referencias clínicas están en skinai_config.py.
     """
     probs = probs_raw.copy()
 
@@ -107,24 +93,23 @@ def ajustar_por_perfil(probs_raw: np.ndarray, perfil: dict,
     historial  = perfil.get('historial', [])
     exposicion = perfil.get('exposicion_ac', 'No')
 
-    if 'Rosácea' in historial:
+    if 'Rosácea'    in historial:
         _boost('rosacea-etr', BOOST_PERFIL_ROSACEA_ETR)
         _boost('rosacea-inflammatory', BOOST_PERFIL_ROSACEA_INFL)
-    if 'Acné' in historial:
+    if 'Acné'       in historial:
         _boost('acne-inflammatory', BOOST_PERFIL_ACNE_INFL)
         _boost('acne-comedonal', BOOST_PERFIL_ACNE_COMEDONAL)
         _boost('acne-excoriated', BOOST_PERFIL_ACNE_EXCORIADO)
     if 'Dermatitis' in historial:
-        _boost('seborrheic-dermatitis', BOOST_PERFIL_DERMATITIS)
+        # La única dermatitis en el modelo de 7 clases es la perioral.
+        _boost('perioral-dermatitis', BOOST_PERFIL_PERIORAL)
 
     if tipo_piel == 'Sensible':
         _boost('rosacea-etr', BOOST_PIEL_SENSIBLE_ROSACEA)
-        _boost('seborrheic-dermatitis', BOOST_PIEL_SENSIBLE_SEBORRHEIC)
     if tipo_piel == 'Grasa':
         _boost('acne-comedonal', BOOST_PIEL_GRASA_COMEDONAL)
         _boost('acne-inflammatory', BOOST_PIEL_GRASA_INFL)
-    if tipo_piel == 'Seca':
-        _boost('seborrheic-dermatitis', BOOST_PIEL_SECA_SEBORRHEIC)
+    # 'Seca' ya no ajusta ninguna clase (su único efecto era boost seborreico).
 
     if fototipo in ['I', 'II']:
         _boost('rosacea-etr', BOOST_FOTOTIPO_BAJO_ROSACEA)
@@ -139,20 +124,26 @@ def ajustar_por_perfil(probs_raw: np.ndarray, perfil: dict,
         _boost('rosacea-etr', BOOST_EDAD_ADULTO_ROSACEA)
         _boost('rosacea-inflammatory', BOOST_EDAD_ADULTO_ROSACEA_INFL)
 
-    if exposicion == 'Sí, siempre':
-        _boost('seborrheic-dermatitis', BOOST_AC_SEBORRHEIC)
     if sexo == 'Femenino':
         _boost('acne-excoriated', BOOST_FEMENINO_EXCORIATED)
+    # 'exposicion_ac' ya no ajusta ninguna clase (su efecto era boost seborreico).
 
-    # ── Continuidad diagnóstica ───────────────────────────────────────────────
+    # ── Continuidad diagnóstica (si existe análisis anterior) ─────────────────
     if result_anterior:
-        cond_previa = result_anterior.get('condition')
-        conf_previa = result_anterior.get('confidence', 0.0)
+        cond_previa  = result_anterior.get('condition')
+        conf_previa  = result_anterior.get('confidence', 0.0)
 
+        # Boost de continuidad: condición crónica previamente diagnosticada
+        # tiene mayor probabilidad de persistir. Solo aplica si la confianza
+        # previa supera el umbral mínimo de credibilidad.
         if cond_previa and conf_previa >= BOOST_CONTINUIDAD_MIN_CONF:
             factor_continuidad = round(1.0 + conf_previa * BOOST_CONTINUIDAD_BASE, 3)
             _boost(cond_previa, factor_continuidad)
 
+        # Penalización de transiciones clínicamente improbables:
+        # si la condición previa está en el mapa de incompatibilidades,
+        # las condiciones listadas reciben una penalización para que
+        # necesiten evidencia visual más fuerte antes de sustituir el diagnóstico previo.
         if cond_previa in TRANSICIONES_IMPROBABLES:
             for cond_incompatible in TRANSICIONES_IMPROBABLES[cond_previa]:
                 _boost(cond_incompatible, PENALTY_TRANSICION_IMPROBABLE)
@@ -162,7 +153,7 @@ def ajustar_por_perfil(probs_raw: np.ndarray, perfil: dict,
 
 
 # =============================================================================
-# CONSTRUCCIÓN DEL RESULTADO COMPLETO
+# CONSTRUIR RESULTADO COMPLETO
 # =============================================================================
 
 def construir_resultado_completo(probs_array: np.ndarray,
@@ -170,36 +161,8 @@ def construir_resultado_completo(probs_array: np.ndarray,
                                  analisis_zonal: dict | None,
                                  perfil: dict | None = None,
                                  result_anterior: dict | None = None,
-                                 n_aug: int = 5) -> dict:
-    """
-    Construye el dict completo que se guarda en analyses.result en la BD.
+                                 tta_passes: int = 5) -> dict:
 
-    Estructura del resultado
-    ------------------------
-    {
-      condition, confidence, top_n,
-      severity_score, worst_zone, affected_zones_count,
-      zones_display:    {zona: {erythema, comedones, scales, severity}},
-      zones_diagnostic: {zona: {erythema, comedones, scales, severity}},
-      profile_consistency, historical_consistency,
-      diagnostic_note (solo cuando cambia la condición con baja confianza),
-      model, tta_passes, zone_schema_version, timestamp
-    }
-
-    Notas
-    -----
-    - zones_display: zonas principales que renderiza el dashboard.
-    - zones_diagnostic: subzonas usadas internamente por ajustar_por_zona.
-    - worst_zone: solo entre zonas de display (no subzonas).
-    - profile_consistency: coherencia con historial declarado.
-    - historical_consistency: coherencia con el análisis anterior (0.0 si es el primero).
-    - diagnostic_note: advertencia cuando la condición cambia con confianza baja.
-
-    References
-    ----------
-    Severity weights: Dreno et al. 2022, JEADV.
-    Confidence threshold: Guo et al. 2017, ICML.
-    """
     sorted_idx = np.argsort(probs_array)[::-1]
     top_n = [
         {'label': clases_lista[i], 'prob': round(float(probs_array[i]), 4)}
@@ -210,6 +173,9 @@ def construir_resultado_completo(probs_array: np.ndarray,
     top1_label = top_n[0]['label'] if top_n else 'healthy-skin'
     top1_conf  = top_n[0]['prob']  if top_n else 0.0
 
+    # Métricas zonales separadas en display y diagnostic.
+    # severity por zona se lee de zone_severity — ya calculado por
+    # face_censor._analizar_zonas() con los mismos pesos. No recalcular.
     zones_display    = {}
     zones_diagnostic = {}
     if analisis_zonal:
@@ -228,17 +194,19 @@ def construir_resultado_completo(probs_array: np.ndarray,
 
     severity_score       = float(analisis_zonal['severity_score']) \
                            if analisis_zonal else 0.0
-    worst_zone           = analisis_zonal['worst_zone']            \
+    worst_zone           = analisis_zonal['worst_zone']           \
                            if analisis_zonal else None
-    affected_zones_count = analisis_zonal['affected_zones_count']  \
+    affected_zones_count = analisis_zonal['affected_zones_count'] \
                            if analisis_zonal else 0
 
+    # Consistencia con perfil declarado
+    # Si no hay historial, usa confianza de top1 como proxy
     profile_consistency = 0.0
     if perfil:
         historial_mapping = {
             'Acné':       ['acne-comedonal', 'acne-inflammatory', 'acne-excoriated'],
             'Rosácea':    ['rosacea-etr', 'rosacea-inflammatory'],
-            'Dermatitis': ['seborrheic-dermatitis', 'perioral-dermatitis'],
+            'Dermatitis': ['perioral-dermatitis'],
         }
         historial = perfil.get('historial', [])
         if historial:
@@ -247,19 +215,27 @@ def construir_resultado_completo(probs_array: np.ndarray,
                     prob_sum = sum(p['prob'] for p in top_n if p['label'] in clases)
                     profile_consistency = round(max(profile_consistency, prob_sum), 4)
         else:
+            # Sin historial: la confianza del top1 es el mejor proxy disponible
             profile_consistency = round(top1_conf, 4)
 
+    # Consistencia con el análisis anterior (historical_consistency)
+    # Mide qué tan probable es la condición actual dado el diagnóstico previo.
+    # 1.0 = misma condición que antes · 0.0 = no hay análisis anterior.
     historical_consistency = 0.0
     diagnostic_note        = None
     if result_anterior:
         cond_previa = result_anterior.get('condition')
         conf_previa = result_anterior.get('confidence', 0.0)
         if cond_previa:
+            # Probabilidad que el modelo asignó a la condición previa en este análisis
             prob_cond_previa = next(
                 (p['prob'] for p in top_n if p['label'] == cond_previa), 0.0
             )
+            # Ponderada por la confianza que tenía ese diagnóstico anterior
             historical_consistency = round(prob_cond_previa * conf_previa, 4)
 
+            # Advertencia cuando la condición cambia con confianza baja:
+            # sugiere oscilación del modelo, no cambio real de la piel.
             umbral_nota = CONFIDENCE_THRESHOLD * DIAGNOSTIC_NOTE_LOW_CONF_FACTOR
             if top1_label != cond_previa and top1_conf < umbral_nota:
                 diagnostic_note = (
@@ -282,13 +258,14 @@ def construir_resultado_completo(probs_array: np.ndarray,
         'profile_consistency':    profile_consistency,
         'historical_consistency': historical_consistency,
         'model':                  MODEL_ARCH,
-        'tta_passes':             n_aug,
+        'tta_passes':             tta_passes,
         'zone_schema_version':    ZONE_SCHEMA_VERSION,
         'timestamp':              datetime.now().isoformat(),
     }
     if diagnostic_note:
         result['diagnostic_note'] = diagnostic_note
     return result
+
 
 
 # =============================================================================
@@ -299,26 +276,10 @@ def calcular_delta(result_anterior: dict, result_actual: dict) -> dict:
     """
     Calcula diferencias numéricas entre dos resultados consecutivos.
     Alimenta los gráficos de comparación del dashboard.
-
-    Incluye detección de incompatibilidad de versiones de esquema de zonas:
-    si result_anterior fue generado con v2 (5 zonas) y result_actual con v3
-    (9 zonas), se añade 'schema_mismatch': True al delta como advertencia.
-
-    Métricas
-    --------
-    severity_delta      : diferencia absoluta del score global
-    severity_delta_pct  : cambio porcentual
-    severity_trend      : 'improving' | 'stable' | 'worsening'
-      Umbral ±0.05 — equivale a 1/5 del rango IGA scale.
-      Ref: Zaenglein et al. 2022, JAAD.
-    zones               : por zona → erythema_delta, comedones_delta,
-                          scales_delta, erythema_pct
-    condition_changed   : bool
-    affected_zones_delta: int
-    inci_score_delta    : si ambos resultados tienen inci_safety_score
     """
     delta: dict = {}
 
+    # Advertencia de incompatibilidad de esquema de zonas
     v_prev = result_anterior.get('zone_schema_version', 'v2')
     v_curr = result_actual.get('zone_schema_version', ZONE_SCHEMA_VERSION)
     if v_prev != v_curr:
@@ -329,6 +290,7 @@ def calcular_delta(result_anterior: dict, result_actual: dict) -> dict:
             f'El delta de zonas es parcial.'
         )
 
+    # Severidad global
     sev_prev = result_anterior.get('severity_score', 0.0)
     sev_curr = result_actual.get('severity_score',   0.0)
     sev_diff = round(sev_curr - sev_prev, 4)
@@ -342,6 +304,7 @@ def calcular_delta(result_anterior: dict, result_actual: dict) -> dict:
         'stable'
     )
 
+    # Delta por zona — solo zones_display para consistencia con el dashboard
     zones_prev = result_anterior.get('zones_display', result_anterior.get('zones', {}))
     zones_curr = result_actual.get('zones_display',   result_actual.get('zones', {}))
     delta['zones'] = {}
@@ -360,17 +323,20 @@ def calcular_delta(result_anterior: dict, result_actual: dict) -> dict:
                 ),
             }
 
+    # Cambio de condición
     delta['condition_changed'] = (
         result_anterior.get('condition') != result_actual.get('condition')
     )
     delta['condition_prev'] = result_anterior.get('condition')
     delta['condition_curr'] = result_actual.get('condition')
 
+    # Cambio en zonas activas
     delta['affected_zones_delta'] = (
         result_actual.get('affected_zones_count', 0) -
         result_anterior.get('affected_zones_count', 0)
     )
 
+    # Delta INCI safety score (si ambos resultados lo tienen)
     if 'inci_safety_score' in result_anterior and 'inci_safety_score' in result_actual:
         delta['inci_score_delta'] = round(
             result_actual['inci_safety_score'] -
@@ -378,3 +344,4 @@ def calcular_delta(result_anterior: dict, result_actual: dict) -> dict:
         )
 
     return delta
+

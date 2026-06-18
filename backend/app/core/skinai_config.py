@@ -18,9 +18,15 @@ Referencias de los pesos de severidad:
 # SEVERITY SCORE
 # =============================================================================
 
-ERYTHEMA_W  = 0.50
+# Pesos del severity_score. Al eliminar la clase seborrheic-dermatitis, las
+# escamas pierden su único consumidor diagnóstico (boost seborreico + penalización
+# de rosácea). Se mantiene un peso reducido porque la varianza del Laplaciano sigue
+# siendo un proxy válido de textura/rugosidad en acné, pero se redistribuye hacia
+# eritema, que es el signo inflamatorio primario de las 7 clases restantes.
+# (antes: 0.50 / 0.30 / 0.20 — diseñado para el esquema de 8 clases con seborreica)
+ERYTHEMA_W  = 0.55
 COMEDONES_W = 0.30
-SCALES_W    = 0.20
+SCALES_W    = 0.15
 
 # =============================================================================
 # UMBRALES CLÍNICOS DE ERITEMA  (IGA scale, Zaenglein 2022)
@@ -30,7 +36,6 @@ ERYTHEMA_THRESHOLD_MILD     = 0.08   # eritema leve
 ERYTHEMA_THRESHOLD_MODERATE = 0.15   # eritema moderado/alto
 
 # Umbrales de eritema por contexto clínico
-ERYTHEMA_MIN_ZONA_T      = 0.06   # mínimo en frente/nariz para co-activar seborrheic
 ERYTHEMA_MIN_PERIORAL    = 0.12   # en mentón para activar perioral-dermatitis
 ERYTHEMA_MIN_EXCORIATED  = 0.12   # difuso en mejillas para activar acne-excoriated
 ERYTHEMA_MIN_HEALTHY     = 0.06   # por debajo del cual se considera piel sana
@@ -46,11 +51,10 @@ COMEDONES_MEJILLAS = 0.10   # en mejillas para co-activar acne-inflammatory
 # =============================================================================
 # UMBRALES DE ESCAMAS
 # =============================================================================
-
-SCALES_ZONA_T         = 0.10   # en zona T para activar seborrheic boost base
-SCALES_CEJAS          = 0.10   # en cejas para activar seborrheic boost cejas
-SCALES_ZONA_T_PENALTY = 0.20   # en zona T para activar penalización de rosácea
-SCALES_CEJAS_PENALTY  = 0.15   # en cejas para activar penalización de rosácea
+# Nota: tras eliminar seborrheic-dermatitis, las escamas ya no activan ningún
+# boost diagnóstico ni penalización. Solo contribuyen al severity_score como
+# proxy de textura. Los umbrales seborreicos (SCALES_ZONA_T, SCALES_CEJAS) y de
+# penalización de rosácea (SCALES_*_PENALTY) se retiraron por quedar sin uso.
 
 # =============================================================================
 # UMBRALES COMBINADOS
@@ -66,15 +70,13 @@ BOOST_ROSACEA_ETR_BILATERAL    = 1.4
 BOOST_ROSACEA_INFL_BILATERAL   = 1.2
 BOOST_ACNE_COMEDONAL_ZONA_T    = 1.3
 BOOST_ACNE_INFL_MEJILLAS       = 1.3
-BOOST_SEBORRHEIC_ZONA_T_BASE   = 1.3   # base de la fórmula proporcional
-BOOST_SEBORRHEIC_ZONA_T_SCALE  = 0.7   # escala de la fórmula proporcional
-BOOST_SEBORRHEIC_CEJAS_BASE    = 1.2   # base de la fórmula de cejas
-BOOST_SEBORRHEIC_CEJAS_SCALE   = 0.5   # escala de la fórmula de cejas
-PENALTY_ROSACEA_SCALE          = 0.3   # factor de la fórmula de penalización
-PENALTY_ROSACEA_MAX            = 0.40  # cap máximo de penalización
 BOOST_PERIORAL                 = 1.5
 BOOST_ACNE_EXCORIATED_ZONA     = 1.2
 BOOST_HEALTHY_SKIN             = 1.5
+# Retirados (esquema de 8 clases con seborreica):
+#   BOOST_SEBORRHEIC_ZONA_T_*, BOOST_SEBORRHEIC_CEJAS_*  → clase inexistente
+#   PENALTY_ROSACEA_SCALE / PENALTY_ROSACEA_MAX          → penalizaba rosácea
+#     (recall 75.4%/76.4% en v12) sin clase seborreica que justificara el castigo
 
 # =============================================================================
 # FACTORES DE BOOST DE PERFIL  (ajustar_por_perfil)
@@ -86,14 +88,13 @@ BOOST_PERFIL_ROSACEA_INFL      = 1.4
 BOOST_PERFIL_ACNE_INFL         = 1.4
 BOOST_PERFIL_ACNE_COMEDONAL    = 1.3
 BOOST_PERFIL_ACNE_EXCORIADO    = 1.2
-BOOST_PERFIL_DERMATITIS        = 1.5
+BOOST_PERFIL_PERIORAL          = 1.5   # historial "Dermatitis" → perioral (única dermatitis del modelo)
 
 # Tipo de piel
 BOOST_PIEL_SENSIBLE_ROSACEA    = 1.2
-BOOST_PIEL_SENSIBLE_SEBORRHEIC = 1.1
 BOOST_PIEL_GRASA_COMEDONAL     = 1.3
 BOOST_PIEL_GRASA_INFL          = 1.2
-BOOST_PIEL_SECA_SEBORRHEIC     = 1.2
+# Retirados: BOOST_PIEL_SENSIBLE_SEBORRHEIC, BOOST_PIEL_SECA_SEBORRHEIC (clase inexistente)
 
 # Fototipo
 BOOST_FOTOTIPO_BAJO_ROSACEA    = 1.3
@@ -110,7 +111,8 @@ BOOST_EDAD_ADULTO_ROSACEA      = 1.2
 BOOST_EDAD_ADULTO_ROSACEA_INFL = 1.1
 
 # Exposición a AC/calefacción
-BOOST_AC_SEBORRHEIC            = 1.15
+# Retirado: BOOST_AC_SEBORRHEIC (clase inexistente). La exposición a AC/calefacción
+# ya no ajusta ninguna probabilidad; el dato se conserva solo a nivel de perfil.
 
 # Sexo
 BOOST_FEMENINO_EXCORIATED      = 1.2
@@ -156,12 +158,16 @@ SCALES_NORMALIZATION_FACTOR = 300.0 # satura la varianza del Laplaciano en escam
 # MODELO DE IA  (EfficientNetB3)
 # =============================================================================
 
-IMG_SIZE             = 300
+IMG_SIZE             = 300    # heredado del pipeline v6/v12. VERIFICAR contra la
+                              # Celda 2 del notebook v12: inferencia y entrenamiento
+                              # deben usar el mismo tamaño o cae la accuracy.
 IMAGENET_MEAN        = [0.485, 0.456, 0.406]
 IMAGENET_STD         = [0.229, 0.224, 0.225]
 MODEL_HIDDEN_SIZE    = 256
-MODEL_DROPOUT_1      = 0.3
-MODEL_DROPOUT_2      = 0.2
+MODEL_DROPOUT_1      = 0.5    # v12 se entrenó con 0.5/0.3. En eval() el dropout
+MODEL_DROPOUT_2      = 0.3    # está inactivo y no tiene parámetros, así que no
+                             # altera la inferencia; se fija al valor real solo
+                             # por coherencia con los pesos guardados.
 
 # =============================================================================
 # TEST-TIME AUGMENTATION  (TTA)
@@ -227,7 +233,9 @@ CAP_INTENSIDAD           = 1.0   # cap máximo de intensidad en fórmulas propor
 # ARQUITECTURA DEL MODELO
 # =============================================================================
 
-MODEL_ARCH               = 'efficientnet_b3'   # arquitectura timm del modelo
+MODEL_ARCH               = 'efficientnet_b2'   # v12 es B2 (conv_head=1408 features).
+                                               # NO usar 'efficientnet_b3' (1536): load_state_dict
+                                               # falla por size mismatch en la cabeza.
 
 # =============================================================================
 # DEFAULTS DEL PERFIL (interfaz de consola)
@@ -262,18 +270,6 @@ BOOST_PERIORAL_DIRECT      = 1.6   # eritema en zona perioral directa (más espe
 # tiene mayor probabilidad de persistir (condiciones crónicas).
 # Factor proporcional a la confianza previa: boost = 1 + conf_previa * BASE
 # Con conf=0.90 → boost ×1.45 | conf=0.56 → boost ×1.28 | conf=0.25 → boost ×1.125
-# =============================================================================
-# DIAGNÓSTICO DE EXCLUSIÓN DE PIEL SANA
-# =============================================================================
-
-# Si alguna condición patológica supera este umbral después de los boosts zonales,
-# healthy-skin no puede quedar como diagnóstico principal.
-UMBRAL_EVIDENCIA_PATOLOGICA    = 0.20
-
-# Cap: healthy-skin no puede superar este factor × la mejor condición patológica.
-# 0.8 → healthy-skin queda ~20 % por debajo de la condición más probable.
-HEALTHY_SKIN_CAP_FACTOR        = 0.80
-
 BOOST_CONTINUIDAD_BASE       = 0.5
 
 # Umbral mínimo de confianza previa para aplicar el boost de continuidad.
@@ -292,9 +288,8 @@ PENALTY_TRANSICION_IMPROBABLE = 0.75
 # entre sesiones próximas. Un cambio brusco indica oscilación del modelo,
 # no evolución real de la piel.
 TRANSICIONES_IMPROBABLES = {
-    'seborrheic-dermatitis': ['rosacea-etr', 'rosacea-inflammatory', 'healthy-skin'],
-    'rosacea-etr':           ['seborrheic-dermatitis', 'acne-comedonal', 'healthy-skin'],
-    'rosacea-inflammatory':  ['seborrheic-dermatitis', 'healthy-skin'],
+    'rosacea-etr':           ['acne-comedonal', 'healthy-skin'],
+    'rosacea-inflammatory':  ['healthy-skin'],
     'acne-inflammatory':     ['healthy-skin', 'rosacea-etr'],
     'acne-comedonal':        ['healthy-skin', 'rosacea-etr'],
     'perioral-dermatitis':   ['healthy-skin', 'rosacea-etr'],

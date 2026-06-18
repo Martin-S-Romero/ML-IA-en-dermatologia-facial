@@ -8,28 +8,23 @@ import numpy as np
 import os
 import sys
 
-from app.core.skinai_config import (
+from .skinai_config import (
     # severity
     ERYTHEMA_W, COMEDONES_W, SCALES_W,
     # umbrales de eritema
     ERYTHEMA_THRESHOLD_MILD, ERYTHEMA_THRESHOLD_MODERATE,
-    ERYTHEMA_MIN_ZONA_T, ERYTHEMA_MIN_PERIORAL,
+    ERYTHEMA_MIN_PERIORAL,
     ERYTHEMA_MIN_EXCORIATED, ERYTHEMA_MIN_HEALTHY, ERYTHEMA_MIN_SYMMETRY,
     ERYTHEMA_MIN_MANDIBULA, ERYTHEMA_PERIORAL_DIRECT, ERYTHEMA_PERIORAL_MAX_MEJILLAS,
-    # umbrales de comedones y escamas
+    # umbrales de comedones
     COMEDONES_ZONA_T, COMEDONES_MEJILLAS,
-    SCALES_ZONA_T, SCALES_CEJAS, SCALES_ZONA_T_PENALTY, SCALES_CEJAS_PENALTY,
     ERITEMA_COMEDONES_MEJILLAS,
     COMEDONES_MANDIBULA,
     # boosts zonales
     BOOST_ROSACEA_ETR_BILATERAL, BOOST_ROSACEA_INFL_BILATERAL,
     BOOST_ACNE_COMEDONAL_ZONA_T, BOOST_ACNE_INFL_MEJILLAS,
-    BOOST_SEBORRHEIC_ZONA_T_BASE, BOOST_SEBORRHEIC_ZONA_T_SCALE,
-    BOOST_SEBORRHEIC_CEJAS_BASE, BOOST_SEBORRHEIC_CEJAS_SCALE,
-    PENALTY_ROSACEA_SCALE, PENALTY_ROSACEA_MAX,
     BOOST_PERIORAL, BOOST_ACNE_EXCORIATED_ZONA, BOOST_HEALTHY_SKIN,
     BOOST_ACNE_INFL_MANDIBULA, BOOST_PERIORAL_DIRECT,
-    UMBRAL_EVIDENCIA_PATOLOGICA, HEALTHY_SKIN_CAP_FACTOR,
     # mediapipe
     FACEMESH_MAX_FACES, FACEMESH_DETECTION_CONFIDENCE, FACEMESH_TRACKING_CONFIDENCE,
     LANDMARK_LEFT_EYE, LANDMARK_RIGHT_EYE,
@@ -39,7 +34,6 @@ from app.core.skinai_config import (
     # métricas visuales
     ADAPTIVE_BLOCK_SIZE, ADAPTIVE_C, COMEDONES_AMPLIFIER, SCALES_NORMALIZATION_FACTOR,
     # zonas
-    CAP_INTENSIDAD,
     ZONA_WEIGHTS, ZONAS_DISPLAY,
 )
 
@@ -121,10 +115,10 @@ class FaceCensor:
 
     def _apply_censor(self, image, points):
         """Aplica el efecto de censura sobre la región delimitada por `points`."""
+        bx1, by1, bx2, by2 = self._get_box(points)
         x1, y1, x2, y2 = self._safe_box(
-            *[v + d for v, d in zip(self._get_box(points),
-                                    [-self.expand, -self.expand,
-                                      self.expand,  self.expand])],
+            bx1 - self.expand, by1 - self.expand,
+            bx2 + self.expand, by2 + self.expand,
             image.shape[1], image.shape[0],
         )
         roi = image[y1:y2, x1:x2]
@@ -195,9 +189,9 @@ class FaceCensor:
                 severity_dict[zona] = 0.0
                 continue
 
+            bx1, by1, bx2, by2 = self._get_box(pts)
             x1, y1, x2, y2 = self._safe_box(
-                *[v + d for v, d in zip(self._get_box(pts),
-                                        [-5, -5, 5, 5])],
+                bx1 - 5, by1 - 5, bx2 + 5, by2 + 5,
                 img_w, img_h,
             )
             roi = frame[y1:y2, x1:x2]
@@ -225,7 +219,7 @@ class FaceCensor:
             z: severity_dict[z] for z in ZONAS_DISPLAY if z in severity_dict
         }
         worst_zone = (
-            max(display_severities, key=display_severities.get)
+            max(display_severities, key=lambda z: display_severities.get(z, 0.0))
             if display_severities else None
         )
 
@@ -280,10 +274,10 @@ class FaceCensor:
             )
 
             if self.cut:
+                lbx1, lby1, lbx2, lby2 = self._get_box(landmarks)
                 fx1, fy1, fx2, fy2 = self._safe_box(
-                    *[v + d for v, d in zip(self._get_box(landmarks),
-                                            [-self.expand, -self.expand,
-                                              self.expand,  self.expand])],
+                    lbx1 - self.expand, lby1 - self.expand,
+                    lbx2 + self.expand, lby2 + self.expand,
                     w, h,
                 )
                 if fx2 > fx1 and fy2 > fy1:
@@ -394,37 +388,11 @@ def ajustar_por_zona(probs_dict, analisis_zonal, verbose=False):
     if e_mandibula_media >= ERYTHEMA_MIN_MANDIBULA and c_mandibula_media >= COMEDONES_MANDIBULA:
         _boost('acne-inflammatory', BOOST_ACNE_INFL_MANDIBULA, 'eritema + comedones en mandíbula')
 
-    # Dermatitis seborreica: escamas proporcionales en zona T
-    s_frente     = escamas.get('frente', 0)
-    s_nariz      = escamas.get('nariz',  0)
-    s_nariz_lat  = (
-        escamas.get('nariz_lat_izq', 0) + escamas.get('nariz_lat_der', 0)
-    ) / 2
-    e_frente     = eritema.get('frente', 0)
-    e_nariz      = eritema.get('nariz',  0)
-    zona_T_escamas = max(s_frente, s_nariz, s_nariz_lat)
-
-    if zona_T_escamas >= SCALES_ZONA_T and (e_frente >= ERYTHEMA_MIN_ZONA_T or e_nariz >= ERYTHEMA_MIN_ZONA_T):
-        factor_base = BOOST_SEBORRHEIC_ZONA_T_BASE + min(zona_T_escamas, CAP_INTENSIDAD) * BOOST_SEBORRHEIC_ZONA_T_SCALE
-        _boost('seborrheic-dermatitis', round(factor_base, 2),
-               f'escamas zona T (intensidad {zona_T_escamas:.2f})')
-
-    # Dermatitis seborreica: escamas en cejas
-    s_cejas = (escamas.get('ceja_izq', 0) + escamas.get('ceja_der', 0)) / 2
-    if s_cejas >= SCALES_CEJAS:
-        factor_cejas = BOOST_SEBORRHEIC_CEJAS_BASE + min(s_cejas, CAP_INTENSIDAD) * BOOST_SEBORRHEIC_CEJAS_SCALE
-        _boost('seborrheic-dermatitis', round(factor_cejas, 2),
-               f'escamas en cejas (intensidad {s_cejas:.2f})')
-
-    # Penalización de rosácea cuando hay escamas altas
-    if zona_T_escamas >= SCALES_ZONA_T_PENALTY or s_cejas >= SCALES_CEJAS_PENALTY:
-        penalizacion = round(
-            1.0 - min((zona_T_escamas + s_cejas) * PENALTY_ROSACEA_SCALE, PENALTY_ROSACEA_MAX), 2
-        )
-        _boost('rosacea-etr',          penalizacion,
-               'penalización: escamas incompatibles con rosácea')
-        _boost('rosacea-inflammatory', penalizacion,
-               'penalización: escamas incompatibles con rosácea')
+    # NOTA: los bloques de dermatitis seborreica (escamas en zona T y cejas) y la
+    # penalización de rosácea por escamas se eliminaron junto con la clase
+    # seborrheic-dermatitis. La penalización castigaba rosacea-etr/inflammatory,
+    # que son las clases mejor resueltas por v12 (recall 75.4% / 76.4%).
+    # Las escamas se siguen calculando solo para el severity_score.
 
     # Dermatitis perioral: eritema concentrado en mentón
     e_menton = eritema.get('menton', 0)
@@ -441,26 +409,9 @@ def ajustar_por_zona(probs_dict, analisis_zonal, verbose=False):
     if e_mejillas_media >= ERYTHEMA_MIN_EXCORIATED and c_mejillas_media < ERYTHEMA_THRESHOLD_MILD:
         _boost('acne-excoriated', BOOST_ACNE_EXCORIATED_ZONA, 'eritema difuso sin comedones marcados')
 
-    # Piel sana: eritema global bajo en todas las zonas, solo si el modelo ya la prioriza.
-    # Sin esta guarda, lesiones focales (pápulas aisladas) promedian erythema bajo por zona
-    # y el boost 1.5× fuerza healthy-skin al top incluso cuando el modelo detectó patología.
-    if (all(v < ERYTHEMA_MIN_HEALTHY for v in eritema.values()) and
-            max(probs_dict, key=probs_dict.get) == 'healthy-skin'):
-        _boost('healthy-skin', BOOST_HEALTHY_SKIN, 'eritema global bajo (confirmado por modelo)')
-
-    # Diagnóstico de exclusión: healthy-skin no puede ser top-1 si hay evidencia
-    # patológica suficiente. Evita que lesiones focales con eritema promedio bajo
-    # (que no activan boosts patológicos) eleven healthy-skin al primer lugar.
-    _PATOLOGICAS = {
-        'acne-excoriated', 'acne-inflammatory', 'acne-comedonal',
-        'rosacea-etr', 'rosacea-inflammatory',
-        'seborrheic-dermatitis', 'perioral-dermatitis',
-    }
-    max_patologica = max((probs.get(c, 0.0) for c in _PATOLOGICAS), default=0.0)
-    if max_patologica >= UMBRAL_EVIDENCIA_PATOLOGICA:
-        cap = max_patologica * HEALTHY_SKIN_CAP_FACTOR
-        if probs.get('healthy-skin', 0.0) > cap:
-            probs['healthy-skin'] = cap
+    # Piel sana: eritema global bajo en todas las zonas
+    if all(v < ERYTHEMA_MIN_HEALTHY for v in eritema.values()):
+        _boost('healthy-skin', BOOST_HEALTHY_SKIN, 'eritema global bajo')
 
     # Renormalizar a suma = 1
     total = sum(probs.values())
