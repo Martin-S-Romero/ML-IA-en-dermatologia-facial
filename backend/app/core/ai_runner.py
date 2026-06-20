@@ -83,8 +83,8 @@ def _cargar_modelo_desde_disco() -> tuple[torch.nn.Module, list[str]]:
     n_clases = len(clases_lista)
 
     modelo = timm.create_model(MODEL_ARCH, pretrained=False, num_classes=0)
-    n_feat = modelo.num_features  # B2 → 1408
-    modelo.classifier = nn.Sequential(
+    n_feat = modelo.num_features  # type: ignore[union-attr]  # B2 → 1408
+    modelo.classifier = nn.Sequential(  # type: ignore[union-attr]
         nn.BatchNorm1d(n_feat),
         nn.Dropout(p=MODEL_DROPOUT_1),
         nn.Linear(n_feat, MODEL_HIDDEN_SIZE),
@@ -138,14 +138,14 @@ def predecir_con_tta(modelo: torch.nn.Module, ruta_imagen: str,
 
     with torch.no_grad():
         probs = torch.softmax(
-            modelo(val_t(img).unsqueeze(0).to(DEVICE)), dim=1
+            modelo(val_t(img).unsqueeze(0).to(DEVICE)), dim=1  # type: ignore[operator]
         ).cpu().numpy()[0]
 
     for seed in range(n_aug):
         torch.manual_seed(seed * TTA_SEED_MULTIPLIER)
         with torch.no_grad():
             probs += torch.softmax(
-                modelo(tta_t(img).unsqueeze(0).to(DEVICE)), dim=1
+                modelo(tta_t(img).unsqueeze(0).to(DEVICE)), dim=1  # type: ignore[operator]
             ).cpu().numpy()[0]
 
     return probs / (n_aug + 1)

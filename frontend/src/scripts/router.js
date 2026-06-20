@@ -126,6 +126,9 @@ async function loadPage(pageKey) {
     app.querySelector('section')?.classList.add('page-enter')
 
     currentPage = pageKey
+    // Dashboard never scrolls the body; restore for all other pages
+    document.body.style.overflow = pageKey === 'dashboard' ? 'hidden' : ''
+    document.documentElement.style.overflow = pageKey === 'dashboard' ? 'hidden' : ''
     window.scrollTo({ top: 0, behavior: 'instant' })
 
     await runPageInit(pageKey)

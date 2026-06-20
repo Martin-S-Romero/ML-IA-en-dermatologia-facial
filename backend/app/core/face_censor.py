@@ -46,7 +46,7 @@ try:
             mp.solutions = solutions
         except ImportError:
             pass
-    FaceMesh = mp.solutions.face_mesh.FaceMesh
+    FaceMesh = mp.solutions.face_mesh.FaceMesh  # type: ignore[attr-defined]
 except Exception as e:
     print(f'[!] Error inicializando MediaPipe (import estándar): {e}', file=sys.stderr)
     try:
@@ -251,13 +251,13 @@ class FaceCensor:
         rgb     = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self._face_mesh.process(rgb)
 
-        if not results.multi_face_landmarks:
+        if not results.multi_face_landmarks:  # type: ignore[attr-defined]
             self.ultimo_analisis_zonal = None
             return frame
 
         h, w, _ = frame.shape
 
-        for face_landmarks in results.multi_face_landmarks:
+        for face_landmarks in results.multi_face_landmarks:  # type: ignore[attr-defined]
             landmarks = [
                 (int(lm.x * w), int(lm.y * h))
                 for lm in face_landmarks.landmark

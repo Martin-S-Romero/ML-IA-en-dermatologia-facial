@@ -76,11 +76,12 @@ export async function initDashboard() {
     _routine  = routine
 
     _populateDashTab(analyses)
+    _populateComparisonTab(analyses)
     _populateHistoryTab(analyses)
     _populateRoutineTab(routine)
 
-    // Exponer datos para charts.js (lazy load al entrar a la tab Gráficas)
     window._skinaiAnalyses = analyses
+    import('./charts.js').then(m => m.initCharts())
   } catch (err) {
     console.error('[dashboard] Error al cargar datos:', err)
   }
@@ -108,39 +109,309 @@ async function _fetchRoutine(token) {
   } catch { return null }
 }
 
+// ── MAPA FACIAL SVG ───────────────────────────────────────────────────────
+
+function _zoneColor(severity) {
+  if (severity == null) return '#D4C9B8'
+  if (severity < 0.25)  return '#2E7D5A'
+  if (severity < 0.50)  return '#D4942A'
+  if (severity < 0.75)  return '#C47060'
+  return '#8B2A1A'
+}
+
+function _updateFacialMap(result) {
+  const svg = document.getElementById('facial-map-svg')
+  if (!svg) return
+
+  const zones = {
+    ...(result?.zones_display    || {}),
+    ...(result?.zones_diagnostic || {}),
+  }
+
+  svg.querySelectorAll('[data-zone]').forEach(el => {
+    const data = zones[el.getAttribute('data-zone')]
+    el.setAttribute('fill', _zoneColor(data?.severity ?? null))
+    el.setAttribute('fill-opacity', data ? '0.55' : '0.25')
+  })
+}
+
+// ── HERO HELPERS ──────────────────────────────────────────────────────────
+
+function _sevLevelInfo(v) {
+  if (v < 0.10) return { label: 'Sin señales', adj: 'mínimas',   stroke: '#9CA3AF', textColor: 'text-slate',      colorInk: 'text-slate' }
+  if (v < 0.25) return { label: 'Leve',        adj: 'leves',     stroke: '#5FBA8B', textColor: 'text-[#5FBA8B]', colorInk: 'text-ok' }
+  if (v < 0.50) return { label: 'Moderada',    adj: 'moderadas', stroke: '#D4942A', textColor: 'text-bark',       colorInk: 'text-warn' }
+  if (v < 0.75) return { label: 'Alta',        adj: 'altas',     stroke: '#E8906A', textColor: 'text-[#E8906A]', colorInk: 'text-[#C96A40]' }
+  return               { label: 'Severa',      adj: 'severas',   stroke: '#C47060', textColor: 'text-rose',       colorInk: 'text-rose' }
+}
+
+function _confLabel(c) {
+  return c >= 0.70 ? 'Alta' : c >= 0.50 ? 'Media' : 'Baja'
+}
+
+function _confText(c) {
+  return c >= 0.70 ? 'Este resultado es confiable.'
+       : c >= 0.50 ? 'El resultado puede variar.'
+       :              'El resultado tiene baja certeza.'
+}
+
+function _relativeTime(isoStr) {
+  if (!isoStr) return '--'
+  const days = Math.floor((Date.now() - new Date(isoStr).getTime()) / 86400000)
+  if (days === 0) return 'Hoy'
+  if (days === 1) return 'Hace 1 día'
+  return `Hace ${days} días`
+}
+
+function _formatDateShort(isoStr) {
+  if (!isoStr) return '--'
+  try {
+    return new Date(isoStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+  } catch { return isoStr }
+}
+
+function _donutSVG(pct, stroke, sizeClass = 'w-11 h-11', dark = true) {
+  const trackColor  = dark ? 'rgba(255,255,255,0.12)' : '#E8E2D6'
+  const textColor   = dark ? 'white' : '#181C24'
+  return `<svg viewBox="0 0 36 36" class="${sizeClass} mx-auto" aria-hidden="true">
+    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="${trackColor}" stroke-width="3"/>
+    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="${stroke}" stroke-width="3"
+      stroke-dasharray="${pct} 100" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+    <text x="18" y="22" text-anchor="middle" fill="${textColor}" font-size="8" font-weight="bold"
+      font-family="DM Sans,sans-serif">${pct}%</text>
+  </svg>`
+}
+
+function _miniFaceSVG(worstZone) {
+  // Coordenadas en el sistema 682×870 de rostro-base.png
+  const zones = {
+    frente:        { cx: 341, cy: 165, rx: 170, ry: 130 },
+    ceja_izq:      { cx: 250, cy: 310, rx: 56,  ry: 20  },
+    ceja_der:      { cx: 432, cy: 310, rx: 56,  ry: 20  },
+    mejilla_izq:   { cx: 155, cy: 560, rx: 68,  ry: 118 },
+    mejilla_der:   { cx: 527, cy: 560, rx: 68,  ry: 118 },
+    nariz:         { cx: 341, cy: 482, rx: 46,  ry: 102 },
+    nariz_lat_izq: { cx: 291, cy: 575, rx: 27,  ry: 22  },
+    nariz_lat_der: { cx: 391, cy: 575, rx: 27,  ry: 22  },
+    zona_perioral: { cx: 341, cy: 638, rx: 80,  ry: 48  },
+    mandibula_izq: { cx: 193, cy: 733, rx: 70,  ry: 57  },
+    mandibula_der: { cx: 489, cy: 733, rx: 70,  ry: 57  },
+    menton:        { cx: 341, cy: 810, rx: 108, ry: 42  },
+  }
+  const worstEllipse = worstZone && zones[worstZone]
+    ? `<ellipse cx="${zones[worstZone].cx}" cy="${zones[worstZone].cy}"
+         rx="${zones[worstZone].rx}" ry="${zones[worstZone].ry}"
+         fill="#C47060" fill-opacity="0.65"/>`
+    : ''
+  return `
+    <div class="relative w-14 mx-auto select-none my-1">
+      <img src="/img-resource/rostro-base.png" alt="" class="w-full h-auto block pointer-events-none" draggable="false">
+      <svg viewBox="0 0 682 870" preserveAspectRatio="none"
+           class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+        <defs>
+          <clipPath id="kpi-face-clip">
+            <ellipse cx="341" cy="440" rx="225" ry="400"/>
+          </clipPath>
+        </defs>
+        <g clip-path="url(#kpi-face-clip)">${worstEllipse}</g>
+      </svg>
+    </div>`
+}
+
 // ── TAB: DASHBOARD (resumen) ──────────────────────────────────────────────
 
 function _populateDashTab(analyses) {
   const latestEl = document.getElementById('dash-latest')
   if (!latestEl) return
 
-  // El historial ya viene filtrado a completados; el primero es el más reciente
+  _updateFacialMap(analyses[0]?.result ?? null)
+
   const latest = analyses[0]
-  if (!latest) return  // mantener el estado por defecto "Sin análisis aún"
+  if (!latest) return
 
-  const userNum = analyses.length
-  const dateStr = _formatDate(latest.created_at)
-  const label   = _LABEL_ES[latest.top1_label] || 'Análisis completado'
-  const confPct = latest.top1_confidence != null
-    ? Math.round(latest.top1_confidence * 100)
-    : null
+  const result   = latest.result || {}
+  const label    = _LABEL_ES[latest.top1_label] || 'Análisis completado'
+  const conf     = latest.top1_confidence ?? 0
+  const confPct  = Math.round(conf * 100)
+  const sev      = result.severity_score ?? 0
+  const sevPct   = Math.round(sev * 100)
+  const sevInfo  = _sevLevelInfo(sev)
+  const worstZone = result.worst_zone ? (_ZONE_ES[result.worst_zone] || result.worst_zone) : '—'
+  const zonesCount = result.affected_zones_count ?? 0
+  const dateShort  = _formatDateShort(latest.created_at)
+  const relTime    = _relativeTime(latest.created_at)
 
+  // ── Estado actual (green card) ───────────────────────────────────────────
   latestEl.innerHTML = `
-    <p class="text-[10px] text-white/55 uppercase tracking-widest mb-3">
-      Análisis #${userNum} · ${dateStr}
-    </p>
-    <h2 class="font-display text-lg text-cream mb-1">${label}</h2>
-    ${confPct !== null
-      ? `<p class="text-xs text-white/70 mb-4">Confianza: ${confPct}%</p>`
-      : `<p class="text-xs text-white/50 mb-4">Estado: ${_statusLabel(latest.status)}</p>`
-    }
-    <div class="flex gap-2 flex-wrap">
-      <button
-        class="bg-bark text-ink text-xs font-semibold py-2 px-4 rounded-full hover:bg-bark/90 transition-colors"
-        onclick="dtab('dh')"
-      >Ver historial</button>
+    <div class="flex items-center gap-1.5 mb-3">
+      <svg class="w-3.5 h-3.5 flex-shrink-0 text-[#5FBA8B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+      </svg>
+      <p class="text-[9px] text-white/60 uppercase tracking-widest font-semibold">Estado actual</p>
     </div>
-  `
+    <h2 class="font-display text-xl text-cream leading-snug mb-1.5">
+      Detectamos señales <span class="${sevInfo.textColor}">${sevInfo.adj}</span> de ${label}
+    </h2>
+    <p class="text-[11px] text-white/55 leading-relaxed mb-auto pb-4">Detectamos acné y rosácea desde una foto de tu rostro y te recomendamos una rutina con productos reales.</p>
+    <div class="flex gap-2 mt-auto">
+      <button class="flex-1 flex items-center justify-center gap-2 bg-white text-forest text-sm font-semibold py-2.5 px-4 rounded-full hover:bg-white/90 transition-colors" data-go="capture">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+        Nuevo análisis
+      </button>
+      <button class="flex-1 flex items-center justify-center gap-2 bg-white/15 text-white text-sm font-semibold py-2.5 px-4 rounded-full hover:bg-white/25 transition-colors" onclick="dtab('dh')">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Ver último análisis
+      </button>
+    </div>`
+
+  // ── KPI: Severidad global ────────────────────────────────────────────────
+  const kpiSev = document.getElementById('kpi-sev')
+  if (kpiSev) {
+    kpiSev.innerHTML = `
+      <p class="text-[9px] text-slate/65 uppercase tracking-widest font-semibold">Severidad global</p>
+      <div class="my-1">${_donutSVG(sevPct, sevInfo.stroke, 'w-16 h-16', false)}</div>
+      <div>
+        <p class="text-sm font-bold ${sevInfo.colorInk} leading-tight">${sevInfo.label}</p>
+        <p class="text-[9px] text-slate/55 mt-0.5">Resultado ${confPct >= 70 ? 'confiable' : 'variable'}</p>
+      </div>`
+    kpiSev.classList.remove('hidden')
+  }
+
+  // ── KPI: Zona más afectada ───────────────────────────────────────────────
+  const kpiZone = document.getElementById('kpi-zone')
+  if (kpiZone) {
+    kpiZone.innerHTML = `
+      <p class="text-[9px] text-slate/65 uppercase tracking-widest font-semibold">Zona más afectada</p>
+      ${_miniFaceSVG(result.worst_zone)}
+      <div>
+        <p class="text-base font-bold text-rose leading-tight">${worstZone}</p>
+        <p class="text-[9px] text-slate/55 mt-0.5">Principales señales aquí</p>
+      </div>`
+    kpiZone.classList.remove('hidden')
+  }
+
+  // ── KPI: Zonas afectadas ─────────────────────────────────────────────────
+  const kpiZones = document.getElementById('kpi-zones')
+  if (kpiZones) {
+    kpiZones.innerHTML = `
+      <p class="text-[9px] text-slate/65 uppercase tracking-widest font-semibold">Zonas afectadas</p>
+      <svg class="w-10 h-10 mx-auto my-1" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="10" cy="10" r="5" fill="#D4942A" opacity="0.9"/>
+        <circle cx="30" cy="10" r="5" fill="#D4942A" opacity="0.9"/>
+        <circle cx="10" cy="30" r="5" fill="#D4942A" opacity="0.4"/>
+        <circle cx="30" cy="30" r="5" fill="#D4942A" opacity="0.4"/>
+        <circle cx="10" cy="20" r="5" fill="#D4942A" opacity="0.65"/>
+        <circle cx="30" cy="20" r="5" fill="#D4942A" opacity="0.65"/>
+      </svg>
+      <div>
+        <p class="text-xl font-bold text-warn leading-none">${zonesCount}<span class="text-sm text-slate/50 font-semibold">/12</span></p>
+        <p class="text-[9px] text-slate/55 mt-0.5">Con señales activas</p>
+      </div>`
+    kpiZones.classList.remove('hidden')
+  }
+
+  // ── KPI: Último análisis ─────────────────────────────────────────────────
+  const kpiDate = document.getElementById('kpi-date')
+  if (kpiDate) {
+    kpiDate.innerHTML = `
+      <p class="text-[9px] text-slate/65 uppercase tracking-widest font-semibold">Último análisis</p>
+      <svg class="w-10 h-10 mx-auto my-1" fill="none" stroke="#4F6FAD" stroke-width="1.6" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      <div>
+        <p class="text-sm font-bold text-[#4F6FAD] leading-tight">${dateShort}</p>
+        <p class="text-[9px] text-slate/55 mt-0.5">${relTime}</p>
+      </div>`
+    kpiDate.classList.remove('hidden')
+  }
+}
+
+// ── TAB: COMPARACIÓN ─────────────────────────────────────────────────────
+
+function _avgZone(result, key) {
+  const zones = Object.values(result?.zones_display || {})
+  if (!zones.length) return 0
+  return zones.reduce((s, z) => s + (z[key] ?? 0), 0) / zones.length
+}
+
+function _populateComparisonTab(analyses) {
+  const el   = document.getElementById('dash-comparison')
+  const body = document.getElementById('dash-comparison-body')
+  if (!el || !body) return
+
+  const curr = analyses[0]
+  const prev = analyses[1]
+  if (!curr?.result || !prev?.result) return
+
+  el.classList.remove('hidden')
+
+  const _ICONS = {
+    sev:   `<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
+    erit:  `<svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="7" cy="12" r="2"/><circle cx="15" cy="13" r="2"/><circle cx="10" cy="19" r="2"/><circle cx="18" cy="18" r="2"/></svg>`,
+    com:   `<svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></svg>`,
+    tex:   `<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M3 7c2-2 4 2 6 0s4-2 6 0 4 2 6 0M3 13c2-2 4 2 6 0s4-2 6 0 4 2 6 0M3 19c2-2 4 2 6 0s4-2 6 0 4 2 6 0"/></svg>`,
+    zones: `<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><ellipse cx="12" cy="8" rx="5" ry="4" stroke-width="1.8"/><path stroke-linecap="round" stroke-width="1.8" d="M7 12c-2 1-3 3-3 5h16c0-2-1-4-3-5"/></svg>`,
+  }
+
+  const rows = [
+    { label: 'Severidad global',  icon: _ICONS.sev,   prev: Math.round((prev.result.severity_score ?? 0) * 100), curr: Math.round((curr.result.severity_score ?? 0) * 100), unit: '%',  max: 100 },
+    { label: 'Enrojecimiento',    icon: _ICONS.erit,  prev: Math.round(_avgZone(prev.result, 'erythema')   * 100), curr: Math.round(_avgZone(curr.result, 'erythema')   * 100), unit: '%',  max: 100 },
+    { label: 'Comedones',         icon: _ICONS.com,   prev: Math.round(_avgZone(prev.result, 'comedones')  * 100), curr: Math.round(_avgZone(curr.result, 'comedones')  * 100), unit: '%',  max: 100 },
+    { label: 'Textura / Escamas', icon: _ICONS.tex,   prev: Math.round(_avgZone(prev.result, 'scaling')    * 100), curr: Math.round(_avgZone(curr.result, 'scaling')    * 100), unit: '%',  max: 100 },
+    { label: 'Zonas afectadas',   icon: _ICONS.zones, prev: prev.result.affected_zones_count ?? 0,                 curr: curr.result.affected_zones_count ?? 0,                 unit: ' z', max: 12  },
+  ]
+
+  const headerHTML = `
+    <div class="grid grid-cols-[1fr_auto_auto_auto] gap-2 pb-2 border-b border-sand mb-1">
+      <span class="text-[8px] text-slate/60 uppercase tracking-wide">Indicador</span>
+      <span class="text-[8px] text-slate/60 uppercase tracking-wide w-16 text-center">Anterior</span>
+      <span class="text-[8px] text-slate/60 uppercase tracking-wide w-16 text-center">Actual</span>
+      <span class="text-[8px] text-slate/60 uppercase tracking-wide w-12 text-right">Cambio</span>
+    </div>`
+
+  const rowsHTML = rows.map(r => {
+    const delta     = r.curr - r.prev
+    const deltaPct  = r.prev > 0 ? Math.round(Math.abs(delta / r.prev) * 100) : (r.curr > 0 ? 100 : 0)
+    const improved  = delta < 0
+    const unchanged = delta === 0
+    const changeClass = unchanged ? 'text-slate' : improved ? 'text-ok' : 'text-rose'
+    const changeText  = unchanged ? '—' : `${improved ? '↓' : '↑'} ${deltaPct}%`
+    const prevW = Math.min(100, Math.round((r.prev / r.max) * 100))
+    const currW = Math.min(100, Math.round((r.curr / r.max) * 100))
+    const currBarClass = improved ? 'bg-ok' : unchanged ? 'bg-slate/35' : 'bg-rose'
+
+    return `
+      <div class="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center py-1.5 border-b border-sand/60 last:border-0">
+        <div class="flex items-center gap-1.5 min-w-0 text-slate">
+          ${r.icon}
+          <span class="text-[10px] font-semibold text-ink truncate">${r.label}</span>
+        </div>
+        <div class="w-16">
+          <p class="text-[8px] text-slate text-center mb-0.5">${r.prev}${r.unit}</p>
+          <div class="w-full bg-sand rounded-full h-1.5">
+            <div class="h-1.5 rounded-full bg-slate/40" style="width:${prevW}%"></div>
+          </div>
+        </div>
+        <div class="w-16">
+          <p class="text-[8px] text-slate text-center mb-0.5">${r.curr}${r.unit}</p>
+          <div class="w-full bg-sand rounded-full h-1.5">
+            <div class="h-1.5 rounded-full ${currBarClass}" style="width:${currW}%"></div>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold ${changeClass} w-12 text-right flex-shrink-0">${changeText}</span>
+      </div>`
+  }).join('')
+
+  body.innerHTML = `
+    <p class="text-[8px] text-slate uppercase tracking-widest font-semibold mb-2">
+      ${_formatDate(prev.created_at)} → ${_formatDate(curr.created_at)}
+    </p>
+    ${headerHTML}
+    ${rowsHTML}
+    <p class="text-[9px] text-slate/50 mt-2">Los cambios se calculan del análisis anterior al actual.</p>`
 }
 
 // ── TAB: HISTORIAL ────────────────────────────────────────────────────────
@@ -534,7 +805,7 @@ export function closeDetail() {
 
 // ── DASHBOARD TABS ────────────────────────────────────────────────────────
 
-const TAB_IDS = ['dd', 'dh', 'dg', 'dr']
+const TAB_IDS = ['dd', 'dh', 'dr']
 
 export function dtab(name) {
   TAB_IDS.forEach(id => {
@@ -551,9 +822,6 @@ export function dtab(name) {
   const sidebarDash = document.getElementById('sidebar-dash-btn')
   if (sidebarDash) sidebarDash.classList.add('active')
 
-  if (name === 'dg') {
-    import('./charts.js').then(m => m.initCharts())
-  }
 }
 
 // ── SIDEBAR NAV ───────────────────────────────────────────────────────────
