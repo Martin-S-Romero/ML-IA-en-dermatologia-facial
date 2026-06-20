@@ -416,48 +416,302 @@ function _populateComparisonTab(analyses) {
 
 // ── TAB: HISTORIAL ────────────────────────────────────────────────────────
 
+function _condIconHTML(condKey) {
+  const styles = {
+    'healthy-skin':          ['#E8F5EE', '#2E7D5A'],
+    'acne-comedonal':        ['#FEF3C7', '#B45309'],
+    'acne-excoriated':       ['#FEF3C7', '#B45309'],
+    'acne-inflammatory':     ['#FEE2E2', '#DC2626'],
+    'perioral-dermatitis':   ['#FDECD0', '#C2410C'],
+    'rosacea-etr':           ['#FEE2E2', '#DC2626'],
+    'rosacea-inflammatory':  ['#FEE2E2', '#B91C1C'],
+    'seborrheic-dermatitis': ['#FDECD0', '#C2410C'],
+  }
+  const [bg, stroke] = styles[condKey] || ['#F0EDE8', '#6B5E4E']
+  return `<div style="background:${bg}" class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0">
+    <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="${stroke}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8" r="4"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+    </svg>
+  </div>`
+}
+
+function _sevInfoHist(v) {
+  if (v < 0.20) return { label: 'Leve',     textColor: 'text-ok',         barColor: 'bg-ok' }
+  if (v < 0.50) return { label: 'Moderado', textColor: 'text-warn',       barColor: 'bg-warn' }
+  if (v < 0.75) return { label: 'Alto',     textColor: 'text-[#E8906A]',  barColor: 'bg-[#E8906A]' }
+  return               { label: 'Severo',   textColor: 'text-rose',       barColor: 'bg-rose' }
+}
+
+function _histZoneData(a) {
+  const r         = a.result || {}
+  const zonesDisp = r.zones_display || {}
+  const entries   = Object.entries(zonesDisp)
+  const worstKey  = r.worst_zone || null
+  const worstName = worstKey ? (_ZONE_ES[worstKey] || worstKey) : '—'
+  const worstPct  = worstKey && zonesDisp[worstKey]
+    ? Math.round((zonesDisp[worstKey].severity ?? 0) * 100) : null
+  let bestName = '—', bestPct = null
+  if (entries.length) {
+    const [bKey, bVal] = entries.reduce((mn, cur) =>
+      (cur[1].severity ?? 1) < (mn[1].severity ?? 1) ? cur : mn)
+    bestName = _ZONE_ES[bKey] || bKey
+    bestPct  = Math.round((bVal.severity ?? 0) * 100)
+  }
+  return { worstName, worstPct, bestName, bestPct }
+}
+
+const _MO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+
+function _histDateStr(isoStr) {
+  const d = new Date(isoStr)
+  return `${d.getDate()} ${_MO[d.getMonth()]} ${d.getFullYear()}`
+}
+
+function _histTableRow(a) {
+  const userNum = _analysisUserNum[a.id] || '?'
+  const condKey = a.top1_label || ''
+  const label   = _LABEL_ES[condKey] || 'Análisis de piel'
+  const r       = a.result || {}
+  const sev     = r.severity_score ?? 0
+  const sevPct  = Math.round(sev * 100)
+  const sevI    = _sevInfoHist(sev)
+  const { worstName, worstPct, bestName, bestPct } = _histZoneData(a)
+
+  return `
+    <tr class="border-b border-sand hover:bg-sand/20 transition-colors">
+      <td class="px-4 py-3.5">
+        <span class="text-[11px] font-bold text-ink bg-sand/60 rounded-lg px-2.5 py-1 whitespace-nowrap">#${userNum}</span>
+      </td>
+      <td class="px-4 py-3.5">
+        <div class="flex items-center gap-3">
+          ${_condIconHTML(condKey)}
+          <span class="text-[12px] font-semibold text-ink whitespace-nowrap">${label}</span>
+        </div>
+      </td>
+      <td class="px-4 py-3.5 whitespace-nowrap">
+        <p class="text-[12px] font-semibold ${sevI.textColor}">${sevI.label} ${sevPct}%</p>
+        <div class="w-24 bg-sand rounded-full h-1.5 mt-1.5">
+          <div class="${sevI.barColor} h-1.5 rounded-full" style="width:${sevPct}%"></div>
+        </div>
+      </td>
+      <td class="px-4 py-3.5 whitespace-nowrap">
+        <p class="text-[12px] font-medium text-ink">${worstName}</p>
+        ${worstPct != null ? `<p class="text-[11px] text-slate mt-0.5">${worstPct}%</p>` : ''}
+      </td>
+      <td class="px-4 py-3.5 whitespace-nowrap">
+        <p class="text-[12px] font-medium text-ink">${bestName}</p>
+        ${bestPct != null ? `<p class="text-[11px] text-slate mt-0.5">${bestPct}%</p>` : ''}
+      </td>
+      <td class="px-4 py-3.5 whitespace-nowrap">
+        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-ok bg-ok/10 rounded-full px-3 py-1">
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Completado
+        </span>
+      </td>
+      <td class="px-4 py-3.5 whitespace-nowrap">
+        <span class="text-[12px] text-slate">${_histDateStr(a.created_at)}</span>
+      </td>
+      <td class="px-4 py-3.5 whitespace-nowrap">
+        <button onclick="openDetail(${a.id})"
+          class="flex items-center gap-1.5 text-[11px] font-semibold text-slate hover:text-ink transition-colors">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          Ver análisis
+        </button>
+      </td>
+    </tr>`
+}
+
+function _histCard(a) {
+  const userNum = _analysisUserNum[a.id] || '?'
+  const condKey = a.top1_label || ''
+  const label   = _LABEL_ES[condKey] || 'Análisis de piel'
+  const r       = a.result || {}
+  const sev     = r.severity_score ?? 0
+  const sevPct  = Math.round(sev * 100)
+  const sevI    = _sevInfoHist(sev)
+  const { worstName, worstPct, bestName, bestPct } = _histZoneData(a)
+
+  return `
+    <div class="bg-white rounded-2xl border border-sand p-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-bold text-ink bg-sand/60 rounded-lg px-2.5 py-1">#${userNum}</span>
+        <div class="flex items-center gap-1.5">
+          <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-ok">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Completado
+          </span>
+          <span class="text-[10px] text-slate">${_histDateStr(a.created_at)}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 mb-3">
+        ${_condIconHTML(condKey)}
+        <p class="text-[16px] font-bold text-ink leading-tight">${label}</p>
+      </div>
+      <p class="text-[13px] font-semibold ${sevI.textColor} mb-1">${sevI.label} ${sevPct}%</p>
+      <div class="w-full bg-sand rounded-full h-1.5 mb-4">
+        <div class="${sevI.barColor} h-1.5 rounded-full" style="width:${sevPct}%"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 pb-3 mb-3 border-b border-sand">
+        <div>
+          <p class="text-[10px] text-slate mb-0.5">Zona más afectada</p>
+          <p class="text-[12px] font-bold text-ink">${worstName}</p>
+          ${worstPct != null ? `<p class="text-[11px] text-slate">${worstPct}%</p>` : ''}
+        </div>
+        <div>
+          <p class="text-[10px] text-slate mb-0.5">Zona menos afectada</p>
+          <p class="text-[12px] font-bold text-ink">${bestName}</p>
+          ${bestPct != null ? `<p class="text-[11px] text-slate">${bestPct}%</p>` : ''}
+        </div>
+      </div>
+      <button onclick="openDetail(${a.id})"
+        class="w-full bg-forest text-white text-[12px] font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-forest/90 transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        Ver análisis
+      </button>
+    </div>`
+}
+
+function _histFilterBar(analyses) {
+  const conds    = [...new Set(analyses.map(a => a.top1_label).filter(Boolean))]
+  const condOpts = conds.map(c => `<option value="${c}">${_LABEL_ES[c] || c}</option>`).join('')
+  const periodOpts = `
+    <option value="30">Últimos 30 días</option>
+    <option value="90">Últimos 3 meses</option>
+    <option value="180">Últimos 6 meses</option>
+    <option value="365">Último año</option>`
+  const searchIcon = `<svg class="w-3.5 h-3.5 text-slate pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
+
+  return `
+    <div class="hidden lg:flex items-center gap-3 mb-5">
+      <div class="relative">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2">${searchIcon}</span>
+        <input id="hist-search" type="text" placeholder="Buscar análisis"
+          class="text-[12px] border border-sand rounded-full pl-9 pr-4 py-2 w-52 bg-white text-ink placeholder:text-slate/50 outline-none focus:border-forest/40 transition-colors" />
+      </div>
+      <select id="hist-cond" class="text-[12px] border border-sand rounded-full px-4 py-2 bg-white text-ink outline-none focus:border-forest/40 cursor-pointer">
+        <option value="">Todos los análisis</option>${condOpts}
+      </select>
+      <select id="hist-period" class="text-[12px] border border-sand rounded-full px-4 py-2 bg-white text-ink outline-none focus:border-forest/40 cursor-pointer">
+        <option value="">Todos los períodos</option>${periodOpts}
+      </select>
+    </div>
+    <div class="flex lg:hidden items-center gap-2 mb-4">
+      <div class="relative flex-1">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2">${searchIcon}</span>
+        <input id="hist-search-m" type="text" placeholder="Buscar"
+          class="w-full text-[12px] border border-sand rounded-xl pl-9 pr-3 py-2 bg-white text-ink placeholder:text-slate/50 outline-none focus:border-forest/40 transition-colors" />
+      </div>
+      <select id="hist-cond-m" class="text-[12px] border border-sand rounded-xl px-3 py-2 bg-white text-ink outline-none cursor-pointer flex-shrink-0">
+        <option value="">Todos</option>${condOpts}
+      </select>
+      <select id="hist-period-m" class="text-[12px] border border-sand rounded-xl px-3 py-2 bg-white text-ink outline-none cursor-pointer flex-shrink-0">
+        <option value="">Filtros</option>${periodOpts}
+      </select>
+    </div>`
+}
+
 function _populateHistoryTab(analyses) {
   const container = document.getElementById('hist-items')
   if (!container) return
 
+  _analysisUserNum = {}
+  analyses.forEach((a, i) => { _analysisUserNum[a.id] = analyses.length - i })
+
   if (!analyses.length) {
     container.innerHTML = `
+      <h2 class="text-[17px] font-bold text-ink">Historial de análisis</h2>
+      <p class="text-[11px] text-slate mt-0.5 mb-4">Consulta tus análisis anteriores y observa tu progreso.</p>
       <div class="card card-body text-center py-10">
         <p class="text-xs text-slate">No tienes análisis registrados aún.</p>
-        <button class="btn-primary mt-4 max-w-xs mx-auto" data-go="capture">
-          Hacer primer análisis
-        </button>
+        <button class="btn-primary mt-4 max-w-xs mx-auto" data-go="capture">Hacer primer análisis</button>
       </div>`
     return
   }
 
-  _analysisUserNum = {}
-  container.innerHTML = analyses.map((a, i) => {
-    const userNum = analyses.length - i   // oldest = #1, newest = #N
-    _analysisUserNum[a.id] = userNum
-    const dateStr = _formatDate(a.created_at)
-    const label   = _LABEL_ES[a.top1_label] || 'Análisis de piel'
+  container.innerHTML = `
+    <h2 class="text-[17px] font-bold text-ink">Historial de análisis</h2>
+    <p class="text-[11px] text-slate mt-0.5 mb-5">Consulta tus análisis anteriores y observa tu progreso.</p>
 
-    return `
-      <div
-        class="card card-body mb-3 cursor-pointer hover:shadow-md transition-shadow"
-        onclick="openDetail(${a.id})"
-        role="button"
-        aria-label="Abrir análisis #${userNum}"
-      >
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-[10px] font-bold text-forest bg-forest/10 rounded px-2 py-0.5">
-            Análisis #${userNum}
-          </span>
-          <span class="text-[10px] text-ok font-semibold">Completado</span>
-        </div>
-        <p class="text-xs font-semibold text-ink mb-0.5">${label}</p>
-        <p class="text-[10px] text-slate">${dateStr}</p>
-        <div class="flex justify-end mt-2">
-          <span class="text-[10px] text-forest font-semibold">Ver detalle →</span>
-        </div>
-      </div>`
-  }).join('')
+    ${_histFilterBar(analyses)}
+
+    <div class="hidden lg:block overflow-x-auto rounded-2xl border border-sand bg-white mb-4">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-sand/40 border-b border-sand">
+            <th class="px-4 py-3 text-[10px] font-semibold text-slate uppercase tracking-wider">#</th>
+            <th class="px-4 py-3 text-[10px] font-semibold text-slate uppercase tracking-wider">Condición</th>
+            <th class="px-4 py-3 text-[10px] font-semibold text-slate uppercase tracking-wider">Severidad</th>
+            <th class="px-4 py-3 text-[10px] font-semibold text-slate uppercase tracking-wider">Zona más afectada</th>
+            <th class="px-4 py-3 text-[10px] font-semibold text-slate uppercase tracking-wider">Zona menos afectada</th>
+            <th class="px-4 py-3 text-[10px] font-semibold text-slate uppercase tracking-wider">Estado</th>
+            <th class="px-4 py-3 text-[10px] font-semibold text-slate uppercase tracking-wider">Fecha</th>
+            <th class="px-4 py-3 text-[10px] font-semibold text-slate uppercase tracking-wider">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="hist-tbody">
+          ${analyses.map(a => _histTableRow(a)).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div id="hist-cards" class="lg:hidden space-y-3 mb-4">
+      ${analyses.map(a => _histCard(a)).join('')}
+    </div>
+
+    <div class="flex items-center gap-x-5 gap-y-2 flex-wrap pt-3 border-t border-sand/60">
+      <span class="text-[11px] font-semibold text-ink">Niveles de severidad</span>
+      <span class="flex items-center gap-1.5 text-[11px] text-slate"><span class="w-2.5 h-2.5 rounded-full bg-ok inline-block flex-shrink-0"></span>Leve (0-20%)</span>
+      <span class="flex items-center gap-1.5 text-[11px] text-slate"><span class="w-2.5 h-2.5 rounded-full bg-warn inline-block flex-shrink-0"></span>Moderado (21-50%)</span>
+      <span class="flex items-center gap-1.5 text-[11px] text-slate"><span class="w-2.5 h-2.5 rounded-full bg-[#E8906A] inline-block flex-shrink-0"></span>Alto (51-75%)</span>
+      <span class="flex items-center gap-1.5 text-[11px] text-slate"><span class="w-2.5 h-2.5 rounded-full bg-rose inline-block flex-shrink-0"></span>Severo (76-100%)</span>
+    </div>
+    <p class="hist-count text-[10px] text-slate text-center mt-3">Mostrando ${analyses.length} de ${analyses.length} análisis</p>`
+
+  _attachHistoryFilters(analyses)
+}
+
+function _attachHistoryFilters(allAnalyses) {
+  function applyFilters() {
+    const search = (
+      document.getElementById('hist-search')?.value ||
+      document.getElementById('hist-search-m')?.value || ''
+    ).toLowerCase().trim()
+    const cond   = document.getElementById('hist-cond')?.value     || document.getElementById('hist-cond-m')?.value   || ''
+    const period = document.getElementById('hist-period')?.value   || document.getElementById('hist-period-m')?.value || ''
+    const cutoff = period ? Date.now() - parseInt(period) * 86400000 : null
+
+    const filtered = allAnalyses.filter(a => {
+      if (search && !(_LABEL_ES[a.top1_label] || '').toLowerCase().includes(search)) return false
+      if (cond   && a.top1_label !== cond) return false
+      if (cutoff && new Date(a.created_at).getTime() < cutoff) return false
+      return true
+    })
+
+    const tbody = document.getElementById('hist-tbody')
+    if (tbody) tbody.innerHTML = filtered.length
+      ? filtered.map(a => _histTableRow(a)).join('')
+      : `<tr><td colspan="8" class="py-8 text-center text-xs text-slate">No hay análisis que coincidan.</td></tr>`
+
+    const cards = document.getElementById('hist-cards')
+    if (cards) cards.innerHTML = filtered.length
+      ? filtered.map(a => _histCard(a)).join('')
+      : `<p class="text-center text-xs text-slate py-8">No hay análisis que coincidan.</p>`
+
+    const counter = document.querySelector('.hist-count')
+    if (counter) counter.textContent = `Mostrando ${filtered.length} de ${allAnalyses.length} análisis`
+  }
+
+  ;['hist-search', 'hist-cond', 'hist-period', 'hist-search-m', 'hist-cond-m', 'hist-period-m'].forEach(id => {
+    const el = document.getElementById(id)
+    if (!el) return
+    el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', applyFilters)
+  })
 }
 
 // ── TAB: RUTINA ───────────────────────────────────────────────────────────
