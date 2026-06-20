@@ -235,6 +235,11 @@
   .accordion-card.open .accordion-arrow { @apply rotate-180; }
 }
 
+/* ── KPI wrapper: 2 cols on mobile, transparent to grid on desktop ── */
+@media (min-width: 1024px) {
+  #kpi-wrapper { display: contents; }
+}
+
 /* ── Custom scrollbar ── */
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }

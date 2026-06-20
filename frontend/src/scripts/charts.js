@@ -1,172 +1,182 @@
 /**
  * charts.js
  * Inicializa las gráficas del dashboard con Chart.js.
- * Usa window._skinaiAnalyses (poblado por dashboard.js) para datos reales.
+ * Usa window._skinaiAnalyses (poblado por dashboard.js) para datos reales del modelo ML.
  * Se llama de forma lazy cuando el usuario activa la tab "Gráficas".
  */
 
 let initialized = false
 
-const rose   = '#C47060'
-const forest = '#233D30'
-const bark   = '#B89A72'
-const ok     = '#2E7D5A'
-const warn   = '#D4942A'
-const grid   = '#E8E2D6'
+const rose = '#C47060'
+const bark = '#B89A72'
+const grid = '#E8E2D6'
+
+// ── Inicialización ────────────────────────────────────────────────────────────
 
 export function initCharts() {
   if (initialized) return
 
-  // Chart.js aún no cargó — reintentar
   if (typeof Chart === 'undefined') {
     setTimeout(initCharts, 300)
     return
   }
 
-  const analyses = (window._skinaiAnalyses || []).filter(a => a.status === 'completed')
+  const analyses = (window._skinaiAnalyses || [])
+    .filter(a => a.status === 'completed' && a.result)
 
-  // ── Sin suficientes datos ─────────────────────────────────────────────
-  if (analyses.length < 2) {
-    // El mensaje de "no data" del HTML ya está visible por defecto
-    return
-  }
+  if (analyses.length < 2) return
 
   initialized = true
 
-  // Ocultar mensaje "no data", mostrar bloques de gráficas
-  const noDataCard = document.querySelector('#dg > div > .card.card-body.text-center')
-  if (noDataCard) noDataCard.classList.add('hidden')
-  ;['chart-block-lesiones', 'chart-block-radar', 'chart-block-sev', 'chart-block-bars'].forEach(id => {
-    document.getElementById(id)?.classList.remove('hidden')
-  })
+  document.getElementById('chart-block-lesiones')?.classList.remove('hidden')
 
-  // Etiquetas del eje X usando fechas reales (del más antiguo al más reciente)
+  // Ordenar del más antiguo al más reciente para el eje X
   const sorted = [...analyses].reverse()
-  const labels = sorted.map(a =>
-    new Date(a.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-  )
-  const n = labels.length
 
   Chart.defaults.font  = { family: "'DM Sans', sans-serif", size: 11 }
   Chart.defaults.color = '#5A6474'
 
-  // ── 1. Lesiones en el tiempo ──────────────────────────────────────────
-  // Valores en cero hasta que el modelo ML esté integrado (Fase 8)
+  // ── 1. Severidad en el tiempo (eje Y categórico) ─────────────────────────
   const elLes = document.getElementById('chart-lesiones')
   if (elLes) {
-    new Chart(elLes, {
+    const catLabels = ['Sin señales', 'Muy leve', 'Leve', 'Moderada', 'Severa']
+    const catColors = ['#9CA3AF', '#5FBA8B', '#D4942A', '#E8906A', '#C47060']
+
+    const sevCat   = s => s < 0.10 ? 0 : s < 0.25 ? 1 : s < 0.50 ? 2 : s < 0.75 ? 3 : 4
+    const segColor = ctx => catColors[Math.round((ctx.p0.parsed.y + ctx.p1.parsed.y) / 2)] ?? bark
+
+    // Plugin: puntos de color en cada nivel del eje Y
+    const yDotPlugin = {
+      id: 'yDots',
+      afterDraw(chart) {
+        const yScale = chart.scales.y
+        if (!yScale) return
+        const c = chart.ctx
+        for (let i = 0; i <= 4; i++) {
+          const yPos = yScale.getPixelForValue(i)
+          const xPos = yScale.right
+          c.save()
+          c.beginPath()
+          c.arc(xPos, yPos, 4, 0, Math.PI * 2)
+          c.fillStyle = catColors[i]
+          c.fill()
+          c.restore()
+        }
+      },
+    }
+
+    // Plugin: etiqueta de % encima de cada punto del dataset
+    const pctLabelPlugin = {
+      id: 'pctLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx, scales: { x, y }, data } = chart
+        const ds  = data.datasets[0]
+        const raw = data._raw
+        if (!ds || !raw) return
+        ds.data.forEach((val, i) => {
+          const score = raw[i]?.result?.severity_score ?? 0
+          const pct   = Math.round(score * 100)
+          const xPos  = x.getPixelForValue(i)
+          const yPos  = y.getPixelForValue(val)
+          const color = Array.isArray(ds.pointBackgroundColor)
+            ? ds.pointBackgroundColor[i]
+            : ds.pointBackgroundColor
+          ctx.save()
+          ctx.font         = 'bold 10px "DM Sans", sans-serif'
+          ctx.fillStyle    = color ?? bark
+          ctx.textAlign    = 'center'
+          ctx.textBaseline = 'bottom'
+          ctx.fillText(`${pct}%`, xPos, yPos - 12)
+          ctx.restore()
+        })
+      },
+    }
+
+    const _buildLesionesChart = (slice) => {
+      const pts  = slice.map(a => sevCat(a.result?.severity_score ?? 0))
+      // Etiquetas X en dos líneas: "22 mar" / "2026"
+      const lbls = slice.map(a => {
+        const d = new Date(a.created_at)
+        return [
+          d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+          d.getFullYear().toString(),
+        ]
+      })
+      return {
+        labels: lbls,
+        datasets: [{
+          data: pts,
+          segment: { borderColor: segColor },
+          backgroundColor: rose + '20',
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: pts.map(v => catColors[v]),
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderWidth: 2.5,
+        }],
+      }
+    }
+
+    const lesData = _buildLesionesChart(sorted)
+    lesData._raw  = sorted
+
+    const lesChart = new Chart(elLes, {
       type: 'line',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Lesiones detectadas',
-            data: Array(n).fill(0),
-            borderColor: rose, backgroundColor: rose + '22',
-            fill: true, tension: 0.4,
-            pointBackgroundColor: rose, pointRadius: 5,
-          },
-        ],
-      },
+      data: lesData,
+      plugins: [yDotPlugin, pctLabelPlugin],
       options: {
-        responsive: true, maintainAspectRatio: false,
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { top: 24, right: 20, bottom: 4, left: 4 },
+        },
         plugins: {
           legend: { display: false },
-          title: { display: true, text: 'Datos disponibles en Fase 8 (modelo ML)', color: warn, font: { size: 10 } },
-        },
-        scales: {
-          y: { beginAtZero: true, grid: { color: grid } },
-          x: { grid: { display: false } },
-        },
-      },
-    })
-  }
-
-  // ── 2. Radar: primer vs último análisis ──────────────────────────────
-  const elRadar = document.getElementById('chart-radar')
-  if (elRadar) {
-    new Chart(elRadar, {
-      type: 'radar',
-      data: {
-        labels: ['Lesiones', 'Inflamación', 'Sebo', 'Hiperpig.', 'Poros', 'Cicatrices'],
-        datasets: [
-          {
-            label: `Análisis #${sorted[0]?.id}`,
-            data: [0, 0, 0, 0, 0, 0],
-            borderColor: rose,   backgroundColor: rose + '33',   pointBackgroundColor: rose,
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const score = ctx.chart.data._raw?.[ctx.dataIndex]?.result?.severity_score ?? 0
+                return ` ${catLabels[ctx.parsed.y] ?? ''} · ${Math.round(score * 100)}%`
+              },
+            },
           },
-          {
-            label: `Análisis #${sorted[n - 1]?.id}`,
-            data: [0, 0, 0, 0, 0, 0],
-            borderColor: forest, backgroundColor: forest + '22', pointBackgroundColor: forest,
+        },
+        scales: {
+          y: {
+            min: 0,
+            max: 4,
+            grid: { color: grid },
+            border: { display: false },
+            ticks: {
+              stepSize: 1,
+              padding: 14,
+              callback: v => catLabels[v] ?? '',
+            },
           },
-        ],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
-          title: { display: true, text: 'Datos disponibles en Fase 8', color: warn, font: { size: 10 } },
-        },
-        scales: {
-          r: { beginAtZero: true, max: 10, grid: { color: grid }, pointLabels: { font: { size: 10 } } },
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { maxRotation: 0, padding: 6 },
+          },
         },
       },
     })
+
+    const filterSel = document.getElementById('chart-lesiones-filter')
+    if (filterSel) {
+      filterSel.addEventListener('change', () => {
+        const val   = filterSel.value
+        const slice = val === 'all' ? sorted : sorted.slice(-Number(val))
+        const d     = _buildLesionesChart(slice)
+        lesChart.data.labels   = d.labels
+        lesChart.data.datasets = d.datasets
+        lesChart.data._raw     = slice
+        lesChart.update()
+      })
+    }
   }
 
-  // ── 3. Severidad por análisis ─────────────────────────────────────────
-  const elSev = document.getElementById('chart-sev')
-  if (elSev) {
-    new Chart(elSev, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          data: Array(n).fill(0),
-          backgroundColor: Array(n).fill(ok + '88'),
-          borderRadius: 6, borderSkipped: false,
-        }],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: 'Datos disponibles en Fase 8', color: warn, font: { size: 10 } },
-        },
-        scales: {
-          y: { beginAtZero: true, max: 10, grid: { color: grid } },
-          x: { grid: { display: false } },
-        },
-      },
-    })
-  }
-
-  // ── 4. Indicadores de mejoría ─────────────────────────────────────────
-  const elBars = document.getElementById('chart-bars')
-  if (elBars) {
-    new Chart(elBars, {
-      type: 'bar',
-      data: {
-        labels: ['Sebo', 'Inflamación', 'Hiperpig.', 'Poros', 'Lesiones'],
-        datasets: [{
-          data: [0, 0, 0, 0, 0],
-          backgroundColor: [ok, ok, ok, ok, ok],
-          borderRadius: 5,
-        }],
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: 'Datos disponibles en Fase 8', color: warn, font: { size: 10 } },
-        },
-        scales: {
-          x: { grid: { color: grid }, ticks: { callback: v => v + '%' } },
-          y: { grid: { display: false } },
-        },
-      },
-    })
-  }
 }

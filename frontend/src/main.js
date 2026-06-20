@@ -213,9 +213,8 @@ function injectNavStyles() {
 
     /* Dashboard tab bar */
     .dtab {
-      flex: 1;
-      min-width: 70px;
-      padding: 10px 0;
+      flex: 1 0 auto;
+      padding: 10px 14px;
       font-size: 12px;
       font-weight: 600;
       color: rgba(255,255,255,0.36);
@@ -237,7 +236,8 @@ function injectNavStyles() {
 
     /* Dashboard tab pages */
     .dpage { display: none; }
-    .dpage.active { display: block; }
+    .dpage.active { display: block; flex: 1 1 0%; min-height: 0; overflow: hidden; }
+    #dd.dpage.active, #dh.dpage.active, #dr.dpage.active { overflow-y: auto; }
 
     /* Zone labels on image */
     .zone-lbl {

@@ -12,7 +12,7 @@ const POLL_INTERVAL = 2000   // ms entre cada consulta de estado
 
 // Retardo (ms desde el inicio) en que cada paso se activa visualmente.
 // null = se activa sólo cuando la API confirma el estado final.
-const STEP_TIMINGS = [0, 800, 1600, 2400, 3200, null, null]
+const STEP_TIMINGS = [0, 800, 1600, 2400, 3200, null]
 
 let _pollTimer = null
 
@@ -93,12 +93,9 @@ function _startPolling(analysisId) {
         // Activar pasos 6 y 7 con pequeño retraso para dar sensación de finalización
         _activateStep(6)
         setTimeout(() => {
-          _activateStep(7)
-          setTimeout(() => {
-            sessionStorage.removeItem('skinai_analysis_id')
-            window._goFull && window._goFull('dashboard')
-          }, 900)
-        }, 700)
+          sessionStorage.removeItem('skinai_analysis_id')
+          window._goFull && window._goFull('dashboard')
+        }, 900)
 
       } else if (data.status === 'failed') {
         clearInterval(_pollTimer)

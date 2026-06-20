@@ -9,7 +9,7 @@ from app.core.logger import logger
 router = APIRouter()
 
 
-@router.put("/profile", response_model=schemas.SkinProfileOut)
+@router.api_route("/profile", methods=["POST", "PUT"], response_model=schemas.SkinProfileOut)
 def update_profile(
     profile: schemas.SkinProfileCreate,
     current_user: models.User = Depends(deps.get_current_user),

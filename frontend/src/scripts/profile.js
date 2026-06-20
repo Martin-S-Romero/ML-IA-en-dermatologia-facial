@@ -105,7 +105,7 @@ function initSaveProfile() {
     try {
       const token = localStorage.getItem('skinai_token')
       const res   = await fetch(`${API}/users/profile`, {
-        method:  'POST',
+        method:  'PUT',
         headers: {
           'Content-Type':  'application/json',
           'Authorization': `Bearer ${token}`,

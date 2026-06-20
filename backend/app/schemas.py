@@ -150,6 +150,7 @@ class AnalysisSnapshot(BaseModel):
     censored_filename: Optional[str]   = None
     top1_label:        Optional[str]   = None
     top1_confidence:   Optional[float] = None
+    result:            Optional[Any]   = None
     created_at:        datetime
 
     class Config:

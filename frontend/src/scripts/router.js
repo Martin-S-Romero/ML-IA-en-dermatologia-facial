@@ -106,7 +106,7 @@ async function loadPage(pageKey) {
   const url = PAGES[pageKey]
 
   // Only show the global navbar on authenticated flow pages that lack their own sidebar
-  const NAVBAR_PAGES = ['profile', 'capture', 'routine-check', 'routine-change', 'analyzing']
+  const NAVBAR_PAGES = ['capture', 'routine-check', 'routine-change', 'analyzing']
   const navbarSlot = document.getElementById('slot-navbar')
   if (navbarSlot) navbarSlot.style.display = NAVBAR_PAGES.includes(pageKey) ? 'block' : 'none'
 
@@ -126,6 +126,9 @@ async function loadPage(pageKey) {
     app.querySelector('section')?.classList.add('page-enter')
 
     currentPage = pageKey
+    // Dashboard never scrolls the body; restore for all other pages
+    document.body.style.overflow = pageKey === 'dashboard' ? 'hidden' : ''
+    document.documentElement.style.overflow = pageKey === 'dashboard' ? 'hidden' : ''
     window.scrollTo({ top: 0, behavior: 'instant' })
 
     await runPageInit(pageKey)
