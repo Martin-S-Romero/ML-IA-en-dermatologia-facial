@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Recomendaciones — Análisis de Ejemplo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #1a1a2e; }
+  header { background: #1a1a2e; color: #fff; padding: 24px 32px; }
+  header h1 { font-size: 1.4rem; font-weight: 600; }
+  header p { font-size: 0.82rem; color: #8b9dc3; margin-top: 4px; }
+  main { max-width: 960px; margin: 32px auto; padding: 0 24px; }
+
+  .user-section { margin-bottom: 40px; }
+  .user-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .user-header h2 { font-size: 1.15rem; font-weight: 700; }
+  .user-email { font-size: 0.78rem; color: #6c757d; font-family: monospace; background: #e9ecef; padding: 2px 8px; border-radius: 4px; }
+
+  .analysis-card { background: #fff; border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+  .analysis-header { background: #f1f3f5; padding: 14px 20px; border-bottom: 1px solid #dee2e6; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .analysis-title { font-weight: 700; font-size: 1rem; }
+  .badge { font-size: 0.72rem; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+  .badge-primary   { background: #d0ebff; color: #1971c2; }
+  .badge-secondary { background: #fff3bf; color: #e67700; }
+  .badge-tertiary  { background: #d3f9d8; color: #2f9e44; }
+  .meta { font-size: 0.78rem; color: #6c757d; }
+  .conditions-bar { padding: 10px 20px; background: #fff9db; border-bottom: 1px solid #ffe066; font-size: 0.82rem; }
+  .conditions-bar strong { font-size: 0.76rem; color: #6c757d; text-transform: uppercase; letter-spacing: 0.04em; }
+  .cond-chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.76rem; font-weight: 600; margin: 0 4px; }
+
+  .condition-block { border-top: 1px solid #f0f0f0; }
+  .condition-label { padding: 10px 20px; font-size: 0.82rem; font-weight: 700; color: #495057; background: #f8f9fa; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+  .condition-label .conf { font-weight: 400; color: #868e96; }
+
+  .cats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0; }
+  .cat-col { border-right: 1px solid #f0f0f0; padding: 14px 16px; }
+  .cat-col:last-child { border-right: none; }
+  .cat-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #adb5bd; margin-bottom: 8px; }
+  .product { font-size: 0.78rem; padding: 5px 0; border-bottom: 1px solid #f8f9fa; }
+  .product:last-child { border-bottom: none; }
+  .product-name { font-weight: 600; color: #212529; }
+  .product-brand { color: #868e96; font-size: 0.72rem; }
+  .product-score { display: inline-block; font-size: 0.68rem; background: #e9ecef; color: #495057; padding: 1px 6px; border-radius: 4px; margin-top: 2px; }
+  .product-matched { font-size: 0.68rem; color: #2f9e44; margin-top: 1px; }
+  .product-no-match { font-size: 0.68rem; color: #adb5bd; margin-top: 1px; }
+  .single-condition .condition-label { display: none; }
+  .single-condition .condition-block { border-top: none; }
+
+  @media (max-width: 600px) {
+    .cats-grid { grid-template-columns: 1fr 1fr; }
+    .cat-col { border-right: none; border-bottom: 1px solid #f0f0f0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Recomendaciones — Análisis de Ejemplo</h1>
+  <p>Motor: scoring de ingredientes (Opción C) · top_n=5 · umbral multi-condición: prob ≥ 15%</p>
+</header>
+<main>
+
+  <!-- ── Usuario 1: acne-excoriated ── -->
+  <div class="user-section">
+    <div class="user-header">
+      <h2>Acné Excoriado</h2>
+      <span class="user-email">ejemplo1@example.com</span>
+    </div>
+    <div class="analysis-card">
+      <div class="analysis-header">
+        <span class="analysis-title">Análisis #2</span>
+        <span class="badge badge-primary">acne-excoriated — 42.7%</span>
+        <span class="meta">Severidad: 0.000 · 1 condición activa · efficientnet_b3_v1</span>
+      </div>
+      <div class="single-condition">
+        <div class="condition-block">
+          <div class="condition-label">acne-excoriated <span class="conf">(42.7%)</span></div>
+          <div class="cats-grid">
+            <div class="cat-col">
+              <div class="cat-title">Cleanser</div>
+              <div class="product"><div class="product-name">Gel micellar wash</div><div class="product-brand">Unilever, Simple</div><span class="product-score">53.5</span><div class="product-matched">PANTHENOL</div></div>
+              <div class="product"><div class="product-name">Cetaphil Gentle Skin Cleanser</div><div class="product-brand">Cetaphil,Galderma</div><span class="product-score">52.75</span><div class="product-matched">PANTHENOL</div></div>
+              <div class="product"><div class="product-name">Low pH Niacinamide Micellar CW</div><div class="product-brand">COSRX</div><span class="product-score">52.75</span><div class="product-matched">Panthenol</div></div>
+            </div>
+            <div class="cat-col">
+              <div class="cat-title">Moisturizer</div>
+              <div class="product"><div class="product-name">Effaclar Az Gel-cream</div><div class="product-brand">La Roche-Posay</div><span class="product-score">71.12</span><div class="product-matched">Azelaic Acid, Panthenol</div></div>
+              <div class="product"><div class="product-name">Lotion purifiante</div><div class="product-brand">Cosmia</div><span class="product-score">61.0</span><div class="product-matched">PANTHENOL, AZELAIC ACID</div></div>
+              <div class="product"><div class="product-name">Balancium B5 D-Panthenol Cream</div><div class="product-brand">COSRX</div><span class="product-score">54.25</span><div class="product-matched">Panthenol</div></div>
+            </div>
+            <div class="cat-col">
+              <div class="cat-title">SPF</div>
+              <div class="product"><div class="product-name">Dermopure Therapiebegleitende...</div><div class="product-brand">Eucerin</div><span class="product-score">53.5</span><div class="product-matched">Panthenol</div></div>
+              <div class="product"><div class="product-name">Healthy Renew Peptides SPF 30</div><div class="product-brand">Cetaphil</div><span class="product-score">52.75</span><div class="product-matched">Panthenol</div></div>
+              <div class="product"><div class="product-name">Anthelios UV Clear SPF 50 AzAcid</div><div class="product-brand">La Roche-Posay</div><span class="product-score">51.25</span><div class="product-matched">Azelaic Acid</div></div>
+            </div>
+            <div class="cat-col">
+              <div class="cat-title">Serum</div>
+              <div class="product"><div class="product-name">Azelaic Acid 10 Ampoule</div><div class="product-brand">Skin1004</div><span class="product-score">69.62</span><div class="product-matched">Azelaic Acid, Panthenol</div></div>
+              <div class="product"><div class="product-name">10% Azelaic Acid Serum</div><div class="product-brand">The Inkey List</div><span class="product-score">61.38</span><div class="product-matched">Azelaic Acid</div></div>
+              <div class="product"><div class="product-name">Azelaic Acid 10 Kojic Tea Tree</div><div class="product-brand">Purito SEOUL</div><span class="product-score">61.38</span><div class="product-matched">Azelaic Acid</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Usuario 3: rosacea-etr ── -->
+  <div class="user-section">
+    <div class="user-header">
+      <h2>Rosácea ETR</h2>
+      <span class="user-email">ejemplo3@example.com</span>
+    </div>
+    <div class="analysis-card">
+      <div class="analysis-header">
+        <span class="analysis-title">Análisis #3</span>
+        <span class="badge badge-primary">rosacea-etr — 54.3%</span>
+        <span class="meta">Severidad: 0.000 · 1 condición activa · efficientnet_b3_v1</span>
+      </div>
+      <div class="single-condition">
+        <div class="condition-block">
+          <div class="condition-label">rosacea-etr <span class="conf">(54.3%)</span></div>
+          <div class="cats-grid">
+            <div class="cat-col">
+              <div class="cat-title">Cleanser</div>
+              <div class="product"><div class="product-name">Cleanse Makeup Remover Wipes FF</div><div class="product-brand">Olay</div><span class="product-score">59.12</span><div class="product-matched">Niacinamide</div></div>
+              <div class="product"><div class="product-name">Hungarian Water Essence CW</div><div class="product-brand">Olay</div><span class="product-score">59.12</span><div class="product-matched">Niacinamide</div></div>
+              <div class="product"><div class="product-name">Energy Micellar Water</div><div class="product-brand">Nivea</div><span class="product-score">59.12</span><div class="product-matched">Niacinamide</div></div>
+            </div>
+            <div class="cat-col">
+              <div class="cat-title">Moisturizer</div>
+              <div class="product"><div class="product-name">Bright Boost Face Moisturiser</div><div class="product-brand">Pond's Men</div><span class="product-score">74.75</span><div class="product-matched">Niacinamide, TiO₂, ZnO</div></div>
+              <div class="product"><div class="product-name">Pond's Instabright Tone Up Cream</div><div class="product-brand">Pond's</div><span class="product-score">69.88</span><div class="product-matched">Niacinamide, TiO₂</div></div>
+              <div class="product"><div class="product-name">Total Effects Fragrance Free</div><div class="product-brand">Olay</div><span class="product-score">67.0</span><div class="product-matched">Niacinamide, TiO₂</div></div>
+            </div>
+            <div class="cat-col">
+              <div class="cat-title">SPF</div>
+              <div class="product"><div class="product-name">Madagascar Centella Air-fit SPF</div><div class="product-brand">Skin1004</div><span class="product-score">79.0</span><div class="product-matched">ZnO, TiO₂, Niacinamide</div></div>
+              <div class="product"><div class="product-name">Uv Shield Daily Mild SPF50+</div><div class="product-brand">Some By Mi</div><span class="product-score">75.62</span><div class="product-matched">TiO₂, Niacinamide, ZnO</div></div>
+              <div class="product"><div class="product-name">UV Clear Tinted SPF 46</div><div class="product-brand">EltaMD</div><span class="product-score">73.0</span><div class="product-matched">ZnO, Niacinamide</div></div>
+            </div>
+            <div class="cat-col">
+              <div class="cat-title">Serum</div>
+              <div class="product"><div class="product-name">Sebiaclear Ampoule Flash</div><div class="product-brand">SVR</div><span class="product-score">78.25</span><div class="product-matched">Azelaic Acid, Niacinamide</div></div>
+              <div class="product"><div class="product-name">Azelaic Acid 10 Kojic Tea Tree</div><div class="product-brand">Purito SEOUL</div><span class="product-score">73.75</span><div class="product-matched">Azelaic Acid, Niacinamide</div></div>
+              <div class="product"><div class="product-name">Hyaluron Activ B3 Serum</div><div class="product-brand">Avene</div><span class="product-score">62.5</span><div class="product-matched">Niacinamide</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Usuario 7: multi-condición ── -->
+  <div class="user-section">
+    <div class="user-header">
+      <h2>Multi-condición</h2>
+      <span class="user-email">ejemplo7@example.com</span>
+    </div>
+
+    <!-- Análisis 4: rosacea-inflammatory + acne-excoriated -->
+    <div class="analysis-card">
+      <div class="analysis-header">
+        <span class="analysis-title">Análisis #4</span>
+        <span class="badge badge-primary">rosacea-inflammatory — 31.9%</span>
+        <span class="badge badge-secondary">acne-excoriated — 24.8%</span>
+        <span class="meta">Severidad: 0.370 · <strong>2 condiciones activas</strong> · efficientnet_b3_v3</span>
+      </div>
+      <div class="conditions-bar">
+        <strong>Condiciones detectadas:</strong>
+        <span class="cond-chip" style="background:#ffd6d6;color:#c92a2a">rosacea-inflammatory 31.9%</span>
+        <span class="cond-chip" style="background:#fff0d6;color:#d9480f">acne-excoriated 24.8% ✓ &gt;15%</span>
+        <span class="cond-chip" style="background:#e9ecef;color:#adb5bd">seborrheic-dermatitis 13.3% ✗</span>
+        <span class="cond-chip" style="background:#e9ecef;color:#adb5bd">rosacea-etr 11.8% ✗</span>
+      </div>
+
+      <!-- Condición 1: rosacea-inflammatory -->
+      <div class="condition-block">
+        <div class="condition-label">↳ rosacea-inflammatory <span class="conf">(31.9%)</span></div>
+        <div class="cats-grid">
+          <div class="cat-col">
+            <div class="cat-title">Cleanser</div>
+            <div class="product"><div class="product-name">Pigmentbio H2O Micellar Water</div><div class="product-brand">Bioderma</div><span class="product-score">49.0</span><div class="product-matched">Azelaic Acid</div></div>
+            <div class="product"><div class="product-name">Clinique Redness Solutions</div><div class="product-brand">Clinique</div><span class="product-score">40.0</span><div class="product-no-match">sin match</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Moisturizer</div>
+            <div class="product"><div class="product-name">Effaclar Az Gel-cream</div><div class="product-brand">La Roche-Posay</div><span class="product-score">61.38</span><div class="product-matched">Azelaic Acid</div></div>
+            <div class="product"><div class="product-name">ACM Azéane Cream 15% Az.Acid</div><div class="product-brand">ACM Laboratoire</div><span class="product-score">49.25</span><div class="product-matched">AZELAIC ACID</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">SPF</div>
+            <div class="product"><div class="product-name">Anthelios UV Clear SPF 50 AzAcid</div><div class="product-brand">La Roche-Posay</div><span class="product-score">51.25</span><div class="product-matched">Azelaic Acid</div></div>
+            <div class="product"><div class="product-name">Melascreen Fluido SPF50+</div><div class="product-brand">Ducray</div><span class="product-score">45.25</span><div class="product-matched">AZELAIC ACID</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Serum</div>
+            <div class="product"><div class="product-name">10% Azelaic Acid Serum</div><div class="product-brand">The Inkey List</div><span class="product-score">61.38</span><div class="product-matched">Azelaic Acid</div></div>
+            <div class="product"><div class="product-name">Azelaic Acid 10 Ampoule</div><div class="product-brand">Skin1004</div><span class="product-score">61.38</span><div class="product-matched">Azelaic Acid</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Condición 2: acne-excoriated -->
+      <div class="condition-block">
+        <div class="condition-label">↳ acne-excoriated <span class="conf">(24.8%)</span></div>
+        <div class="cats-grid">
+          <div class="cat-col">
+            <div class="cat-title">Cleanser</div>
+            <div class="product"><div class="product-name">Gel micellar wash</div><div class="product-brand">Unilever, Simple</div><span class="product-score">53.5</span><div class="product-matched">PANTHENOL</div></div>
+            <div class="product"><div class="product-name">Cetaphil Gentle Skin Cleanser</div><div class="product-brand">Cetaphil</div><span class="product-score">52.75</span><div class="product-matched">PANTHENOL</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Moisturizer</div>
+            <div class="product"><div class="product-name">Effaclar Az Gel-cream</div><div class="product-brand">La Roche-Posay</div><span class="product-score">71.12</span><div class="product-matched">Azelaic Acid, Panthenol</div></div>
+            <div class="product"><div class="product-name">Lotion purifiante</div><div class="product-brand">Cosmia</div><span class="product-score">61.0</span><div class="product-matched">PANTHENOL, AZELAIC ACID</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">SPF</div>
+            <div class="product"><div class="product-name">Dermopure Feuchtigkeitspflege</div><div class="product-brand">Eucerin</div><span class="product-score">53.5</span><div class="product-matched">Panthenol</div></div>
+            <div class="product"><div class="product-name">Anthelios UV Clear SPF 50</div><div class="product-brand">La Roche-Posay</div><span class="product-score">51.25</span><div class="product-matched">Azelaic Acid</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Serum</div>
+            <div class="product"><div class="product-name">Azelaic Acid 10 Ampoule</div><div class="product-brand">Skin1004</div><span class="product-score">69.62</span><div class="product-matched">Azelaic Acid, Panthenol</div></div>
+            <div class="product"><div class="product-name">10% Azelaic Acid Serum</div><div class="product-brand">The Inkey List</div><span class="product-score">61.38</span><div class="product-matched">Azelaic Acid</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Análisis 5: healthy-skin + rosacea-inflammatory + rosacea-etr -->
+    <div class="analysis-card">
+      <div class="analysis-header">
+        <span class="analysis-title">Análisis #5</span>
+        <span class="badge badge-primary">healthy-skin — 29.0%</span>
+        <span class="badge badge-secondary">rosacea-inflammatory — 16.5%</span>
+        <span class="badge badge-tertiary">rosacea-etr — 15.4%</span>
+        <span class="meta">Severidad: 0.459 · <strong>3 condiciones activas</strong> · efficientnet_b3_v3</span>
+      </div>
+      <div class="conditions-bar">
+        <strong>Condiciones detectadas:</strong>
+        <span class="cond-chip" style="background:#d3f9d8;color:#2f9e44">healthy-skin 29.0%</span>
+        <span class="cond-chip" style="background:#ffd6d6;color:#c92a2a">rosacea-inflammatory 16.5% ✓ &gt;15%</span>
+        <span class="cond-chip" style="background:#ffd6d6;color:#c92a2a">rosacea-etr 15.4% ✓ &gt;15%</span>
+        <span class="cond-chip" style="background:#e9ecef;color:#adb5bd">seborrheic-dermatitis 13.6% ✗</span>
+        <span class="cond-chip" style="background:#e9ecef;color:#adb5bd">acne-excoriated 13.1% ✗</span>
+      </div>
+
+      <!-- Condición 1: healthy-skin -->
+      <div class="condition-block">
+        <div class="condition-label">↳ healthy-skin <span class="conf">(29.0%)</span></div>
+        <div class="cats-grid">
+          <div class="cat-col">
+            <div class="cat-title">Cleanser</div>
+            <div class="product"><div class="product-name">5 In 1 Micellar Water</div><div class="product-brand">Nivea</div><span class="product-score">71.5</span><div class="product-matched">Tocopherol, Glycerin</div></div>
+            <div class="product"><div class="product-name">Eye Makeup Remover Gel</div><div class="product-brand">Mario Badescu</div><span class="product-score">70.38</span><div class="product-matched">Glycerin, Tocopherol</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Moisturizer</div>
+            <div class="product"><div class="product-name">Cicabio Creme</div><div class="product-brand">Bioderma</div><span class="product-score">73.38</span><div class="product-matched">Glycerin, Zinc Oxide</div></div>
+            <div class="product"><div class="product-name">Drying Cream</div><div class="product-brand">Mario Badescu</div><span class="product-score">71.88</span><div class="product-matched">ZnO, Glycerin, Tocopherol</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">SPF</div>
+            <div class="product"><div class="product-name">Anthelios HA Mineral Daily</div><div class="product-brand">La Roche-Posay</div><span class="product-score">74.12</span><div class="product-matched">ZnO, Glycerin, Tocopherol</div></div>
+            <div class="product"><div class="product-name">Physical UV Defense SPF 30</div><div class="product-brand">SkinCeuticals</div><span class="product-score">74.12</span><div class="product-matched">ZnO, Glycerin, Tocopherol</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Serum</div>
+            <div class="product"><div class="product-name">Vital Skin Strengthening Serum</div><div class="product-brand">Kiehl's</div><span class="product-score">71.88</span><div class="product-matched">Glycerin, Tocopherol</div></div>
+            <div class="product"><div class="product-name">Vitamin C Serum</div><div class="product-brand">Cetaphil</div><span class="product-score">70.38</span><div class="product-matched">Glycerin, Tocopherol</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Condición 2: rosacea-inflammatory -->
+      <div class="condition-block">
+        <div class="condition-label">↳ rosacea-inflammatory <span class="conf">(16.5%)</span></div>
+        <div class="cats-grid">
+          <div class="cat-col">
+            <div class="cat-title">Cleanser</div>
+            <div class="product"><div class="product-name">Pigmentbio H2O Micellar Water</div><div class="product-brand">Bioderma</div><span class="product-score">49.0</span><div class="product-matched">Azelaic Acid</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Moisturizer</div>
+            <div class="product"><div class="product-name">Effaclar Az Gel-cream</div><div class="product-brand">La Roche-Posay</div><span class="product-score">61.38</span><div class="product-matched">Azelaic Acid</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">SPF</div>
+            <div class="product"><div class="product-name">Anthelios UV Clear SPF 50</div><div class="product-brand">La Roche-Posay</div><span class="product-score">51.25</span><div class="product-matched">Azelaic Acid</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Serum</div>
+            <div class="product"><div class="product-name">10% Azelaic Acid Serum</div><div class="product-brand">The Inkey List</div><span class="product-score">61.38</span><div class="product-matched">Azelaic Acid</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Condición 3: rosacea-etr -->
+      <div class="condition-block">
+        <div class="condition-label">↳ rosacea-etr <span class="conf">(15.4%)</span></div>
+        <div class="cats-grid">
+          <div class="cat-col">
+            <div class="cat-title">Cleanser</div>
+            <div class="product"><div class="product-name">Cleanse Makeup Remover Wipes FF</div><div class="product-brand">Olay</div><span class="product-score">59.12</span><div class="product-matched">Niacinamide</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Moisturizer</div>
+            <div class="product"><div class="product-name">Bright Boost Face Moisturiser</div><div class="product-brand">Pond's Men</div><span class="product-score">74.75</span><div class="product-matched">Niacinamide, TiO₂, ZnO</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">SPF</div>
+            <div class="product"><div class="product-name">Madagascar Centella Air-fit SPF</div><div class="product-brand">Skin1004</div><span class="product-score">79.0</span><div class="product-matched">ZnO, TiO₂, Niacinamide</div></div>
+          </div>
+          <div class="cat-col">
+            <div class="cat-title">Serum</div>
+            <div class="product"><div class="product-name">Sebiaclear Ampoule Flash</div><div class="product-brand">SVR</div><span class="product-score">78.25</span><div class="product-matched">Azelaic Acid, Niacinamide</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</body>
+</html>

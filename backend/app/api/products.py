@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from app import db_scheme as models, schemas
 from app.api import deps
 from app.core.recommendation_engine import get_recommendations
+import json
 
 router = APIRouter()
 
@@ -35,6 +36,19 @@ def get_product_recommendations(
       comedogenicidad/irritancia, y un boost por severidad alta.
     - El score solo es comparable dentro de la misma categoría.
     """
+    # Cache hit: mismas categorías y top_n que la llamada anterior
+    analysis = db.query(models.Analysis).filter_by(
+        id=analysis_id, user_id=current_user.id
+    ).first()
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="Análisis no encontrado")
+
+    cache = analysis.cached_recommendations or {}
+    cache_key = f"{sorted(categories)}|{top_n}"
+    if cache.get("key") == cache_key and cache.get("data"):
+        return cache["data"]
+
+    # Cache miss: calcular y guardar
     result = get_recommendations(
         db=db,
         analysis_id=analysis_id,
@@ -44,6 +58,10 @@ def get_product_recommendations(
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Análisis no encontrado")
+
+    analysis.cached_recommendations = {"key": cache_key, "data": result}
+    db.commit()
+
     return result
 
 

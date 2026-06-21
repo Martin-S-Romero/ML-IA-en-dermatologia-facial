@@ -30,7 +30,10 @@ class Analysis(Base):
     model_version      = Column(String(50), nullable=True)    # ej. "opcionA"
 
     # Resultado completo del modelo: all_scores{}, tta_passes, compute
-    result             = Column(JSONB, nullable=True)
+    result                  = Column(JSONB, nullable=True)
+
+    # Cache del último resultado del motor de recomendación
+    cached_recommendations  = Column(JSONB, nullable=True)
 
     created_at         = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     completed_at       = Column(DateTime(timezone=True), nullable=True)

@@ -127,7 +127,7 @@ def main():
     for user in EXAMPLE_USERS:
         email = user["email"]
         label = user["label"]
-        print(f"\n[→] {email}")
+        print(f"\n[->] {email}")
         sections += [f"## {label}", f"`{email}`", ""]
 
         token = _login(email, user["password"])
@@ -152,7 +152,7 @@ def main():
         for analysis in completed:
             aid  = analysis["id"]
             top1 = analysis.get("top1_label", "?")
-            print(f"    [·] análisis #{aid} ({top1})...", end=" ", flush=True)
+            print(f"    [.] analisis #{aid} ({top1})...", end=" ", flush=True)
 
             reco = _get_reco(aid, token)
             if not reco:
@@ -173,7 +173,7 @@ def main():
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         f.write("\n".join(sections))
 
-    status = "✅ Completado" if all_ok else "⚠️  Completado con errores"
+    status = "[OK] Completado" if all_ok else "[WARN] Completado con errores"
     print(f"\n{status}")
     print(f"MD guardado en: {OUT_PATH}")
 
