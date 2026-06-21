@@ -14,6 +14,8 @@ let _routine        = null
 let _analysisUserNum = {}   // map: db_id → número relativo al usuario
 let _recoData        = null // cache del último response de recomendaciones
 let _recoCondIdx     = 0    // condición activa en el panel de recomendaciones
+let _dashRecoData    = null // cache de recomendaciones del dashboard
+let _dashRecoCondIdx = 0    // condición activa en el card del dashboard
 
 // ── TRADUCCIONES ──────────────────────────────────────────────────────────────
 
@@ -357,7 +359,113 @@ function _populateDashTab(analyses) {
       </div>`
     kpiDate.classList.remove('hidden')
   }
+
+  if (latest.status === 'completed') {
+    _populateDashRecommendations(latest)
+  }
 }
+
+async function _populateDashRecommendations(latest) {
+  const el = document.getElementById('dash-recommendations')
+  if (!el) return
+
+  const token = localStorage.getItem('skinai_token')
+
+  el.innerHTML = `
+    <p class="section-label mb-2">Recomendaciones</p>
+    <div class="flex items-center justify-center gap-2 py-6 text-[11px] text-slate">
+      <svg class="w-4 h-4 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      Cargando...
+    </div>`
+
+  try {
+    const res = await fetch(`${API}/products/recommendations/${latest.id}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error()
+    const data = await res.json()
+
+    const conds   = data.conditions || []
+    const primary = conds[0]
+    if (!primary) throw new Error()
+
+    const reco = primary.recommendations || {}
+
+    _dashRecoData    = data
+    _dashRecoCondIdx = 0
+
+    const condPillsHTML = conds.length > 1
+      ? conds.map((c, i) => {
+          const name = _LABEL_ES[c.condition] || c.condition
+          const pct  = Math.round((c.confidence || 0) * 100)
+          return `<button id="dash-reco-pill-${i}" onclick="switchDashReco(${i})"
+            class="text-[8px] rounded-full px-2 py-0.5 font-medium transition-colors ${i === 0 ? 'bg-forest text-white' : 'bg-forest/10 text-forest hover:bg-forest/20'}">${name} · ${pct}%</button>`
+        }).join('')
+      : `<span class="text-[8px] text-forest bg-forest/10 rounded-full px-2 py-0.5 font-medium">${_LABEL_ES[conds[0].condition] || conds[0].condition} · ${Math.round((conds[0].confidence || 0) * 100)}%</span>`
+
+    const rowsHTML = _dashRecoRows(reco)
+    if (!rowsHTML) throw new Error()
+
+    el.innerHTML = `
+      <p class="section-label mb-2">Recomendaciones</p>
+      <div class="flex flex-wrap gap-1 mb-2.5">
+        ${condPillsHTML}
+      </div>
+      <div id="dash-reco-rows" class="bg-sand/30 rounded-xl px-2.5 py-0.5 mb-3">
+        ${rowsHTML}
+      </div>
+      <button onclick="dtab('dh'); openDetail(${latest.id})"
+        class="w-full text-[11px] text-forest font-semibold flex items-center justify-center gap-1 py-2 bg-forest/5 rounded-xl hover:bg-forest/10 transition-colors">
+        Ver completas en historial
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>`
+
+  } catch {
+    el.innerHTML = `
+      <p class="section-label mb-2">Recomendaciones</p>
+      <p class="text-[11px] text-slate text-center py-4">No se pudieron cargar las recomendaciones.</p>`
+  }
+}
+
+function _dashRecoRows(reco) {
+  const CATS = ['cleanser', 'moisturizer', 'spf', 'serum']
+  return CATS.flatMap(cat => {
+    const p = (reco[cat] || [])[0]
+    if (!p) return []
+    const si    = _scoreInfo(p.score || 0)
+    const catES = _CATEGORY_ES[cat] || cat
+    return [`
+      <div class="flex items-center gap-2 py-1.5 border-b border-sand/60 last:border-0">
+        <span class="text-[8px] text-slate/55 font-bold uppercase tracking-wide w-16 flex-shrink-0">${catES}</span>
+        <p class="text-[11px] text-ink font-medium flex-1 truncate min-w-0">${p.name}</p>
+        <span class="text-[8px] font-semibold ${si.bg} ${si.color} rounded-full px-1.5 py-0.5 flex-shrink-0">${si.label}</span>
+      </div>`]
+  }).join('')
+}
+
+export function switchDashReco(idx) {
+  if (!_dashRecoData) return
+  _dashRecoCondIdx = idx
+
+  const conds = _dashRecoData.conditions || []
+  const cond  = conds[idx] || conds[0]
+
+  const rowsEl = document.getElementById('dash-reco-rows')
+  if (rowsEl) rowsEl.innerHTML = _dashRecoRows(cond.recommendations || {})
+
+  conds.forEach((_, i) => {
+    const pill = document.getElementById(`dash-reco-pill-${i}`)
+    if (!pill) return
+    pill.className = `text-[8px] rounded-full px-2 py-0.5 font-medium transition-colors ${
+      i === idx ? 'bg-forest text-white' : 'bg-forest/10 text-forest hover:bg-forest/20'
+    }`
+  })
+}
+window.switchDashReco = switchDashReco
 
 // ── TAB: COMPARACIÓN ─────────────────────────────────────────────────────
 
