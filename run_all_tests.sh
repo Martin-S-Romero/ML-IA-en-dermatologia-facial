@@ -28,7 +28,7 @@ python scripts/tests/test_products.py
 
 echo "------------------------------------------------"
 echo "Ejecutando: Fase 2 - Motor de Recomendacion (4 escenarios + contrato)"
-python scripts/tests/test_recommendations_phase2.py
+TEST_USER_EMAIL=testanalysis@example.com TEST_USER_PASS=TestPass123! python scripts/tests/test_recommendations_phase2.py
 
 echo "------------------------------------------------"
 echo "Ejecutando: Endpoints de Analisis (historia, documento, imagen)"

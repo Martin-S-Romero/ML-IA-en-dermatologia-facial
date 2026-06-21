@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore', message='SymbolDatabase.GetPrototype.*')
 # Ajustar el path para que pueda importar módulos de la aplicación
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "backend")))
 
-from app.core.face_censor_v3 import FaceCensor
+from app.core.face_censor import FaceCensor
 
 IMAGE_PATH = r"c:\Users\Sheen\Downloads\Tesis 2.0\image\test_imagen798x1200.jpg"
 

@@ -281,8 +281,14 @@ class ScoredProductOut(BaseModel):
     class Config:
         from_attributes = True
 
+class ConditionRecoOut(BaseModel):
+    condition:       str
+    confidence:      float
+    recommendations: dict   # category -> List[ScoredProductOut]
+
 class RecommendationsOut(BaseModel):
     analysis_id:     int
-    condition:       str
+    condition:       str            # top1 — backward compat
     severity_score:  float
-    recommendations: dict  # category -> List[ScoredProductOut]
+    conditions:      List[ConditionRecoOut]
+    recommendations: dict           # = conditions[0].recommendations — backward compat

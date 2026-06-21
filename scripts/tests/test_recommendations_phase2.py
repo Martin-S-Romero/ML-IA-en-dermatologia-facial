@@ -140,14 +140,22 @@ def test_reco_phase2():
         print(f"    {FAIL} {r.status_code}: {r.text[:200]}")
         return
     data    = r.json()
-    missing = {"analysis_id", "condition", "severity_score", "recommendations"} - set(data.keys())
+    required = {"analysis_id", "condition", "severity_score", "recommendations", "conditions"}
+    missing  = required - set(data.keys())
+    conditions = data.get("conditions", [])
     _ok(
         not missing,
-        f"Campos OK. Condición: {data['condition']}  "
-        f"Severity: {data['severity_score']}  "
-        f"Categorías: {list(data['recommendations'].keys())}",
+        f"Campos OK. Top1: {data.get('condition')}  "
+        f"Severity: {data.get('severity_score')}  "
+        f"Condiciones activas: {len(conditions)}  "
+        f"Categorías: {list(data.get('recommendations', {}).keys())}",
         extra=f"Faltan campos: {missing}"
     )
+    if len(conditions) > 1:
+        labels = [c['condition'] for c in conditions]
+        confs  = [c['confidence'] for c in conditions]
+        print(f"    [INFO   ] Condiciones detectadas: "
+              + ", ".join(f"{l}({c:.0%})" for l, c in zip(labels, confs)))
 
     # ── D: Aislamiento de datos ───────────────────────────────────────────────
     print(f"\n[D] Aislamiento — User B no puede ver el análisis de User A")

@@ -160,51 +160,23 @@ def _score_product(
     return round(score, 2), matched
 
 
+# ── Umbral de confianza para condiciones secundarias ───────────────────────────
+# Solo se incluyen predicciones del modelo con prob >= umbral.
+# La condición primaria (top1_label) siempre se incluye sin umbral.
+SECONDARY_CONDITION_THRESHOLD: float = 0.15
+
+
 # ── API pública ────────────────────────────────────────────────────────────────
 
-def get_recommendations(
+def _score_for_condition(
     db: Session,
-    analysis_id: int,
-    user_id: int,
+    condition: str,
+    result: dict,
     categories: list[str],
-    top_n: int = 5,
-) -> dict | None:
-    """
-    Retorna los top_n productos rankeados por score para cada categoría.
-    Devuelve None si el análisis no existe o no pertenece al usuario.
-
-    El resultado tiene esta forma:
-    {
-        'analysis_id': int,
-        'condition': str,
-        'severity_score': float,
-        'recommendations': {
-            'cleanser': [{'product_id', 'name', 'brand', 'score', 'matched_ingredients', ...}, ...],
-            'moisturizer': [...],
-            ...
-        }
-    }
-    """
-    analysis = db.query(models.Analysis).filter_by(
-        id=analysis_id, user_id=user_id
-    ).first()
-    if not analysis:
-        return None
-
-    # top1_label es columna dedicada (indexed) — más fiable que parsear el JSONB.
-    # El campo 'condition' en JSONB v3 y 'top1_label' en v1 son equivalentes;
-    # usamos la columna dedicada que existe desde la primera versión del schema.
-    condition = analysis.top1_label or 'healthy-skin'
-    result    = analysis.result or {}
-
-    # severity_score: presente en análisis v3 (model_version efficientnet_b3_v3).
-    # En análisis v1 el JSONB no lo tiene → cae a 0.0 (sin severity boost).
-    severity  = float(result.get('severity_score', 0.0))
-
-    # target_ingredients / avoid_ingredients: solo presentes en análisis generados
-    # con el engine que incluye construir_resultado_completo() actualizado.
-    # Los análisis existentes en BD usan JSONB sin esos campos → fallback a listas
-    # hardcodeadas idénticas a las de skinai_analizar_v3.
+    top_n: int,
+    severity: float,
+) -> dict[str, list[dict]]:
+    """Corre el pipeline de scoring de ingredientes para una condición."""
     target_raw: list[str] = result.get('target_ingredients') or FALLBACK_TARGET.get(condition, [])
     avoid_raw:  list[str] = result.get('avoid_ingredients')  or FALLBACK_AVOID.get(condition, [])
 
@@ -213,7 +185,6 @@ def get_recommendations(
     bonus:  list[str] = BONUS_HIGHLIGHTS.get(condition, [])
 
     recommendations: dict[str, list[dict]] = {}
-
     for category in categories:
         products = (
             db.query(models.Product)
@@ -243,9 +214,75 @@ def get_recommendations(
         scored.sort(key=lambda x: x['score'], reverse=True)
         recommendations[category] = scored[:top_n]
 
+    return recommendations
+
+
+def get_recommendations(
+    db: Session,
+    analysis_id: int,
+    user_id: int,
+    categories: list[str],
+    top_n: int = 5,
+) -> dict | None:
+    """
+    Retorna los top_n productos rankeados por score para cada categoría.
+    Devuelve None si el análisis no existe o no pertenece al usuario.
+
+    Incluye la condición primaria (top1_label) y todas las condiciones
+    secundarias del campo result.top_n con prob >= SECONDARY_CONDITION_THRESHOLD.
+
+    Estructura de respuesta:
+    {
+        'analysis_id': int,
+        'condition': str,               # top1 — backward compat
+        'severity_score': float,
+        'conditions': [                 # una entrada por condición activa
+            {
+                'condition': str,
+                'confidence': float,
+                'recommendations': { category: [ScoredProduct, ...] }
+            },
+            ...
+        ],
+        'recommendations': dict,        # = conditions[0].recommendations — backward compat
+    }
+    """
+    analysis = db.query(models.Analysis).filter_by(
+        id=analysis_id, user_id=user_id
+    ).first()
+    if not analysis:
+        return None
+
+    condition = analysis.top1_label or 'healthy-skin'
+    result    = analysis.result or {}
+    severity  = float(result.get('severity_score', 0.0))
+
+    # Condición primaria siempre incluida
+    active = [{'label': condition, 'prob': float(analysis.top1_confidence or 1.0)}]
+
+    # Condiciones secundarias desde result.top_n con umbral de confianza
+    for entry in result.get('top_n', []):
+        label = entry.get('label', '')
+        prob  = float(entry.get('prob', 0.0))
+        if label and label != condition and prob >= SECONDARY_CONDITION_THRESHOLD:
+            active.append({'label': label, 'prob': prob})
+
+    # Scoring por condición
+    conditions_out: list[dict] = []
+    for cond in active:
+        reco = _score_for_condition(db, cond['label'], result, categories, top_n, severity)
+        conditions_out.append({
+            'condition':       cond['label'],
+            'confidence':      round(cond['prob'], 4),
+            'recommendations': reco,
+        })
+
+    primary_reco = conditions_out[0]['recommendations'] if conditions_out else {}
+
     return {
         'analysis_id':     analysis_id,
-        'condition':       condition,
+        'condition':       condition,        # backward compat
         'severity_score':  severity,
-        'recommendations': recommendations,
+        'conditions':      conditions_out,
+        'recommendations': primary_reco,     # backward compat
     }
