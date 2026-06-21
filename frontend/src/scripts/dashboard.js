@@ -12,6 +12,8 @@ const API = 'http://localhost:8000/api'
 let _analyses       = []
 let _routine        = null
 let _analysisUserNum = {}   // map: db_id → número relativo al usuario
+let _recoData        = null // cache del último response de recomendaciones
+let _recoCondIdx     = 0    // condición activa en el panel de recomendaciones
 
 // ── TRADUCCIONES ──────────────────────────────────────────────────────────────
 
@@ -59,6 +61,34 @@ const _ZONE_ES = {
   mandibula_izq: 'Mandíbula izq.',
   mandibula_der: 'Mandíbula der.',
   zona_perioral: 'Zona perioral',
+}
+
+const _ZONE_CHILDREN = {
+  frente:      ['ceja_izq',      'ceja_der'],
+  nariz:       ['nariz_lat_izq', 'nariz_lat_der'],
+  menton:      ['zona_perioral'],
+  mejilla_izq: ['mandibula_izq'],
+  mejilla_der: ['mandibula_der'],
+}
+
+const _CATEGORY_ES = {
+  cleanser:    'Limpiador',
+  moisturizer: 'Hidratante',
+  spf:         'Protector solar',
+  serum:       'Sérum',
+  exfoliant:   'Exfoliante',
+  retinoid:    'Retinoide',
+  spot:        'Tratamiento puntual',
+  toner:       'Tónico',
+  eye:         'Contorno de ojos',
+  mask:        'Mascarilla',
+  oil:         'Aceite facial',
+}
+const _CAT_DESC = {
+  cleanser:    'Primer paso · mañana y noche',
+  moisturizer: 'Hidratación y barrera',
+  spf:         'Protección solar · cada mañana',
+  serum:       'Activos concentrados',
 }
 
 // ── INICIALIZACIÓN PRINCIPAL ──────────────────────────────────────────────
@@ -896,9 +926,10 @@ function _renderMLResults(a) {
       </div>`
   }
 
-  // ── 4. Zonas principales ─────────────────────────────────────────────────
+  // ── 4. Zonas principales + subzonas anidadas (colapsadas) ───────────────
   let zonesDisplayHTML = ''
-  const zonesDisp = r.zones_display || {}
+  const zonesDisp = r.zones_display    || {}
+  const zonesDiag = r.zones_diagnostic || {}
   if (Object.keys(zonesDisp).length) {
     zonesDisplayHTML = `
       <div class="mb-3">
@@ -907,11 +938,12 @@ function _renderMLResults(a) {
         </p>
         <div class="space-y-2">
           ${Object.entries(zonesDisp).map(([zona, m]) => {
-            const name    = _ZONE_ES[zona] || zona
-            const zSev    = Math.round(m.severity * 100)
-            const eritPct = Math.round((m.erythema  ?? 0) * 100)
-            const comPct  = Math.round((m.comedones ?? 0) * 100)
-            const scaPct  = Math.round((m.scaling ?? m.descamacion ?? 0) * 100)
+            const name     = _ZONE_ES[zona] || zona
+            const zSev     = Math.round(m.severity * 100)
+            const eritPct  = Math.round((m.erythema  ?? 0) * 100)
+            const comPct   = Math.round((m.comedones ?? 0) * 100)
+            const scaPct   = Math.round((m.scaling ?? m.descamacion ?? 0) * 100)
+            const children = (_ZONE_CHILDREN[zona] || []).filter(k => zonesDiag[k])
             return `
               <div class="bg-sand/40 rounded-xl p-3">
                 <div class="flex justify-between items-center mb-1.5">
@@ -922,63 +954,240 @@ function _renderMLResults(a) {
                   <div class="${_sevBg(m.severity)} h-1.5 rounded-full" style="width:${zSev}%"></div>
                 </div>
                 <div class="flex gap-1.5 flex-wrap">
-                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">
-                    eritema ${eritPct}%
-                  </span>
-                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">
-                    comedones ${comPct}%
-                  </span>
-                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">
-                    escamas ${scaPct}%
-                  </span>
+                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">eritema ${eritPct}%</span>
+                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">comedones ${comPct}%</span>
+                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">escamas ${scaPct}%</span>
                 </div>
+                ${children.length ? `
+                <div class="border-t border-sand/60 mt-2.5 pt-2">
+                  <button onclick="toggleZoneSub('${zona}')" id="zone-sub-${zona}-btn"
+                    class="flex items-center gap-1 text-[9px] font-medium text-slate hover:text-ink transition-colors w-full">
+                    ${_chevron(false)} Ver subzonas (${children.length})
+                  </button>
+                  <div id="zone-sub-${zona}" class="hidden mt-2 space-y-1.5">
+                    ${children.map(subKey => {
+                      const s       = zonesDiag[subKey]
+                      const subName = _ZONE_ES[subKey] || subKey
+                      const sSev    = Math.round(s.severity * 100)
+                      const sErit   = Math.round((s.erythema  ?? 0) * 100)
+                      const sCom    = Math.round((s.comedones ?? 0) * 100)
+                      return `
+                        <div class="bg-white/60 rounded-lg px-2.5 py-2">
+                          <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] font-medium text-ink">${subName}</span>
+                            <span class="text-[10px] font-bold ${_sevText(s.severity)}">${sSev}%</span>
+                          </div>
+                          <div class="w-full bg-sand/60 rounded-full h-1 mb-1.5">
+                            <div class="${_sevBg(s.severity)} h-1 rounded-full" style="width:${sSev}%"></div>
+                          </div>
+                          <div class="flex gap-1 flex-wrap">
+                            <span class="text-[8px] bg-white/70 rounded-full px-1.5 py-0.5 text-slate/70">er ${sErit}%</span>
+                            <span class="text-[8px] bg-white/70 rounded-full px-1.5 py-0.5 text-slate/70">co ${sCom}%</span>
+                          </div>
+                        </div>`
+                    }).join('')}
+                  </div>
+                </div>` : ''}
               </div>`
           }).join('')}
         </div>
       </div>`
   }
 
-  // ── 5. Subzonas diagnósticas ─────────────────────────────────────────────
-  let zonesDiagHTML = ''
-  const zonesDiag = r.zones_diagnostic || {}
-  if (Object.keys(zonesDiag).length) {
-    zonesDiagHTML = `
-      <div class="mb-1">
-        <p class="text-[9px] text-slate uppercase tracking-widest font-semibold mb-2">
-          Subzonas diagnósticas
-        </p>
-        <div class="grid grid-cols-2 gap-1.5">
-          ${Object.entries(zonesDiag).map(([zona, m]) => {
-            const name    = _ZONE_ES[zona] || zona
-            const zSev    = Math.round(m.severity * 100)
-            const eritPct = Math.round((m.erythema  ?? 0) * 100)
-            const comPct  = Math.round((m.comedones ?? 0) * 100)
-            return `
-              <div class="bg-sand/40 rounded-xl p-2.5">
-                <p class="text-[10px] font-medium text-ink leading-tight mb-1.5">${name}</p>
-                <div class="flex justify-between items-center mb-1">
-                  <span class="text-[9px] text-slate">Sev.</span>
-                  <span class="text-[10px] font-bold ${_sevText(m.severity)}">${zSev}%</span>
-                </div>
-                <div class="w-full bg-sand rounded-full h-1 mb-1.5">
-                  <div class="${_sevBg(m.severity)} h-1 rounded-full" style="width:${zSev}%"></div>
-                </div>
-                <div class="flex gap-1 flex-wrap">
-                  <span class="text-[8px] bg-white/70 rounded-full px-1.5 py-0.5 text-slate/70">
-                    er ${eritPct}%
-                  </span>
-                  <span class="text-[8px] bg-white/70 rounded-full px-1.5 py-0.5 text-slate/70">
-                    co ${comPct}%
-                  </span>
-                </div>
-              </div>`
-          }).join('')}
-        </div>
-      </div>`
-  }
-
-  return `${diagHTML}${statsHTML}${topNHTML}${zonesDisplayHTML}${zonesDiagHTML}`
+  return `${diagHTML}${statsHTML}${topNHTML}${zonesDisplayHTML}`
 }
+
+// ── RECOMENDACIONES DE PRODUCTOS ──────────────────────────────────────────────
+
+function _scoreInfo(score) {
+  if (score >= 70) return { label: 'Alta relevancia', bg: 'bg-forest/10', color: 'text-forest' }
+  if (score >= 55) return { label: 'Buena',           bg: 'bg-ok/10',     color: 'text-ok'     }
+  return                  { label: 'Compatible',      bg: 'bg-sand/60',   color: 'text-slate'  }
+}
+
+function _productRow(p, rank, borderTop) {
+  const matched = p.matched_ingredients || []
+  const si      = _scoreInfo(p.score || 0)
+  return `
+    <div class="flex items-start gap-2.5 py-2.5 ${borderTop ? 'border-t border-sand/60' : ''}">
+      <span class="text-[10px] font-bold text-slate/25 w-3.5 flex-shrink-0 pt-0.5">${rank}</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-start justify-between gap-1.5 mb-0.5">
+          <p class="text-[11px] font-semibold text-ink leading-snug">${p.name || '—'}</p>
+          <span class="text-[8px] font-semibold ${si.bg} ${si.color} rounded-full px-2 py-0.5 flex-shrink-0 whitespace-nowrap">${si.label}</span>
+        </div>
+        <p class="text-[10px] text-slate">${p.brand || '—'}</p>
+        ${matched.length
+          ? `<div class="flex flex-wrap gap-1 mt-1.5">
+               ${matched.map(m => `<span class="text-[8px] bg-ok/10 text-ok font-medium rounded-full px-2 py-0.5">&#10003; ${m}</span>`).join('')}
+             </div>`
+          : `<p class="text-[8px] text-slate/40 mt-1 italic">Compatible &mdash; sin activos específicos</p>`}
+      </div>
+    </div>`
+}
+
+function _chevron(up) {
+  const d = up ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'
+  return `<svg class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`
+}
+
+function _renderRecoPanel(data, condIdx) {
+  const conditions = data.conditions || []
+  if (!conditions.length) {
+    return '<p class="text-[11px] text-slate text-center py-4">Sin recomendaciones disponibles.</p>'
+  }
+
+  const cond = conditions[condIdx] || conditions[0]
+  const CATS = ['cleanser', 'moisturizer', 'spf', 'serum']
+
+  const tabsHTML = conditions.length > 1 ? `
+    <div class="flex flex-wrap gap-2 mb-4">
+      ${conditions.map((c, i) => {
+        const name   = _LABEL_ES[c.condition] || c.condition
+        const pct    = Math.round((c.confidence || 0) * 100)
+        const active = i === condIdx
+        return `<button onclick="selectRecoCondition(${i})"
+          class="flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-full transition-colors
+                 ${active ? 'bg-forest text-white font-semibold shadow-sm' : 'bg-sand/70 text-slate hover:bg-sand'}">
+          ${name}
+          <span class="text-[9px] rounded-full px-1.5 py-0.5
+                       ${active ? 'bg-white/25 text-white' : 'bg-sand text-slate/60'}">${pct}%</span>
+        </button>`
+      }).join('')}
+    </div>` : ''
+
+  const reco        = cond.recommendations || {}
+  const visibleCats = CATS.filter(cat => reco[cat]?.length)
+
+  if (!visibleCats.length) {
+    return `${tabsHTML}<p class="text-[11px] text-slate text-center py-4">Sin productos disponibles para esta condición en el catálogo.</p>`
+  }
+
+  const hasMultiple = visibleCats.some(cat => (reco[cat] || []).length > 1)
+  const globalBar   = hasMultiple ? `
+    <div class="flex justify-end mb-3">
+      <button onclick="toggleAllReco()" id="reco-global-toggle"
+        class="flex items-center gap-1 text-[9px] font-medium text-forest hover:opacity-75 transition-opacity">
+        ${_chevron(false)} Expandir todo
+      </button>
+    </div>` : ''
+
+  const catsHTML = visibleCats.map(cat => {
+    const products = reco[cat]
+    const catES    = _CATEGORY_ES[cat] || cat
+    const catDsc   = _CAT_DESC[cat]   || ''
+    const catId    = `reco-cat-${cat}`
+    const extra    = products.length - 1
+
+    return `
+      <div class="mb-3 last:mb-0">
+        <div class="flex items-center justify-between mb-1.5 px-1">
+          <div class="flex items-center gap-2 min-w-0">
+            <p class="text-[10px] font-bold text-ink uppercase tracking-wide">${catES}</p>
+            <p class="text-[9px] text-slate/50 truncate">${catDsc}</p>
+          </div>
+          ${extra > 0 ? `
+          <button onclick="toggleReco('${catId}')" id="${catId}-btn"
+            data-total="${extra}"
+            class="flex items-center gap-1 text-[9px] font-medium text-forest hover:opacity-75 transition-opacity flex-shrink-0 ml-2">
+            ${_chevron(false)} Ver ${extra} más
+          </button>` : ''}
+        </div>
+        <div class="bg-sand/30 rounded-xl px-3 py-1">
+          ${_productRow(products[0], 1, false)}
+          ${extra > 0 ? `
+          <div id="${catId}-more" class="hidden">
+            ${products.slice(1).map((p, i) => _productRow(p, i + 2, true)).join('')}
+          </div>` : ''}
+        </div>
+      </div>`
+  }).join('')
+
+  return `${tabsHTML}${globalBar}${catsHTML}`
+}
+
+export function toggleReco(catId) {
+  const more = document.getElementById(catId + '-more')
+  const btn  = document.getElementById(catId + '-btn')
+  if (!more || !btn) return
+
+  const expanding = more.classList.contains('hidden')
+  more.classList.toggle('hidden')
+  btn.innerHTML = expanding
+    ? `${_chevron(true)} Mostrar menos`
+    : `${_chevron(false)} Ver ${btn.dataset.total} más`
+
+  const allMore   = document.querySelectorAll('[id^="reco-cat-"][id$="-more"]')
+  const anyHidden = [...allMore].some(el => el.classList.contains('hidden'))
+  const g = document.getElementById('reco-global-toggle')
+  if (g) g.innerHTML = anyHidden
+    ? `${_chevron(false)} Expandir todo`
+    : `${_chevron(true)} Colapsar todo`
+}
+window.toggleReco = toggleReco
+
+export function toggleAllReco() {
+  const allMore = document.querySelectorAll('[id^="reco-cat-"][id$="-more"]')
+  if (!allMore.length) return
+
+  const anyHidden = [...allMore].some(el => el.classList.contains('hidden'))
+
+  allMore.forEach(el => {
+    const catId = el.id.replace('-more', '')
+    const btn   = document.getElementById(catId + '-btn')
+    el.classList.toggle('hidden', !anyHidden)
+    if (btn) btn.innerHTML = anyHidden
+      ? `${_chevron(true)} Mostrar menos`
+      : `${_chevron(false)} Ver ${btn.dataset.total} más`
+  })
+
+  const g = document.getElementById('reco-global-toggle')
+  if (g) g.innerHTML = anyHidden
+    ? `${_chevron(true)} Colapsar todo`
+    : `${_chevron(false)} Expandir todo`
+}
+window.toggleAllReco = toggleAllReco
+
+export function toggleZoneSub(zona) {
+  const panel = document.getElementById(`zone-sub-${zona}`)
+  const btn   = document.getElementById(`zone-sub-${zona}-btn`)
+  if (!panel || !btn) return
+  const expanding = panel.classList.contains('hidden')
+  panel.classList.toggle('hidden')
+  const count = panel.children.length
+  btn.innerHTML = expanding
+    ? `${_chevron(true)} Ocultar subzonas`
+    : `${_chevron(false)} Ver subzonas (${count})`
+}
+window.toggleZoneSub = toggleZoneSub
+
+async function _loadRecommendations(analysisId, containerId) {
+  const token = localStorage.getItem('skinai_token')
+  const panel = document.getElementById(containerId)
+  if (!panel) return
+
+  try {
+    const res = await fetch(`${API}/products/recommendations/${analysisId}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error('No se pudieron cargar las recomendaciones')
+    const data = await res.json()
+    _recoData    = data
+    _recoCondIdx = 0
+    const p = document.getElementById(containerId)
+    if (p) p.innerHTML = _renderRecoPanel(data, 0)
+  } catch (err) {
+    const p = document.getElementById(containerId)
+    if (p) p.innerHTML = `<p class="text-[11px] text-slate text-center py-4">${err.message}</p>`
+  }
+}
+
+export function selectRecoCondition(idx) {
+  _recoCondIdx = idx
+  const panel  = document.getElementById('reco-panel')
+  if (panel && _recoData) panel.innerHTML = _renderRecoPanel(_recoData, idx)
+}
+window.selectRecoCondition = selectRecoCondition
 
 function _renderDetail(a, container, userNum) {
   const token = localStorage.getItem('skinai_token')
@@ -1037,6 +1246,26 @@ function _renderDetail(a, container, userNum) {
       ${_renderMLResults(a)}
     </div>
 
+    ${a.status === 'completed' ? `
+    <!-- Productos recomendados -->
+    <div class="card card-body mb-4">
+      <div class="flex items-start justify-between mb-1">
+        <p class="section-label">Productos recomendados</p>
+        <span class="text-[8px] text-slate bg-sand/60 rounded-full px-2 py-0.5 font-medium flex-shrink-0 ml-2">Motor IA</span>
+      </div>
+      <p class="text-[11px] text-slate mb-3 leading-relaxed">
+        Seleccionados por compatibilidad de ingredientes activos con tu condición detectada.
+      </p>
+      <div id="reco-panel">
+        <div class="flex items-center justify-center gap-2 py-8 text-[11px] text-slate">
+          <svg class="w-4 h-4 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Cargando recomendaciones...
+        </div>
+      </div>
+    </div>` : ''}
+
     ${a.error_message ? `
     <div class="bg-[#FFF5F5] border border-rose/30 rounded-card p-3 mb-4">
       <p class="text-[11px] text-rose font-semibold mb-1">Error detectado:</p>
@@ -1048,6 +1277,10 @@ function _renderDetail(a, container, userNum) {
       Nuevo análisis
     </button>
   `
+
+  if (a.status === 'completed') {
+    _loadRecommendations(a.id, 'reco-panel')
+  }
 }
 
 export function closeDetail() {
