@@ -27,7 +27,8 @@
       "Bash(Select-Object FullName)",
       "PowerShell(head -150)",
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\adria\\\\OneDrive\\\\Escritorio\\\\ML-IA-en-dermatologia-facial\\\\backend\\\\app\" -Recurse | Where-Object { $_.PSIsContainer -eq $false -and $_.Extension -match '\\\\.py$|\\\\.json$|\\\\.yml$|\\\\.yaml$|\\\\.txt$|\\\\.md$' } | Select-Object FullName)",
-      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\adria\\\\OneDrive\\\\Escritorio\\\\ML-IA-en-dermatologia-facial\\\\frontend\" -Recurse | Where-Object { $_.PSIsContainer -eq $false -and $_.Extension -match '\\\\.js$|\\\\.html$|\\\\.json$|\\\\.css$' } | Select-Object FullName)"
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\adria\\\\OneDrive\\\\Escritorio\\\\ML-IA-en-dermatologia-facial\\\\frontend\" -Recurse | Where-Object { $_.PSIsContainer -eq $false -and $_.Extension -match '\\\\.js$|\\\\.html$|\\\\.json$|\\\\.css$' } | Select-Object FullName)",
+      "PowerShell($filePath = \"c:\\\\Users\\\\adria\\\\OneDrive\\\\Escritorio\\\\ML-IA-en-dermatologia-facial\\\\frontend\\\\src\\\\scripts\\\\dashboard.js\"; \\(Get-Content $filePath -ReadCount 0 | Select-String -Pattern \"imagen procesada\" -Context 2\\) | ForEach-Object { $_.LineNumber, $_.Line })"
     ]
   }
 }

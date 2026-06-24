@@ -99,6 +99,8 @@ export async function initDashboard() {
   const token = localStorage.getItem('skinai_token')
   if (!token) return
 
+  _initFab()
+
   try {
     const [analyses, routine] = await Promise.all([
       _fetchHistory(token),
@@ -117,6 +119,16 @@ export async function initDashboard() {
   } catch (err) {
     console.error('[dashboard] Error al cargar datos:', err)
   }
+}
+
+function _initFab() {
+  if (document.getElementById('fab-new-analysis')) return
+  const fab = document.createElement('button')
+  fab.id = 'fab-new-analysis'
+  fab.setAttribute('data-go', 'capture')
+  fab.className = 'fixed bottom-5 right-5 w-12 h-12 lg:w-14 lg:h-14 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform z-[9999] overflow-hidden p-0 border-0 bg-transparent'
+  fab.innerHTML = '<img src="/img-resource/icon-mas.png" alt="Nuevo análisis" class="w-full h-full object-cover">'
+  document.body.appendChild(fab)
 }
 
 // ── FETCH HELPERS ─────────────────────────────────────────────────────────
@@ -944,165 +956,209 @@ export async function openDetail(id) {
 
 // ── RENDERIZADO DE RESULTADOS ML ──────────────────────────────────────────
 
-function _renderMLResults(a) {
-  if (a.status !== 'completed' || !a.top1_label) {
-    return `<div class="info-box text-[11px]">Resultados no disponibles.</div>`
+function _zoneFaceHTML(zoneKey, fillColor, clipId) {
+  const zones = {
+    frente:        { cx: 341, cy: 165, rx: 170, ry: 130 },
+    ceja_izq:      { cx: 250, cy: 310, rx: 56,  ry: 20  },
+    ceja_der:      { cx: 432, cy: 310, rx: 56,  ry: 20  },
+    mejilla_izq:   { cx: 155, cy: 560, rx: 68,  ry: 118 },
+    mejilla_der:   { cx: 527, cy: 560, rx: 68,  ry: 118 },
+    nariz:         { cx: 341, cy: 482, rx: 46,  ry: 102 },
+    nariz_lat_izq: { cx: 291, cy: 575, rx: 27,  ry: 22  },
+    nariz_lat_der: { cx: 391, cy: 575, rx: 27,  ry: 22  },
+    zona_perioral: { cx: 341, cy: 638, rx: 80,  ry: 48  },
+    mandibula_izq: { cx: 193, cy: 733, rx: 70,  ry: 57  },
+    mandibula_der: { cx: 489, cy: 733, rx: 70,  ry: 57  },
+    menton:        { cx: 341, cy: 810, rx: 108, ry: 42  },
   }
+  const z       = zoneKey && zones[zoneKey]
+  const ellipse = z ? `<ellipse cx="${z.cx}" cy="${z.cy}" rx="${z.rx}" ry="${z.ry}" fill="${fillColor}" fill-opacity="0.65"/>` : ''
+  return `
+    <div class="relative w-14 flex-shrink-0 select-none">
+      <img src="/img-resource/rostro-base.png" alt="" class="w-full h-auto block pointer-events-none" draggable="false">
+      <svg viewBox="0 0 682 870" preserveAspectRatio="none"
+           class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+        <defs><clipPath id="${clipId}"><ellipse cx="341" cy="440" rx="225" ry="400"/></clipPath></defs>
+        <g clip-path="url(#${clipId})">${ellipse}</g>
+      </svg>
+    </div>`
+}
 
-  const r          = a.result || {}
-  const condition  = r.condition  || a.top1_label
+function _renderDiagCard(a) {
+  if (a.status !== 'completed' || !a.top1_label) {
+    return `<div class="card card-body"><p class="info-box text-[11px]">Resultados no disponibles.</p></div>`
+  }
+  const r         = a.result || {}
+  const condition = r.condition  || a.top1_label
   const confidence = r.confidence ?? a.top1_confidence ?? 0
-  const confPct    = Math.round(confidence * 100)
-  const condLabel  = _LABEL_ES[condition] || condition
-  const desc       = _DESCRIPCIONES[condition] || ''
-  const severity   = r.severity_score ?? 0
-  const sevPct     = Math.round(severity * 100)
-  const worstZone  = r.worst_zone ? (_ZONE_ES[r.worst_zone] || r.worst_zone) : '—'
-  const zonesCount = r.affected_zones_count ?? 0
+  const confPct   = Math.round(confidence * 100)
+  const condLabel = _LABEL_ES[condition] || condition
+  const desc      = _DESCRIPCIONES[condition] || ''
+  const confBg    = confPct >= 60 ? 'bg-forest' : confPct >= 40 ? 'bg-warn' : 'bg-slate/40'
+  const confText  = confPct >= 60 ? 'text-forest' : confPct >= 40 ? 'text-warn' : 'text-slate'
+  return `
+    <div class="bg-gradient-to-br from-forest/8 to-forest/3 border border-forest/20 rounded-2xl p-2.5 h-full flex flex-col justify-center">
+      <p class="text-[10px] text-forest uppercase tracking-widest font-semibold mb-0.5">Diagnóstico principal</p>
+      <div class="flex items-baseline justify-between gap-2">
+        <p class="text-[13px] font-bold text-ink leading-snug">${condLabel}</p>
+        <span class="text-[17px] font-bold ${confText} flex-shrink-0">${confPct}%</span>
+      </div>
+      ${desc ? `<p class="text-[10px] text-slate leading-relaxed mt-0.5">${desc}</p>` : ''}
+    </div>`
+}
 
-  const _sevBg    = v => v < 0.25 ? 'bg-ok'    : v < 0.5 ? 'bg-warn'    : 'bg-rose'
-  const _sevText  = v => v < 0.25 ? 'text-ok'  : v < 0.5 ? 'text-warn'  : 'text-rose'
-  const _sevLabel = v => v < 0.25 ? 'Leve'     : v < 0.5 ? 'Moderado'   : 'Alto'
-  const confBg    = confPct >= 60  ? 'bg-forest' : confPct >= 40 ? 'bg-warn' : 'bg-slate/40'
-  const confText  = confPct >= 60  ? 'text-forest' : confPct >= 40 ? 'text-warn' : 'text-slate'
+function _renderSeverityCard(a) {
+  if (a.status !== 'completed' || !a.top1_label) return ''
+  const r        = a.result || {}
+  const severity = r.severity_score ?? 0
+  const sevPct   = Math.round(severity * 100)
+  const _sevBg   = v => v < 0.25 ? 'bg-ok'   : v < 0.5 ? 'bg-warn'   : 'bg-rose'
+  const _sevText = v => v < 0.25 ? 'text-ok' : v < 0.5 ? 'text-warn' : 'text-rose'
+  const _sevLabel = v => v < 0.25 ? 'Leve'   : v < 0.5 ? 'Moderado'  : 'Alto'
+  return `
+    <div class="card card-body !py-2 !px-3 text-center flex flex-col justify-center h-full">
+      <p class="text-[10px] text-slate uppercase tracking-widest mb-0.5">Severidad</p>
+      <p class="text-[20px] font-bold leading-none ${_sevText(severity)}">${sevPct}%</p>
+      <p class="text-[11px] ${_sevText(severity)} font-medium mt-0.5">${_sevLabel(severity)}</p>
+    </div>`
+}
 
-  // ── 1. Diagnóstico principal ─────────────────────────────────────────────
-  const diagHTML = `
-    <div class="bg-gradient-to-br from-forest/8 to-forest/3 border border-forest/20 rounded-2xl p-4 mb-3">
-      <p class="text-[9px] text-forest uppercase tracking-widest font-semibold mb-2">
-        Diagnóstico principal
-      </p>
-      <p class="text-[17px] font-bold text-ink leading-snug">${condLabel}</p>
-      ${desc ? `<p class="text-[11px] text-slate mt-1 leading-relaxed">${desc}</p>` : ''}
-      <div class="mt-3">
-        <div class="flex justify-between items-center mb-1">
-          <span class="text-[10px] text-slate">Confianza del modelo</span>
-          <span class="text-[13px] font-bold ${confText}">${confPct}%</span>
-        </div>
-        <div class="w-full bg-sand rounded-full h-2">
-          <div class="${confBg} h-2 rounded-full transition-all" style="width:${confPct}%"></div>
-        </div>
+function _renderZoneStatsCards(a) {
+  if (a.status !== 'completed' || !a.top1_label) return ''
+  const r            = a.result || {}
+  const worstZoneKey = r.worst_zone || null
+  const worstZone    = worstZoneKey ? (_ZONE_ES[worstZoneKey] || worstZoneKey) : '—'
+  const zonesCount   = r.affected_zones_count ?? 0
+  const zonesDisp    = r.zones_display || {}
+  let bestZoneKey = null
+  let bestZone    = '—'
+  if (Object.keys(zonesDisp).length) {
+    const sorted = Object.entries(zonesDisp).sort((x, y) => x[1].severity - y[1].severity)
+    if (sorted.length) { bestZoneKey = sorted[0][0]; bestZone = _ZONE_ES[bestZoneKey] || bestZoneKey }
+  }
+  return `
+    <div class="card card-body !py-3 flex-1 flex items-center gap-3">
+      ${_zoneFaceHTML(worstZoneKey, '#C47060', 'detail-worst-clip')}
+      <div>
+        <p class="text-[10px] text-slate uppercase tracking-widest mb-1">Zona más afectada</p>
+        <p class="text-[13px] font-bold text-rose leading-tight">${worstZone}</p>
+        <p class="text-[10px] text-slate mt-1">${zonesCount} zona${zonesCount !== 1 ? 's' : ''} activa${zonesCount !== 1 ? 's' : ''}</p>
+      </div>
+    </div>
+    <div class="card card-body !py-3 flex-1 flex items-center gap-3">
+      ${_zoneFaceHTML(bestZoneKey, '#5FBA8B', 'detail-best-clip')}
+      <div>
+        <p class="text-[10px] text-slate uppercase tracking-widest mb-1">Zona menos afectada</p>
+        <p class="text-[13px] font-bold text-ok leading-tight">${bestZone}</p>
       </div>
     </div>`
+}
 
-  // ── 2. Severidad + zona + conteo ─────────────────────────────────────────
-  const statsHTML = `
-    <div class="grid grid-cols-3 gap-2 mb-3">
-      <div class="bg-sand/50 rounded-xl p-3 text-center">
-        <p class="text-[9px] text-slate uppercase tracking-widest mb-1">Severidad</p>
-        <p class="text-[18px] font-bold ${_sevText(severity)}">${sevPct}%</p>
-        <p class="text-[9px] ${_sevText(severity)} font-medium mt-0.5">${_sevLabel(severity)}</p>
-        <div class="w-full bg-sand rounded-full h-1 mt-1.5">
-          <div class="${_sevBg(severity)} h-1 rounded-full" style="width:${sevPct}%"></div>
-        </div>
-      </div>
-      <div class="bg-sand/50 rounded-xl p-3 text-center col-span-2 flex flex-col justify-center">
-        <p class="text-[9px] text-slate uppercase tracking-widest mb-1">Zona más afectada</p>
-        <p class="text-[13px] font-bold text-ink leading-tight">${worstZone}</p>
-        <p class="text-[9px] text-slate mt-1.5">
-          ${zonesCount} zona${zonesCount !== 1 ? 's' : ''} activa${zonesCount !== 1 ? 's' : ''}
-        </p>
-      </div>
-    </div>`
-
-  // ── 3. Top N condiciones ──────────────────────────────────────────────────
-  let topNHTML = ''
-  if (r.top_n?.length) {
-    topNHTML = `
-      <div class="bg-sand/30 rounded-2xl p-3 mb-3">
-        <p class="text-[9px] text-slate uppercase tracking-widest font-semibold mb-2">
-          Condiciones detectadas
-        </p>
-        ${r.top_n.map((item, i) => {
+function _renderTopNCard(a) {
+  const r = a.result || {}
+  if (!r.top_n?.length) return ''
+  return `
+    <div class="card card-body !p-3 h-full flex flex-col">
+      <p class="text-[10px] text-slate uppercase tracking-widest font-semibold mb-1">Condiciones detectadas</p>
+      <div class="flex-1 flex flex-col justify-center">
+        ${r.top_n.slice(0, 3).map((item, i) => {
           const pct   = Math.round(item.prob * 100)
           const name  = _LABEL_ES[item.label] || item.label
           const isTop = i === 0
           return `
-            <div class="flex items-center gap-2 py-1.5 ${i < r.top_n.length - 1 ? 'border-b border-sand' : ''}">
-              <span class="text-[9px] text-slate/50 w-4 flex-shrink-0">${i + 1}</span>
+            <div class="flex items-center gap-2 py-1.5 ${i < 2 ? 'border-b border-sand' : ''}">
+              <span class="text-[10px] text-slate/50 w-3 flex-shrink-0">${i + 1}</span>
               <div class="flex-1 min-w-0">
-                <p class="text-[11px] ${isTop ? 'font-semibold text-ink' : 'text-ink/65'} truncate">${name}</p>
+                <p class="text-[12px] ${isTop ? 'font-semibold text-ink' : 'text-ink/65'} truncate">${name}</p>
                 <div class="w-full bg-sand rounded-full h-1 mt-0.5">
                   <div class="${isTop ? 'bg-forest' : 'bg-slate/30'} h-1 rounded-full" style="width:${pct}%"></div>
                 </div>
               </div>
-              <span class="text-[11px] ${isTop ? 'font-bold text-forest' : 'text-slate'} w-8 text-right flex-shrink-0">
-                ${pct}%
-              </span>
+              <span class="text-[12px] ${isTop ? 'font-bold text-forest' : 'text-slate'} w-8 text-right flex-shrink-0">${pct}%</span>
             </div>`
         }).join('')}
-      </div>`
-  }
+      </div>
+    </div>`
+}
 
-  // ── 4. Zonas principales + subzonas anidadas (colapsadas) ───────────────
-  let zonesDisplayHTML = ''
+function _renderZonesCard(a) {
+  const r        = a.result || {}
   const zonesDisp = r.zones_display    || {}
   const zonesDiag = r.zones_diagnostic || {}
-  if (Object.keys(zonesDisp).length) {
-    zonesDisplayHTML = `
-      <div class="mb-3">
-        <p class="text-[9px] text-slate uppercase tracking-widest font-semibold mb-2">
-          Zonas principales
-        </p>
-        <div class="space-y-2">
-          ${Object.entries(zonesDisp).map(([zona, m]) => {
-            const name     = _ZONE_ES[zona] || zona
-            const zSev     = Math.round(m.severity * 100)
-            const eritPct  = Math.round((m.erythema  ?? 0) * 100)
-            const comPct   = Math.round((m.comedones ?? 0) * 100)
-            const scaPct   = Math.round((m.scaling ?? m.descamacion ?? 0) * 100)
-            const children = (_ZONE_CHILDREN[zona] || []).filter(k => zonesDiag[k])
+  if (!Object.keys(zonesDisp).length) return ''
+  const _sevBg    = v => v < 0.25 ? 'bg-ok'   : v < 0.5 ? 'bg-warn'   : 'bg-rose'
+  const _sevText  = v => v < 0.25 ? 'text-ok' : v < 0.5 ? 'text-warn' : 'text-rose'
+  const _sevLabel = v => v < 0.25 ? 'Leve'    : v < 0.5 ? 'Moderado'  : 'Alto'
+  // zonas que son subzonas de otra zona presente → no renderizar como zona principal
+  const childSet = new Set(
+    Object.keys(zonesDisp).flatMap(z => _ZONE_CHILDREN[z] || [])
+  )
+  return `
+    <div class="card card-body">
+      <p class="text-[11px] text-slate uppercase tracking-widest font-semibold mb-3">Zonas principales</p>
+      <div class="space-y-2">
+        ${Object.entries(zonesDisp).filter(([zona]) => !childSet.has(zona)).map(([zona, m]) => {
+          const name    = _ZONE_ES[zona] || zona
+          const zSev    = Math.round(m.severity * 100)
+          const eritPct = Math.round((m.erythema  ?? 0) * 100)
+          const comPct  = Math.round((m.comedones ?? 0) * 100)
+          const scaPct  = Math.round((m.scaling ?? m.descamacion ?? 0) * 100)
+          const children = (_ZONE_CHILDREN[zona] || []).filter(k => zonesDiag[k])
+          const mainCard = `
+            <div class="bg-sand/40 rounded-xl p-3 flex-1 min-w-0">
+              <div class="flex justify-between items-center gap-2 mb-1.5 min-w-0">
+                <span class="text-[13px] font-medium text-ink min-w-0 truncate">${name}</span>
+                <span class="text-[12px] font-bold ${_sevText(m.severity)} whitespace-nowrap flex-shrink-0">${_sevLabel(m.severity)} · ${zSev}%</span>
+              </div>
+              <div class="w-full bg-sand rounded-full h-1.5 mb-2">
+                <div class="${_sevBg(m.severity)} h-1.5 rounded-full" style="width:${zSev}%"></div>
+              </div>
+              <div class="flex gap-1.5 flex-wrap">
+                <span class="text-[11px] bg-white/80 rounded-full px-2 py-0.5 text-slate">eritema ${eritPct}%</span>
+                <span class="text-[11px] bg-white/80 rounded-full px-2 py-0.5 text-slate">comedones ${comPct}%</span>
+                <span class="text-[11px] bg-white/80 rounded-full px-2 py-0.5 text-slate">escamas ${scaPct}%</span>
+              </div>
+            </div>`
+          const subCards = children.map(subKey => {
+            const s       = zonesDiag[subKey]
+            const subName = _ZONE_ES[subKey] || subKey
+            const sSev    = Math.round(s.severity * 100)
+            const sErit   = Math.round((s.erythema  ?? 0) * 100)
+            const sCom    = Math.round((s.comedones ?? 0) * 100)
             return `
-              <div class="bg-sand/40 rounded-xl p-3">
-                <div class="flex justify-between items-center mb-1.5">
-                  <span class="text-[11px] font-medium text-ink">${name}</span>
-                  <span class="text-[11px] font-bold ${_sevText(m.severity)}">${_sevLabel(m.severity)} · ${zSev}%</span>
+              <div class="bg-white/70 rounded-xl p-3 flex-1 min-w-0">
+                <div class="flex justify-between items-center gap-2 mb-1.5 min-w-0">
+                  <span class="text-[12px] font-medium text-ink min-w-0 truncate">${subName}</span>
+                  <span class="text-[12px] font-bold ${_sevText(s.severity)} whitespace-nowrap flex-shrink-0">${sSev}%</span>
                 </div>
-                <div class="w-full bg-sand rounded-full h-1.5 mb-2">
-                  <div class="${_sevBg(m.severity)} h-1.5 rounded-full" style="width:${zSev}%"></div>
+                <div class="w-full bg-sand/60 rounded-full h-1.5 mb-2">
+                  <div class="${_sevBg(s.severity)} h-1.5 rounded-full" style="width:${sSev}%"></div>
                 </div>
                 <div class="flex gap-1.5 flex-wrap">
-                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">eritema ${eritPct}%</span>
-                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">comedones ${comPct}%</span>
-                  <span class="text-[9px] bg-white/80 rounded-full px-2 py-0.5 text-slate">escamas ${scaPct}%</span>
+                  <span class="text-[11px] bg-white/80 rounded-full px-2 py-0.5 text-slate/70">er ${sErit}%</span>
+                  <span class="text-[11px] bg-white/80 rounded-full px-2 py-0.5 text-slate/70">co ${sCom}%</span>
                 </div>
-                ${children.length ? `
-                <div class="border-t border-sand/60 mt-2.5 pt-2">
-                  <button onclick="toggleZoneSub('${zona}')" id="zone-sub-${zona}-btn"
-                    class="flex items-center gap-1 text-[9px] font-medium text-slate hover:text-ink transition-colors w-full">
-                    ${_chevron(false)} Ver subzonas (${children.length})
-                  </button>
-                  <div id="zone-sub-${zona}" class="hidden mt-2 space-y-1.5">
-                    ${children.map(subKey => {
-                      const s       = zonesDiag[subKey]
-                      const subName = _ZONE_ES[subKey] || subKey
-                      const sSev    = Math.round(s.severity * 100)
-                      const sErit   = Math.round((s.erythema  ?? 0) * 100)
-                      const sCom    = Math.round((s.comedones ?? 0) * 100)
-                      return `
-                        <div class="bg-white/60 rounded-lg px-2.5 py-2">
-                          <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] font-medium text-ink">${subName}</span>
-                            <span class="text-[10px] font-bold ${_sevText(s.severity)}">${sSev}%</span>
-                          </div>
-                          <div class="w-full bg-sand/60 rounded-full h-1 mb-1.5">
-                            <div class="${_sevBg(s.severity)} h-1 rounded-full" style="width:${sSev}%"></div>
-                          </div>
-                          <div class="flex gap-1 flex-wrap">
-                            <span class="text-[8px] bg-white/70 rounded-full px-1.5 py-0.5 text-slate/70">er ${sErit}%</span>
-                            <span class="text-[8px] bg-white/70 rounded-full px-1.5 py-0.5 text-slate/70">co ${sCom}%</span>
-                          </div>
-                        </div>`
-                    }).join('')}
-                  </div>
-                </div>` : ''}
               </div>`
-          }).join('')}
-        </div>
-      </div>`
-  }
-
-  return `${diagHTML}${statsHTML}${topNHTML}${zonesDisplayHTML}`
+          }).join('')
+          const subToggle = children.length ? `
+            <button onclick="toggleZoneSub('${zona}')" id="zone-sub-${zona}-btn"
+              class="lg:hidden flex items-center gap-1 text-[11px] font-medium text-forest mt-1.5 hover:opacity-75 transition-opacity">
+              ${_chevron(false)} Ver subzonas (${children.length})
+            </button>
+            <div id="zone-sub-${zona}" class="lg:hidden hidden flex flex-col gap-2 mt-2">
+              ${subCards}
+            </div>
+            <div class="hidden lg:flex gap-2 flex-1 min-w-0">
+              ${subCards}
+            </div>` : ''
+          return `
+            <div class="flex flex-col lg:flex-row gap-2 lg:items-stretch">
+              ${mainCard}
+              ${subToggle}
+            </div>`
+        }).join('')}
+      </div>
+    </div>`
 }
 
 // ── RECOMENDACIONES DE PRODUCTOS ──────────────────────────────────────────────
@@ -1118,18 +1174,18 @@ function _productRow(p, rank, borderTop) {
   const si      = _scoreInfo(p.score || 0)
   return `
     <div class="flex items-start gap-2.5 py-2.5 ${borderTop ? 'border-t border-sand/60' : ''}">
-      <span class="text-[10px] font-bold text-slate/25 w-3.5 flex-shrink-0 pt-0.5">${rank}</span>
+      <span class="text-[11px] font-bold text-slate/30 w-4 flex-shrink-0 pt-0.5">${rank}</span>
       <div class="flex-1 min-w-0">
-        <div class="flex items-start justify-between gap-1.5 mb-0.5">
-          <p class="text-[11px] font-semibold text-ink leading-snug">${p.name || '—'}</p>
-          <span class="text-[8px] font-semibold ${si.bg} ${si.color} rounded-full px-2 py-0.5 flex-shrink-0 whitespace-nowrap">${si.label}</span>
+        <div class="flex items-start justify-between gap-2 mb-0.5">
+          <p class="text-[13px] font-semibold text-ink leading-snug">${p.name || '—'}</p>
+          <span class="text-[10px] font-semibold ${si.bg} ${si.color} rounded-full px-2 py-0.5 flex-shrink-0 whitespace-nowrap">${si.label}</span>
         </div>
-        <p class="text-[10px] text-slate">${p.brand || '—'}</p>
+        <p class="text-[11px] text-slate">${p.brand || '—'}</p>
         ${matched.length
           ? `<div class="flex flex-wrap gap-1 mt-1.5">
-               ${matched.map(m => `<span class="text-[8px] bg-ok/10 text-ok font-medium rounded-full px-2 py-0.5">&#10003; ${m}</span>`).join('')}
+               ${matched.map(m => `<span class="text-[10px] bg-ok/10 text-ok font-medium rounded-full px-2 py-0.5">&#10003; ${m}</span>`).join('')}
              </div>`
-          : `<p class="text-[8px] text-slate/40 mt-1 italic">Compatible &mdash; sin activos específicos</p>`}
+          : `<p class="text-[10px] text-slate/50 mt-1 italic">Compatible &mdash; sin activos específicos</p>`}
       </div>
     </div>`
 }
@@ -1155,10 +1211,10 @@ function _renderRecoPanel(data, condIdx) {
         const pct    = Math.round((c.confidence || 0) * 100)
         const active = i === condIdx
         return `<button onclick="selectRecoCondition(${i})"
-          class="flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-full transition-colors
+          class="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full transition-colors
                  ${active ? 'bg-forest text-white font-semibold shadow-sm' : 'bg-sand/70 text-slate hover:bg-sand'}">
           ${name}
-          <span class="text-[9px] rounded-full px-1.5 py-0.5
+          <span class="text-[10px] rounded-full px-1.5 py-0.5
                        ${active ? 'bg-white/25 text-white' : 'bg-sand text-slate/60'}">${pct}%</span>
         </button>`
       }).join('')}
@@ -1175,7 +1231,7 @@ function _renderRecoPanel(data, condIdx) {
   const globalBar   = hasMultiple ? `
     <div class="flex justify-end mb-3">
       <button onclick="toggleAllReco()" id="reco-global-toggle"
-        class="flex items-center gap-1 text-[9px] font-medium text-forest hover:opacity-75 transition-opacity">
+        class="flex items-center gap-1 text-[11px] font-medium text-forest hover:opacity-75 transition-opacity">
         ${_chevron(false)} Expandir todo
       </button>
     </div>` : ''
@@ -1191,13 +1247,13 @@ function _renderRecoPanel(data, condIdx) {
       <div class="mb-3 last:mb-0">
         <div class="flex items-center justify-between mb-1.5 px-1">
           <div class="flex items-center gap-2 min-w-0">
-            <p class="text-[10px] font-bold text-ink uppercase tracking-wide">${catES}</p>
-            <p class="text-[9px] text-slate/50 truncate">${catDsc}</p>
+            <p class="text-[12px] font-bold text-ink uppercase tracking-wide">${catES}</p>
+            <p class="text-[11px] text-slate/60 truncate">${catDsc}</p>
           </div>
           ${extra > 0 ? `
           <button onclick="toggleReco('${catId}')" id="${catId}-btn"
             data-total="${extra}"
-            class="flex items-center gap-1 text-[9px] font-medium text-forest hover:opacity-75 transition-opacity flex-shrink-0 ml-2">
+            class="flex items-center gap-1 text-[11px] font-medium text-forest hover:opacity-75 transition-opacity flex-shrink-0 ml-2">
             ${_chevron(false)} Ver ${extra} más
           </button>` : ''}
         </div>
@@ -1297,8 +1353,30 @@ export function selectRecoCondition(idx) {
 }
 window.selectRecoCondition = selectRecoCondition
 
+function _openImgModal(src) {
+  const existing = document.getElementById('img-modal-overlay')
+  if (existing) existing.remove()
+  const overlay = document.createElement('div')
+  overlay.id = 'img-modal-overlay'
+  overlay.className = 'fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4'
+  overlay.innerHTML = `
+    <button onclick="document.getElementById('img-modal-overlay').remove()"
+      class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center text-white transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+    <img src="${src}" alt="Imagen ampliada"
+      class="max-w-full object-contain rounded-xl shadow-2xl"
+      style="max-height:calc(100vh - 2rem)">
+  `
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
+  document.body.appendChild(overlay)
+}
+window._openImgModal = _openImgModal
+
 function _renderDetail(a, container, userNum) {
-  const token = localStorage.getItem('skinai_token')
+  const token   = localStorage.getItem('skinai_token')
   const dateStr = _formatDate(a.created_at)
 
   const statusBadge = a.status === 'completed'
@@ -1307,72 +1385,150 @@ function _renderDetail(a, container, userNum) {
     ? '<span class="bg-rose/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Error</span>'
     : '<span class="bg-warn/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Procesando</span>'
 
-  const imgSection = a.censored_filename || a.original_filename
+  const hasImage = !!(a.censored_filename || a.original_filename)
+  const imgSrc   = hasImage ? `${API}/analysis/${a.id}/image?token=${token}` : null
+  const imgSection = hasImage
     ? `<img
-         src="${API}/analysis/${a.id}/image?token=${token}"
+         src="${imgSrc}"
          alt="Imagen procesada análisis #${userNum}"
-         class="w-full h-auto block"
+         class="absolute inset-0 w-full h-full object-cover object-top"
          onerror="this.parentElement.innerHTML='<p class=\\'text-xs text-slate text-center py-8\\'>Imagen no disponible</p>'"
        >`
     : '<p class="text-xs text-slate text-center py-8">Sin imagen</p>'
+  const imgExpandBtn = hasImage ? `
+    <button onclick="_openImgModal('${imgSrc}')"
+      class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 active:scale-95 flex items-center justify-center text-white transition-all backdrop-blur-sm z-10">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+      </svg>
+    </button>` : ''
+
+  const r            = a.result || {}
+  const worstZoneKey = r.worst_zone || null
+  const worstZoneName = worstZoneKey ? (_ZONE_ES[worstZoneKey] || worstZoneKey) : '—'
+  const zonesCount   = r.affected_zones_count ?? 0
+  const zonesDisp    = r.zones_display || {}
+  let bestZoneKey = null, bestZoneName = '—'
+  if (Object.keys(zonesDisp).length) {
+    const sorted = Object.entries(zonesDisp).sort((x, y) => x[1].severity - y[1].severity)
+    if (sorted.length) { bestZoneKey = sorted[0][0]; bestZoneName = _ZONE_ES[bestZoneKey] || bestZoneKey }
+  }
 
   container.innerHTML = `
-    <!-- Volver -->
-    <button class="btn-back-dark mb-4 text-sm" onclick="closeDetail()">
-      ← Volver al historial
-    </button>
+  <div class="px-4 lg:px-14">
 
-    <!-- Cabecera -->
-    <div class="bg-gradient-diag rounded-card p-4 text-white mb-4">
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="bg-white/15 rounded-md px-2 py-0.5 text-[11px] font-bold">
-          Análisis #${userNum}
-        </span>
+    <!-- 1+2. Cabecera -->
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <button class="btn-back-dark text-sm" onclick="closeDetail()">← Volver al historial</button>
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Leyenda de severidad -->
+        <div class="flex items-center gap-3 text-[11px] text-slate">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose flex-shrink-0"></span>Alto</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-warn flex-shrink-0"></span>Moderado</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-ok flex-shrink-0"></span>Leve</span>
+        </div>
+        <span class="text-ink/30 text-[13px]">|</span>
+        <p class="text-[13px] font-semibold">
+          <span class="text-forest">Análisis #${userNum}</span>
+          <span class="text-ink/50"> | </span>
+          <span class="text-ink/70">${dateStr}</span>
+        </p>
         ${statusBadge}
       </div>
-      <h2 class="font-display text-lg text-cream mb-0.5">
-        ${_LABEL_ES[a.top1_label] || 'Análisis de piel'}
-      </h2>
-      <p class="text-[11px] text-white/55">${dateStr}</p>
     </div>
 
-    <!-- Imagen procesada -->
-    <div class="card card-body mb-4">
-      <p class="section-label mb-2">Imagen procesada</p>
-      <div class="rounded-xl overflow-hidden mb-2">
-        ${imgSection}
+    <!-- Mobile: flex-col | Desktop: grid 2 cols -->
+    <div class="flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_2fr] mb-3">
+
+      <!-- 3. Imagen procesada (desktop: col1 rowspan 2) -->
+      <div class="card card-body flex flex-col lg:row-start-1 lg:row-span-2 lg:col-start-1">
+        <p class="section-label mb-2">Imagen procesada</p>
+        <div class="rounded-xl overflow-hidden relative h-56 lg:h-auto lg:flex-1 lg:min-h-0">
+          ${imgSection}
+          ${imgExpandBtn}
+        </div>
+        <p class="text-[11px] text-slate leading-relaxed mt-2">
+          Los ojos fueron difuminados automáticamente para proteger tu privacidad antes de ser procesada por el modelo.
+        </p>
       </div>
-      <p class="text-[10px] text-slate leading-relaxed">
-        Los ojos fueron difuminados automáticamente para proteger tu privacidad
-        antes de ser procesada por el modelo.
-      </p>
-    </div>
 
-    <!-- Resultados ML -->
-    <div class="card card-body mb-4">
-      <p class="section-label mb-3">Resultados del modelo ML</p>
-      ${_renderMLResults(a)}
-    </div>
+      <!-- 4+5+6. 4 cards + Condiciones (desktop: col2 row1) -->
+      <div class="flex flex-col gap-3 lg:row-start-1 lg:col-start-2">
 
-    ${a.status === 'completed' ? `
-    <!-- Productos recomendados -->
-    <div class="card card-body mb-4">
-      <div class="flex items-start justify-between mb-1">
-        <p class="section-label">Productos recomendados</p>
-        <span class="text-[8px] text-slate bg-sand/60 rounded-full px-2 py-0.5 font-medium flex-shrink-0 ml-2">Motor IA</span>
-      </div>
-      <p class="text-[11px] text-slate mb-3 leading-relaxed">
-        Seleccionados por compatibilidad de ingredientes activos con tu condición detectada.
-      </p>
-      <div id="reco-panel">
-        <div class="flex items-center justify-center gap-2 py-8 text-[11px] text-slate">
-          <svg class="w-4 h-4 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          Cargando recomendaciones...
+        <!-- Desktop: [2x2 grid | Condiciones] lado a lado -->
+        <!-- Mobile: 2x2 grid apilado, Condiciones se muestra debajo por separado -->
+        <div class="flex flex-col lg:flex-row lg:gap-3 lg:items-stretch">
+
+          <!-- 2x2 grid: orden diferente en móvil vs desktop con order- -->
+          <div class="grid grid-cols-2 gap-3 lg:flex-[2] lg:min-w-0">
+            <!-- Diagnóstico: siempre top-left -->
+            <div class="order-1 h-full">${_renderDiagCard(a)}</div>
+            <!-- Zona más afectada: top-right en desktop (order-2), bottom-left en mobile (order-3) -->
+            <div class="order-3 lg:order-2 h-full">
+              <div class="card card-body !py-2 !px-3 h-full flex items-center justify-center gap-2">
+                <div class="text-center">
+                  <p class="text-[10px] text-slate uppercase tracking-widest mb-0.5">Zona más afectada</p>
+                  <p class="text-[12px] font-bold text-rose leading-tight">${worstZoneName}</p>
+                  <p class="text-[10px] text-slate mt-0.5">${zonesCount} zona${zonesCount !== 1 ? 's' : ''} activa${zonesCount !== 1 ? 's' : ''}</p>
+                </div>
+                ${_zoneFaceHTML(worstZoneKey, '#C47060', 'detail-worst-clip')}
+              </div>
+            </div>
+            <!-- Severidad: bottom-left en desktop (order-3), top-right en mobile (order-2) -->
+            <div class="order-2 lg:order-3 h-full">${_renderSeverityCard(a)}</div>
+            <!-- Zona menos afectada: siempre bottom-right -->
+            <div class="order-4 h-full">
+              <div class="card card-body !py-2 !px-3 h-full flex items-center justify-center gap-2">
+                <div class="text-center">
+                  <p class="text-[10px] text-slate uppercase tracking-widest mb-0.5">Zona menos afectada</p>
+                  <p class="text-[12px] font-bold text-ok leading-tight">${bestZoneName}</p>
+                </div>
+                ${_zoneFaceHTML(bestZoneKey, '#5FBA8B', 'detail-best-clip')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Condiciones detectadas: inline en desktop, oculto aquí en móvil -->
+          <div class="hidden lg:flex lg:flex-col lg:flex-[1] lg:min-w-0">
+            ${_renderTopNCard(a)}
+          </div>
         </div>
       </div>
-    </div>` : ''}
+
+      <!-- Condiciones detectadas: sólo en móvil (orden 6) -->
+      <div class="lg:hidden">
+        ${_renderTopNCard(a)}
+      </div>
+
+      <!-- 7. Zonas principales (desktop: col2 row2) -->
+      <div class="lg:row-start-2 lg:col-start-2">
+        ${_renderZonesCard(a)}
+      </div>
+
+      <!-- Desktop: spacer col1 row3 -->
+      <div class="hidden lg:block lg:row-start-3 lg:col-start-1"></div>
+
+      <!-- 8. Productos recomendados (desktop: col2 row3) -->
+      ${a.status === 'completed' ? `
+      <div class="lg:row-start-3 lg:col-start-2 card card-body">
+        <div class="flex items-start justify-between mb-1">
+          <p class="section-label">Productos recomendados</p>
+          <span class="text-[10px] text-slate bg-sand/60 rounded-full px-2 py-0.5 font-medium flex-shrink-0 ml-2">Motor IA</span>
+        </div>
+        <p class="text-[11px] text-slate mb-3 leading-relaxed">
+          Seleccionados por compatibilidad de ingredientes activos con tu condición detectada.
+        </p>
+        <div id="reco-panel">
+          <div class="flex items-center justify-center gap-2 py-8 text-[11px] text-slate">
+            <svg class="w-4 h-4 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Cargando recomendaciones...
+          </div>
+        </div>
+      </div>` : '<div class="hidden lg:block lg:row-start-3 lg:col-start-2"></div>'}
+
+    </div>
 
     ${a.error_message ? `
     <div class="bg-[#FFF5F5] border border-rose/30 rounded-card p-3 mb-4">
@@ -1380,10 +1536,7 @@ function _renderDetail(a, container, userNum) {
       <p class="text-[11px] text-rose">${a.error_message}</p>
     </div>` : ''}
 
-    <!-- Nueva captura -->
-    <button class="btn-primary w-full mt-2" data-go="capture">
-      Nuevo análisis
-    </button>
+  </div>
   `
 
   if (a.status === 'completed') {
