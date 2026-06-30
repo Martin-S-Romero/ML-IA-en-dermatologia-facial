@@ -300,12 +300,15 @@ class FaceCensor:
             return None
 
         h, w = image.shape[:2]
-        _min_px = MIN_IMG_WIDTH * MIN_IMG_HEIGHT
-        if w * h < _min_px:
-            print(f'[!] Resolución insuficiente ({w}x{h} = {w*h}px). '
-                  f'Mínimo {_min_px}px.')
-            return None
-        print(f'[ok] Resolución válida: {w}x{h}')
+        if w < MIN_IMG_WIDTH or h < MIN_IMG_HEIGHT:
+            orig_w, orig_h = w, h
+            scale = max(MIN_IMG_WIDTH / w, MIN_IMG_HEIGHT / h)
+            new_w = max(int(w * scale), MIN_IMG_WIDTH)
+            new_h = max(int(h * scale), MIN_IMG_HEIGHT)
+            image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
+            h, w = image.shape[:2]
+            print(f'[resize] Imagen ampliada de {orig_w}x{orig_h} → {w}x{h}')
+        print(f'[ok] Resolución: {w}x{h}')
 
         result = self._process_frame(image)
 

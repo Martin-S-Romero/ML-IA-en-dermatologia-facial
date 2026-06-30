@@ -39,8 +39,8 @@ export function initRegister() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || 'Error al registrarse.')
 
-      localStorage.setItem('skinai_token', data.access_token)
-      localStorage.setItem('skinai_user',  JSON.stringify(data.user))
+      localStorage.setItem('cutislab_token', data.access_token)
+      localStorage.setItem('cutislab_user',  JSON.stringify(data.user))
       window._goFull('profile')
 
     } catch (err) {
@@ -78,15 +78,15 @@ export function initLogin() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || 'Correo o contraseña incorrectos.')
 
-      localStorage.setItem('skinai_token', data.access_token)
-      localStorage.setItem('skinai_user',  JSON.stringify(data.user))
+      localStorage.setItem('cutislab_token', data.access_token)
+      localStorage.setItem('cutislab_user',  JSON.stringify(data.user))
 
       // El campo has_profile viene directo del login — sin petición extra
       if (data.user.has_profile) {
-        localStorage.setItem('skinai_profile_complete', '1')
+        localStorage.setItem('cutislab_profile_complete', '1')
         window._goFull('dashboard')
       } else {
-        localStorage.removeItem('skinai_profile_complete')
+        localStorage.removeItem('cutislab_profile_complete')
         window._goFull('profile')
       }
 

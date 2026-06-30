@@ -17,7 +17,7 @@ const FITZ_LABELS = {
 
 export function initProfile() {
   // Mostrar "Volver al Dashboard" solo si el perfil ya fue completado antes
-  if (localStorage.getItem('skinai_profile_complete') === '1') {
+  if (localStorage.getItem('cutislab_profile_complete') === '1') {
     document.getElementById('btn-back-profile')?.classList.remove('hidden')
   }
   initFitzpatrickInteraction()
@@ -103,7 +103,7 @@ function initSaveProfile() {
     hideMsg(successBox)
 
     try {
-      const token = localStorage.getItem('skinai_token')
+      const token = localStorage.getItem('cutislab_token')
       const res   = await fetch(`${API}/users/profile`, {
         method:  'PUT',
         headers: {
@@ -116,11 +116,11 @@ function initSaveProfile() {
       if (!res.ok) throw new Error(data.detail || 'Error al guardar el perfil.')
 
       // Actualizar localStorage con los datos del perfil para que account.js los lea
-      const user = JSON.parse(localStorage.getItem('skinai_user') || '{}')
+      const user = JSON.parse(localStorage.getItem('cutislab_user') || '{}')
       Object.assign(user, profileData)
-      localStorage.setItem('skinai_user', JSON.stringify(user))
+      localStorage.setItem('cutislab_user', JSON.stringify(user))
 
-      localStorage.setItem('skinai_profile_complete', '1')
+      localStorage.setItem('cutislab_profile_complete', '1')
       showMsg(successBox, errorBox, 'Perfil guardado correctamente.', 'success')
       setTimeout(() => window._goFull('capture'), 800)
 

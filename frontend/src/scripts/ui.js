@@ -59,39 +59,6 @@ export function hideTerms() {
   if (m) m.style.display = 'none'
 }
 
-// ── PDF EXPORT MODAL ──────────────────────────────────────────────────────
-export function openPdfModal() {
-  const m = document.getElementById('pdf-modal')
-  if (!m) return
-  m.style.display = 'flex'
-
-  const form = document.getElementById('pdf-form')
-  const gen  = document.getElementById('pdf-generating')
-  const suc  = document.getElementById('pdf-success')
-  if (form) form.style.display = 'block'
-  if (gen)  gen.classList.add('hidden')
-  if (suc)  suc.classList.add('hidden')
-}
-
-export function closePdfModal() {
-  const m = document.getElementById('pdf-modal')
-  if (m) m.style.display = 'none'
-}
-
-export function generatePdf() {
-  const form = document.getElementById('pdf-form')
-  const gen  = document.getElementById('pdf-generating')
-  const suc  = document.getElementById('pdf-success')
-
-  if (form) form.style.display = 'none'
-  if (gen)  gen.classList.remove('hidden')
-
-  setTimeout(() => {
-    if (gen) gen.classList.add('hidden')
-    if (suc) suc.classList.remove('hidden')
-  }, 2200)
-}
-
 // ── CAPTURE STATES ────────────────────────────────────────────────────────
 export function showCaptureError() {
   const normal = document.getElementById('capture-normal')

@@ -47,7 +47,7 @@ function _detectDevice() {
 }
 
 async function _uploadFile(file) {
-  const token = localStorage.getItem('skinai_token')
+  const token = localStorage.getItem('cutislab_token')
   if (!token) { window._goFull('auth'); return }
 
   _setUploadingState(true)
@@ -70,7 +70,7 @@ async function _uploadFile(file) {
     if (!res.ok) throw new Error(data.detail || 'Error al subir la imagen.')
 
     // Guardar analysis_id para que analyzing.js pueda hacer polling
-    sessionStorage.setItem('skinai_analysis_id', String(data.analysis_id))
+    sessionStorage.setItem('cutislab_analysis_id', String(data.analysis_id))
 
     // Navegar a la pantalla de análisis en progreso
     window._goFull('analyzing')

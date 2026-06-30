@@ -137,7 +137,7 @@ def process_image_task(
 
         analysis.top1_label      = result["condition"]
         analysis.top1_confidence = result["confidence"]
-        analysis.model_version   = result["model_version"]
+        analysis.model_version   = result.get("model_version")
         analysis.result          = result
         analysis.status          = "completed"
         analysis.completed_at    = datetime.now(timezone.utc)

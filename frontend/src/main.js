@@ -15,15 +15,21 @@ import {
   toggleDesktopSidebar,
   toggleDrawer, closeDrawer,
   showTerms, hideTerms,
-  openPdfModal, closePdfModal, generatePdf,
   showCaptureError, hideCaptureError,
   bindOptionButtons, bindFitzDots,
 } from './scripts/ui.js'
 
 import {
+  openPdfModal, closePdfModal, generatePdf, exportAnalysisPdf,
+} from './scripts/pdf-export.js'
+
+import {
   dtab, sidebarNav,
   openDetail, closeDetail,
   switchRoutine, toggleAccordion,
+  catalogSearch, catalogFilter, catalogSortBy,
+  catalogGotoPage, catalogPageSize,
+  openProductDetail, closeProductDetail,
 } from './scripts/dashboard.js'
 
 // ── LOAD GLOBAL COMPONENTS ───────────────────────────────────────────────
@@ -82,15 +88,15 @@ async function bootstrap() {
         })
         if (meRes.status === 401) {
           // Token expirado — limpiar sesión
-          localStorage.removeItem('skinai_token')
-          localStorage.removeItem('skinai_user')
-          localStorage.removeItem('skinai_profile_complete')
+          localStorage.removeItem('cutislab_token')
+          localStorage.removeItem('cutislab_user')
+          localStorage.removeItem('cutislab_profile_complete')
         } else if (meRes.ok) {
           const me = await meRes.json()
           if (me.has_profile) {
-            localStorage.setItem('skinai_profile_complete', '1')
+            localStorage.setItem('cutislab_profile_complete', '1')
           } else {
-            localStorage.removeItem('skinai_profile_complete')
+            localStorage.removeItem('cutislab_profile_complete')
           }
         }
       } catch {
@@ -141,18 +147,19 @@ function registerGlobals() {
   window.closeDrawer     = closeDrawer
 
   // Modals
-  window.showTerms       = showTerms
-  window.hideTerms       = hideTerms
-  window.openPdfModal    = openPdfModal
-  window.closePdfModal   = closePdfModal
-  window.generatePdf     = generatePdf
+  window.showTerms          = showTerms
+  window.hideTerms          = hideTerms
+  window.openPdfModal       = openPdfModal
+  window.closePdfModal      = closePdfModal
+  window.generatePdf        = generatePdf
+  window.exportAnalysisPdf  = exportAnalysisPdf
 
   // Account — defined here so está disponible desde el arranque sin depender de imports dinámicos
   window.deleteAccount = async function () {
     if (!confirm('¿Estás seguro? Esta acción no se puede deshacer.')) return
     const btn = document.getElementById('btn-delete-account')
     if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...' }
-    const token = localStorage.getItem('skinai_token')
+    const token = localStorage.getItem('cutislab_token')
     try {
       const res = await fetch('http://localhost:8000/api/users/me', {
         method: 'DELETE',
@@ -187,6 +194,15 @@ function registerGlobals() {
   window.closeDetail     = closeDetail
   window.switchRoutine   = switchRoutine
   window.toggleAccordion = toggleAccordion
+
+  // Catálogo de productos
+  window.catalogSearch      = catalogSearch
+  window.catalogFilter      = catalogFilter
+  window.catalogSortBy      = catalogSortBy
+  window.catalogGotoPage    = catalogGotoPage
+  window.catalogPageSize    = catalogPageSize
+  window.openProductDetail  = openProductDetail
+  window.closeProductDetail = closeProductDetail
 }
 
 // ── INJECT STYLES NOT COVERED BY TAILWIND SCAN ───────────────────────────

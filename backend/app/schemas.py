@@ -292,3 +292,23 @@ class RecommendationsOut(BaseModel):
     severity_score:  float
     conditions:      List[ConditionRecoOut]
     recommendations: dict           # = conditions[0].recommendations — backward compat
+
+
+# ── PRODUCT CATALOG ───────────────────────────────────────────────────────────
+
+class CatalogProductOut(BaseModel):
+    id:              int
+    name:            str
+    brand:           Optional[str] = None
+    category:        Optional[str] = None
+    key_ingredients: List[str]     = []
+
+    class Config:
+        from_attributes = True
+
+
+class ProductCatalogResponse(BaseModel):
+    items:     List[CatalogProductOut]
+    total:     int
+    page:      int
+    page_size: int

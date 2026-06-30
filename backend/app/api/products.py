@@ -6,6 +6,9 @@ from app.api import deps
 from app.core.recommendation_engine import get_recommendations
 import json
 
+# Ingredientes genéricos de relleno que no aportan información en el catálogo
+_FILLER_INGS: set[str] = {'water', 'aqua', 'eau'}
+
 router = APIRouter()
 
 """
@@ -116,6 +119,108 @@ def get_recommended(
 
     all_categories = list(dict.fromkeys(base_categories + extra_categories))
     return _get_top_per_category(db, all_categories, skin_type=profile.skin_type or "")
+
+
+
+@router.get("/catalog", response_model=schemas.ProductCatalogResponse)
+def get_product_catalog(
+    q:           Optional[str] = Query(None, description="Buscar por nombre, marca o ingrediente"),
+    category:    Optional[str] = Query(None, description="Filtro por categoría"),
+    sort_by:     str           = Query("name_asc", description="name_asc | name_desc | category_asc | category_desc | brand_asc | brand_desc"),
+    analysis_id: Optional[int] = Query(None, description="Filtrar por productos recomendados en este análisis"),
+    page:        int           = Query(1, ge=1),
+    page_size:   int           = Query(12, ge=1, le=50),
+    current_user: models.User  = Depends(deps.get_current_user),
+    db:          Session       = Depends(deps.get_db),
+):
+    """Catálogo paginado de productos con búsqueda, filtros por categoría y por análisis."""
+    from sqlalchemy import or_
+
+    # 1. Si se filtra por análisis, obtener los product_ids recomendados en ese análisis
+    analysis_product_ids: Optional[set] = None
+    if analysis_id is not None:
+        analysis = db.query(models.Analysis).filter_by(
+            id=analysis_id, user_id=current_user.id
+        ).first()
+        if analysis and analysis.cached_recommendations:
+            reco_data = analysis.cached_recommendations.get('data', {})
+            ids: set[int] = set()
+            for cond in reco_data.get('conditions', []):
+                for cat_products in cond.get('recommendations', {}).values():
+                    for p in cat_products:
+                        if p.get('product_id'):
+                            ids.add(int(p['product_id']))
+            analysis_product_ids = ids
+
+    # 2. Base query — excluir: categoría "other", sin marca, sin ingredientes
+    from sqlalchemy import exists
+    base_q = db.query(models.Product).filter(
+        models.Product.category != 'other',
+        models.Product.brand.isnot(None),
+        models.Product.brand != '',
+        exists().where(models.ProductIngredient.product_id == models.Product.id),
+    )
+
+    if analysis_product_ids is not None:
+        base_q = base_q.filter(models.Product.id.in_(analysis_product_ids))
+
+    if category:
+        base_q = base_q.filter(models.Product.category == category.lower())
+
+    if q:
+        q_like = f"%{q}%"
+        ing_ids = (
+            db.query(models.ProductIngredient.product_id)
+            .join(models.Ingredient)
+            .filter(models.Ingredient.inci_name.ilike(q_like))
+            .subquery()
+        )
+        base_q = base_q.filter(
+            or_(
+                models.Product.name.ilike(q_like),
+                models.Product.brand.ilike(q_like),
+                models.Product.id.in_(ing_ids),
+            )
+        )
+
+    # 3. Ordenación y paginación
+    _SORT = {
+        'name_asc':      [models.Product.name.asc()],
+        'name_desc':     [models.Product.name.desc()],
+        'category_asc':  [models.Product.category.asc(),  models.Product.name.asc()],
+        'category_desc': [models.Product.category.desc(), models.Product.name.asc()],
+        'brand_asc':     [models.Product.brand.asc(),     models.Product.name.asc()],
+        'brand_desc':    [models.Product.brand.desc(),    models.Product.name.asc()],
+    }
+    order_cols = _SORT.get(sort_by, [models.Product.name.asc()])
+
+    total = base_q.count()
+    prods = (
+        base_q
+        .order_by(*order_cols)
+        .options(joinedload(models.Product.product_ingredients).joinedload(models.ProductIngredient.ingredient))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    # 4. Construir items — ingredientes clave = primeros por posición (mayor concentración)
+    items = [
+        schemas.CatalogProductOut(
+            id=p.id,
+            name=p.name,
+            brand=p.brand,
+            category=p.category,
+            key_ingredients=[
+                pi.ingredient.inci_name
+                for pi in sorted(p.product_ingredients, key=lambda x: x.position)
+                if pi.ingredient.inci_name.lower().strip() not in _FILLER_INGS
+            ][:3],
+        )
+        for p in prods
+    ]
+
+    return schemas.ProductCatalogResponse(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/{product_id}", response_model=schemas.ProductDetailOut)

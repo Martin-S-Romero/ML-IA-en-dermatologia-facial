@@ -15,7 +15,7 @@
       </div>
       <div>
         <p class="font-semibold text-ink mb-1">2. No sustituye consulta médica</p>
-        <p>SkinAI es una herramienta de apoyo informativo. No reemplaza el diagnóstico de un dermatólogo certificado.</p>
+        <p>CutisLab es una herramienta de apoyo informativo. No reemplaza el diagnóstico de un dermatólogo certificado.</p>
       </div>
       <div>
         <p class="font-semibold text-ink mb-1">3. Almacenamiento de datos</p>
@@ -38,84 +38,114 @@
 <!-- ── PDF EXPORT MODAL ── -->
 <div
   id="pdf-modal"
-  class="fixed inset-0 bg-ink/55 z-[700] hidden items-center justify-center backdrop-blur-sm"
+  class="fixed inset-0 bg-ink/55 z-[700] hidden items-center justify-center backdrop-blur-sm p-4"
   role="dialog"
   aria-modal="true"
   aria-labelledby="pdf-title"
 >
-  <div class="bg-white rounded-card p-6 max-w-sm w-[92%] shadow-lg animate-fade-in">
-    <h2 id="pdf-title" class="font-display text-[18px] text-ink mb-1">Exportar análisis en PDF</h2>
-    <p class="text-xs text-slate mb-4 leading-relaxed">
-      Elige qué secciones incluir. El reporte corresponde al análisis del 15 de marzo de 2025.
-    </p>
+  <div class="bg-white rounded-card w-full max-w-sm shadow-lg animate-fade-in">
 
-    <!-- Sections selector -->
-    <div id="pdf-form">
-      <label class="pdf-section-row">
-        <input type="checkbox" checked class="w-3.5 h-3.5 accent-forest flex-shrink-0 mt-0.5" />
-        <div>
-          <p class="text-xs font-semibold text-ink"> Diagnóstico completo</p>
-          <p class="text-[10px] text-slate">Tipo, severidad, zonas y nivel de confianza</p>
-        </div>
-      </label>
-      <label class="pdf-section-row">
-        <input type="checkbox" checked class="w-3.5 h-3.5 accent-forest flex-shrink-0 mt-0.5" />
-        <div>
-          <p class="text-xs font-semibold text-ink">Imagen con zonas marcadas</p>
-          <p class="text-[10px] text-slate">Foto del rostro con áreas enmarcadas</p>
-        </div>
-      </label>
-      <label class="pdf-section-row">
-        <input type="checkbox" checked class="w-3.5 h-3.5 accent-forest flex-shrink-0 mt-0.5" />
-        <div>
-          <p class="text-xs font-semibold text-ink"> Comparación con análisis anterior</p>
-          <p class="text-[10px] text-slate">Evolución de indicadores por sesión</p>
-        </div>
-      </label>
-      <label class="pdf-section-row">
-        <input type="checkbox" checked class="w-3.5 h-3.5 accent-forest flex-shrink-0 mt-0.5" />
-        <div>
-          <p class="text-xs font-semibold text-ink"> Rutina personalizada AM y PM</p>
-          <p class="text-[10px] text-slate">Productos con explicaciones detalladas</p>
-        </div>
-      </label>
-      <label class="pdf-section-row">
-        <input type="checkbox" class="w-3.5 h-3.5 accent-forest flex-shrink-0 mt-0.5" />
-        <div>
-          <p class="text-xs font-semibold text-ink"> Historial completo</p>
-          <p class="text-[10px] text-slate">Todos los análisis anteriores</p>
-        </div>
-      </label>
-      <label class="pdf-section-row">
-        <input type="checkbox" class="w-3.5 h-3.5 accent-forest flex-shrink-0 mt-0.5" />
-        <div>
-          <p class="text-xs font-semibold text-ink"> Lista de productos por sesión</p>
-          <p class="text-[10px] text-slate">Productos registrados en cada análisis</p>
-        </div>
-      </label>
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 pt-4 pb-3.5 border-b border-sand">
+      <h2 id="pdf-title" class="font-display text-[17px] text-ink">Exportar reporte</h2>
+      <button onclick="closePdfModal()"
+        class="w-8 h-8 rounded-full bg-sand/60 hover:bg-sand flex items-center justify-center text-slate transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
 
-      <div class="flex gap-2 mt-4">
-        <button class="btn-secondary flex-none px-4 py-2.5 !w-auto text-xs" onclick="closePdfModal()">Cancelar</button>
-        <button class="btn-primary text-xs" onclick="generatePdf()"> Generar PDF</button>
+    <!-- Form -->
+    <div id="pdf-form" class="px-5 py-4">
+
+      <p class="text-[11px] text-slate mb-3">Selecciona qué deseas exportar</p>
+
+      <!-- Option cards -->
+      <div class="space-y-2">
+
+        <!-- Dashboard -->
+        <button id="pdf-type-dashboard" onclick="selectPdfType('dashboard')"
+          class="w-full text-left flex items-center gap-3 rounded-xl border-2 border-sand px-3.5 py-3 transition-all hover:border-forest/40 focus:outline-none">
+          <div class="w-8 h-8 rounded-lg bg-forest/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-forest" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0 text-left">
+            <p class="text-[12px] font-semibold text-ink">Resumen del dashboard</p>
+            <p class="text-[10px] text-slate">Diagnóstico actual, zonas, comparación y rutina</p>
+          </div>
+          <div class="w-4 h-4 rounded-full border-2 border-sand flex-shrink-0 flex items-center justify-center pdf-radio">
+            <div class="w-2 h-2 rounded-full bg-forest hidden pdf-radio-dot"></div>
+          </div>
+        </button>
+
+        <!-- Historial -->
+        <button id="pdf-type-history" onclick="selectPdfType('history')"
+          class="w-full text-left flex items-center gap-3 rounded-xl border-2 border-sand px-3.5 py-3 transition-all hover:border-forest/40 focus:outline-none">
+          <div class="w-8 h-8 rounded-lg bg-forest/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-forest" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0 text-left">
+            <p class="text-[12px] font-semibold text-ink">Análisis del historial</p>
+            <p class="text-[10px] text-slate">Historial completo o un análisis específico</p>
+          </div>
+          <div class="w-4 h-4 rounded-full border-2 border-sand flex-shrink-0 flex items-center justify-center pdf-radio">
+            <div class="w-2 h-2 rounded-full bg-forest hidden pdf-radio-dot"></div>
+          </div>
+        </button>
+
+        <!-- Productos -->
+        <button id="pdf-type-products" onclick="selectPdfType('products')"
+          class="w-full text-left flex items-center gap-3 rounded-xl border-2 border-sand px-3.5 py-3 transition-all hover:border-forest/40 focus:outline-none">
+          <div class="w-8 h-8 rounded-lg bg-forest/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-forest" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0 text-left">
+            <p class="text-[12px] font-semibold text-ink">Productos recomendados</p>
+            <p class="text-[10px] text-slate">Lista de productos según el análisis seleccionado</p>
+          </div>
+          <div class="w-4 h-4 rounded-full border-2 border-sand flex-shrink-0 flex items-center justify-center pdf-radio">
+            <div class="w-2 h-2 rounded-full bg-forest hidden pdf-radio-dot"></div>
+          </div>
+        </button>
+
       </div>
+
+      <!-- Analysis selector (visible en history y products) -->
+      <div id="pdf-analysis-selector" class="hidden mt-4">
+        <label id="pdf-selector-label"
+          class="text-[10px] text-slate uppercase tracking-widest font-semibold block mb-1.5">
+          Seleccionar análisis (vacío = todos)
+        </label>
+        <select id="pdf-analysis-select"
+          class="w-full border border-sand rounded-xl px-3 py-2.5 text-[12px] bg-white text-ink focus:outline-none focus:border-forest transition-colors cursor-pointer">
+          <option value="">Todos los análisis</option>
+        </select>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-2 mt-5">
+        <button onclick="closePdfModal()"
+          class="btn-secondary flex-none px-5 py-2.5 !w-auto text-xs">Cancelar</button>
+        <button onclick="generatePdf()"
+          class="btn-primary text-xs">Exportar PDF</button>
+      </div>
+
     </div>
 
     <!-- Generating state -->
-    <div id="pdf-generating" class="hidden text-center py-3">
-      <div class="w-9 h-9 rounded-full border-[3px] border-sand border-t-forest animate-spin-ring mx-auto mb-3"></div>
-      <p class="text-sm font-semibold text-ink mb-1">Generando tu reporte...</p>
-      <p class="text-xs text-slate">Esto puede tomar unos segundos</p>
+    <div id="pdf-generating" class="hidden text-center px-5 py-10">
+      <div class="w-10 h-10 rounded-full border-[3px] border-sand border-t-forest animate-spin-ring mx-auto mb-3"></div>
+      <p class="text-[13px] font-semibold text-ink mb-1">Generando reporte...</p>
+      <p class="text-[11px] text-slate">Esto puede tomar unos segundos</p>
     </div>
 
-    <!-- Success state -->
-    <div id="pdf-success" class="hidden text-center py-2">
-      <div class="text-4xl mb-2"></div>
-      <p class="text-sm font-semibold text-ok mb-1">¡Reporte generado!</p>
-      <p class="text-xs text-slate leading-relaxed mb-4">
-        SkinAI_Analisis_15mar2025.pdf<br />está listo para descargar
-      </p>
-      <button class="btn-primary mb-2 text-xs" onclick="closePdfModal()">Descargar PDF</button>
-      <button class="btn-ghost block w-full text-center" onclick="closePdfModal()">Cerrar</button>
-    </div>
   </div>
 </div>

@@ -17,7 +17,7 @@ const STEP_TIMINGS = [0, 800, 1600, 2400, 3200, null]
 let _pollTimer = null
 
 export function initAnalyzing() {
-  const analysisId = sessionStorage.getItem('skinai_analysis_id')
+  const analysisId = sessionStorage.getItem('cutislab_analysis_id')
 
   if (!analysisId) {
     // Sin ID — redirigir a captura tras un instante
@@ -61,7 +61,7 @@ function _failStep(stepNum) {
 // ── POLLING ───────────────────────────────────────────────────────────────
 
 function _startPolling(analysisId) {
-  const token = localStorage.getItem('skinai_token')
+  const token = localStorage.getItem('cutislab_token')
   if (!token) return
 
   _pollTimer = setInterval(async () => {
@@ -79,7 +79,7 @@ function _startPolling(analysisId) {
       // 404 = registro borrado porque no se detectó rostro
       if (res.status === 404) {
         clearInterval(_pollTimer)
-        sessionStorage.removeItem('skinai_analysis_id')
+        sessionStorage.removeItem('cutislab_analysis_id')
         _failStep(6)
         _showFailedState()
         return
@@ -93,7 +93,7 @@ function _startPolling(analysisId) {
         // Activar pasos 6 y 7 con pequeño retraso para dar sensación de finalización
         _activateStep(6)
         setTimeout(() => {
-          sessionStorage.removeItem('skinai_analysis_id')
+          sessionStorage.removeItem('cutislab_analysis_id')
           window._goFull && window._goFull('dashboard')
         }, 900)
 

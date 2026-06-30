@@ -1,8 +1,8 @@
 {
-  "name": "skinai",
+  "name": "cutislab",
   "version": "1.0.0",
   "type": "module",
-  "description": "SkinAI — Detección de acné y rosácea con IA",
+  "description": "CutisLab — Detección de acné y rosácea con IA",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

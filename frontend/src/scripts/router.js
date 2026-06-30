@@ -30,29 +30,29 @@ let navSeq = 0
 // ── AUTH HELPERS ─────────────────────────────────────────────────────────
 
 export function getToken() {
-  return localStorage.getItem('skinai_token')
+  return localStorage.getItem('cutislab_token')
 }
 
 export function setToken(token) {
-  localStorage.setItem('skinai_token', token)
+  localStorage.setItem('cutislab_token', token)
 }
 
 export function setUser(user) {
-  localStorage.setItem('skinai_user', JSON.stringify(user))
+  localStorage.setItem('cutislab_user', JSON.stringify(user))
 }
 
 export function getUser() {
   try {
-    return JSON.parse(localStorage.getItem('skinai_user'))
+    return JSON.parse(localStorage.getItem('cutislab_user'))
   } catch {
     return null
   }
 }
 
 export function logout() {
-  localStorage.removeItem('skinai_token')
-  localStorage.removeItem('skinai_user')
-  localStorage.removeItem('skinai_profile_complete')
+  localStorage.removeItem('cutislab_token')
+  localStorage.removeItem('cutislab_user')
+  localStorage.removeItem('cutislab_profile_complete')
   navigate('landing')
 }
 
@@ -78,14 +78,14 @@ export async function navigate(pageKey) {
   // Si ya hay sesión y quiere ir a landing/auth → redirigir según si completó el perfil
   if (PUBLIC_ONLY.includes(pageKey) && token) {
     if (currentPage === 'dashboard' || currentPage === 'profile') return
-    const profileComplete = localStorage.getItem('skinai_profile_complete')
+    const profileComplete = localStorage.getItem('cutislab_profile_complete')
     await loadPage(profileComplete ? 'dashboard' : 'profile')
     return
   }
 
   // Páginas que requieren perfil completo — si no, forzar al perfil
   const REQUIRES_PROFILE = ['dashboard', 'capture', 'routine-check', 'routine-change', 'analyzing', 'account']
-  if (REQUIRES_PROFILE.includes(pageKey) && token && !localStorage.getItem('skinai_profile_complete')) {
+  if (REQUIRES_PROFILE.includes(pageKey) && token && !localStorage.getItem('cutislab_profile_complete')) {
     await loadPage('profile')
     return
   }
@@ -109,6 +109,9 @@ async function loadPage(pageKey) {
   const NAVBAR_PAGES = ['capture', 'routine-check', 'routine-change', 'analyzing']
   const navbarSlot = document.getElementById('slot-navbar')
   if (navbarSlot) navbarSlot.style.display = NAVBAR_PAGES.includes(pageKey) ? 'block' : 'none'
+
+  // Ocultar el FAB en páginas fuera del dashboard
+  if (pageKey !== 'dashboard') document.getElementById('fab-new-analysis')?.remove()
 
   // Limpiar el contenido anterior de inmediato para que no persista durante la carga
   const app = document.getElementById('app')

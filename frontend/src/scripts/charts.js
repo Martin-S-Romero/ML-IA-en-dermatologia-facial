@@ -1,11 +1,9 @@
 /**
  * charts.js
  * Inicializa las gráficas del dashboard con Chart.js.
- * Usa window._skinaiAnalyses (poblado por dashboard.js) para datos reales del modelo ML.
+ * Usa window._cutislabAnalyses (poblado por dashboard.js) para datos reales del modelo ML.
  * Se llama de forma lazy cuando el usuario activa la tab "Gráficas".
  */
-
-let initialized = false
 
 const rose = '#C47060'
 const bark = '#B89A72'
@@ -14,19 +12,15 @@ const grid = '#E8E2D6'
 // ── Inicialización ────────────────────────────────────────────────────────────
 
 export function initCharts() {
-  if (initialized) return
-
   if (typeof Chart === 'undefined') {
     setTimeout(initCharts, 300)
     return
   }
 
-  const analyses = (window._skinaiAnalyses || [])
+  const analyses = (window._cutislabAnalyses || [])
     .filter(a => a.status === 'completed' && a.result)
 
   if (analyses.length < 2) return
-
-  initialized = true
 
   document.getElementById('chart-block-lesiones')?.classList.remove('hidden')
 
@@ -123,6 +117,7 @@ export function initCharts() {
     const lesData = _buildLesionesChart(sorted)
     lesData._raw  = sorted
 
+    Chart.getChart(elLes)?.destroy()
     const lesChart = new Chart(elLes, {
       type: 'line',
       data: lesData,

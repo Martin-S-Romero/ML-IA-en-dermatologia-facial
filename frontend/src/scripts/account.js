@@ -11,10 +11,10 @@ export function initAccount() {
 }
 
 async function loadUserData() {
-  const token = localStorage.getItem('skinai_token')
+  const token = localStorage.getItem('cutislab_token')
 
   // Datos básicos del usuario (nombre, email) — vienen del login en localStorage
-  const user = JSON.parse(localStorage.getItem('skinai_user') || '{}')
+  const user = JSON.parse(localStorage.getItem('cutislab_user') || '{}')
 
   setEl('account-avatar',       getInitials(user.full_name))
   setEl('account-name',         user.full_name || '--')
@@ -39,7 +39,7 @@ async function loadUserData() {
         allergies:      profile.allergies,
         skin_conditions: profile.skin_conditions,
       })
-      localStorage.setItem('skinai_user', JSON.stringify(user))
+      localStorage.setItem('cutislab_user', JSON.stringify(user))
 
       setEl('account-age',       profile.age       ? `${profile.age} años` : '--')
       setEl('account-gender',    capitalize(profile.gender)    || '--')
@@ -111,7 +111,7 @@ function initEditFields() {
 }
 
 async function startEdit(cell, btn, key) {
-  const user   = JSON.parse(localStorage.getItem('skinai_user') || '{}')
+  const user   = JSON.parse(localStorage.getItem('cutislab_user') || '{}')
   const rawVal = user[key]
 
   const control = buildControl(key, rawVal)
@@ -143,7 +143,7 @@ async function startEdit(cell, btn, key) {
     if (apiValue === null) return
 
     try {
-      const token = localStorage.getItem('skinai_token')
+      const token = localStorage.getItem('cutislab_token')
       const res   = await fetch(`${API}/users/me`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -154,9 +154,9 @@ async function startEdit(cell, btn, key) {
         throw new Error(err.detail || 'Error al guardar.')
       }
 
-      const stored = JSON.parse(localStorage.getItem('skinai_user') || '{}')
+      const stored = JSON.parse(localStorage.getItem('cutislab_user') || '{}')
       stored[key] = apiValue
-      localStorage.setItem('skinai_user', JSON.stringify(stored))
+      localStorage.setItem('cutislab_user', JSON.stringify(stored))
 
       cell.textContent = displayText
 
@@ -424,7 +424,7 @@ async function submitChangePassword() {
   submitBtn.style.opacity = '0.7'
 
   try {
-    const token = localStorage.getItem('skinai_token')
+    const token = localStorage.getItem('cutislab_token')
     const res   = await fetch(`${API}/users/me/change-password`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },

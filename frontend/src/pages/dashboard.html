@@ -12,8 +12,8 @@
       <!-- Mobile top bar -->
       <header class="bg-forest text-white px-4 pt-4 pb-4 relative overflow-hidden lg:hidden">
         <!--
-          ☰ on the left, SkinAI + "Bienvenido, Claudio" stacked on the right.
-          items-start keeps the burger aligned with the SkinAI row; mt-1 fine-tunes it.
+          ☰ on the left, CutisLab + "Bienvenido, Claudio" stacked on the right.
+          items-start keeps the burger aligned with the CutisLab row; mt-1 fine-tunes it.
         -->
         <div class="flex items-start gap-3 relative">
           <button
@@ -27,7 +27,7 @@
             <span class="block w-5 h-0.5 bg-white/80 rounded transition-all duration-300"></span>
           </button>
           <div>
-            <p class="font-display text-lg text-bark leading-tight">SkinAI</p>
+            <p class="font-display text-lg text-bark leading-tight">CutisLab</p>
             <p class="font-display text-base text-white whitespace-nowrap mt-0.5">
               <span class="italic text-white/55">Bienvenido, </span><span class="font-semibold" id="dash-name-mobile">--</span>
             </p>
@@ -40,7 +40,7 @@
         <div class="flex items-center gap-3 min-w-0">
           <!--
             Restore section — visible only when the sidebar is collapsed.
-            Shows ☰ + SkinAI + separator so branding is never lost.
+            Shows ☰ + CutisLab + separator so branding is never lost.
             toggleDesktopSidebar() sets display:flex / none on this element.
           -->
           <div
@@ -57,7 +57,7 @@
               <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
               <span class="block w-5 h-0.5 bg-white/80 rounded"></span>
             </button>
-            <span class="font-display text-lg text-bark tracking-tight">SkinAI</span>
+            <span class="font-display text-lg text-bark tracking-tight">CutisLab</span>
             <span class="border-l border-white/20 h-5 self-center mx-0.5"></span>
           </div>
 
@@ -87,10 +87,10 @@
         <div class="grid gap-3 lg:grid-cols-2 lg:gap-4">
 
           <!-- Top row: Estado actual (verde) + 4 KPI cards (blancas) -->
-          <div class="lg:col-span-2 grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-3">
+          <div class="lg:col-span-2 grid grid-cols-1 lg:grid-cols-[3fr_1fr_1fr_1fr_1fr] gap-2">
 
             <!-- Estado actual (siempre verde) -->
-            <div id="dash-latest" class="bg-gradient-diag rounded-card p-4 text-white relative overflow-hidden flex flex-col">
+            <div id="dash-latest" class="bg-gradient-diag rounded-card p-3 text-white relative overflow-hidden flex flex-col">
               <p class="text-[10px] text-white/55 uppercase tracking-widest mb-3">Sin análisis aún</p>
               <p class="text-sm text-white/70">Realiza tu primer análisis para ver los resultados aquí.</p>
               <div class="mt-4">
@@ -98,32 +98,33 @@
               </div>
             </div>
 
-            <!-- KPI wrapper: 2 columnas en móvil, transparente en desktop -->
-            <div id="kpi-wrapper" class="grid grid-cols-2 gap-3">
+            <!-- KPI wrapper: 2 columnas en móvil, contents en desktop (los 4 cards pasan al grid exterior) -->
+            <div id="kpi-wrapper" class="grid grid-cols-2 gap-3 lg:contents">
 
               <!-- KPI: Severidad global -->
-              <div id="kpi-sev" class="card p-4 flex flex-col items-center text-center justify-between hidden"></div>
+              <div id="kpi-sev" class="card p-3 flex flex-col items-center text-center justify-between hidden"></div>
 
               <!-- KPI: Zona más afectada -->
-              <div id="kpi-zone" class="card p-4 flex flex-col items-center text-center justify-between hidden"></div>
+              <div id="kpi-zone" class="card p-3 flex flex-col items-center text-center justify-between hidden"></div>
 
               <!-- KPI: Zonas afectadas -->
-              <div id="kpi-zones" class="card p-4 flex flex-col items-center text-center justify-between hidden"></div>
+              <div id="kpi-zones" class="card p-3 flex flex-col items-center text-center justify-between hidden"></div>
 
               <!-- KPI: Último análisis -->
-              <div id="kpi-date" class="card p-4 flex flex-col items-center text-center justify-between hidden"></div>
+              <div id="kpi-date" class="card p-3 flex flex-col items-center text-center justify-between hidden"></div>
 
             </div>
 
           </div>
 
           <!-- Mapa facial de zonas -->
-          <div id="dash-zones" class="card card-body !p-3">
-            <p class="section-label mb-2">Mapa facial de zonas</p>
-            <div class="flex flex-col sm:flex-row items-center gap-3">
+          <div id="dash-zones" class="card card-body !p-4">
+            <p class="section-label mb-3">Mapa facial de zonas</p>
 
-              <!-- Imagen base + overlay SVG de zonas (682×870 px) -->
-              <div class="relative w-28 flex-shrink-0 select-none">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-10 sm:pl-4">
+
+              <!-- Imagen base + overlay SVG -->
+              <div class="relative w-32 flex-shrink-0 select-none mx-auto sm:mx-0">
                 <img
                   src="/img-resource/rostro-base.png"
                   alt="Silueta del rostro"
@@ -160,39 +161,44 @@
                 </svg>
               </div>
 
-              <!-- Leyenda -->
-              <div class="flex flex-col gap-2 text-[10px]">
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#2E7D5A]"></span>
-                  <span><span class="font-semibold text-ink">Bien</span> <span class="text-slate">· sin señales relevantes</span></span>
+              <!-- Leyenda de colores + nota -->
+              <div class="flex flex-col">
+                <div class="flex flex-col gap-4 text-[11px]">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full flex-shrink-0 bg-[#2E7D5A]"></span>
+                    <span><span class="font-semibold text-ink">Bien</span><span class="text-slate"> · sin señales relevantes</span></span>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full flex-shrink-0 bg-[#D4942A]"></span>
+                    <span><span class="font-semibold text-ink">Atención</span><span class="text-slate"> · señales leves</span></span>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full flex-shrink-0 bg-[#C47060]"></span>
+                    <span><span class="font-semibold text-ink">Afectada</span><span class="text-slate"> · señales moderadas</span></span>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full flex-shrink-0 bg-[#8B2A1A]"></span>
+                    <span><span class="font-semibold text-ink">Severa</span><span class="text-slate"> · señales graves</span></span>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full flex-shrink-0 bg-[#D4C9B8]"></span>
+                    <span class="text-slate">Sin datos</span>
+                  </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#D4942A]"></span>
-                  <span><span class="font-semibold text-ink">Atención</span> <span class="text-slate">· señales leves</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#C47060]"></span>
-                  <span><span class="font-semibold text-ink">Afectada</span> <span class="text-slate">· señales moderadas</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#8B2A1A]"></span>
-                  <span><span class="font-semibold text-ink">Severa</span> <span class="text-slate">· señales graves</span></span>
-                </div>
-                <div class="flex items-center gap-2 mt-1">
-                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#D4C9B8]"></span>
-                  <span class="text-slate">Sin datos</span>
-                </div>
+                <p class="text-[10px] text-slate mt-4">El color indica la severidad detectada en cada zona.</p>
               </div>
 
+              <!-- Condiciones detectadas (poblado por JS) -->
+              <div id="dash-zones-lesions" class="hidden sm:self-start sm:pt-[30px]"></div>
+
             </div>
-            <p class="text-[10px] text-slate mt-3">El color indica la severidad detectada en cada zona.</p>
           </div>
 
           <!-- Evolución temporal (par del mapa) -->
           <div class="card card-body !p-3 hidden" id="chart-block-lesiones">
             <div class="flex items-center justify-between mb-1">
               <p class="section-label !mb-0">Tu evolución en el tiempo</p>
-              <select id="chart-lesiones-filter" class="text-[9px] text-slate border border-sand rounded-md px-1.5 py-0.5 bg-cream focus:outline-none focus:border-forest cursor-pointer">
+              <select id="chart-lesiones-filter" class="text-[11px] text-slate border border-sand rounded-md px-2 py-0.5 bg-cream focus:outline-none focus:border-forest cursor-pointer">
                 <option value="all">Todos los análisis</option>
                 <option value="6">Últimos 6</option>
                 <option value="3">Últimos 3</option>
@@ -214,16 +220,16 @@
           </div>
 
           <!-- Comparación (1-col, par de Recomendaciones) -->
-          <div id="dash-comparison" class="card card-body !p-3 hidden">
+          <div id="dash-comparison" class="card card-body !p-2.5 hidden">
             <div class="flex items-center gap-1.5 mb-2">
               <p class="section-label !mb-0">Cambios del último análisis</p>
-              <span title="Comparación entre el análisis anterior y el más reciente" class="w-3.5 h-3.5 rounded-full border border-slate/40 text-slate/50 text-[8px] font-bold flex items-center justify-center flex-shrink-0 cursor-default select-none">i</span>
+              <span title="Comparación entre el análisis anterior y el más reciente" class="w-4 h-4 rounded-full border border-slate/40 text-slate/60 text-[10px] font-bold flex items-center justify-center flex-shrink-0 cursor-default select-none">i</span>
             </div>
             <div id="dash-comparison-body"></div>
           </div>
 
           <!-- Recomendaciones de productos (1-col) -->
-          <div id="dash-recommendations" class="card card-body !p-3">
+          <div id="dash-recommendations" class="card card-body !p-2.5">
             <p class="section-label mb-2">Recomendaciones de productos</p>
             <p class="text-xs text-slate text-center py-4">Las recomendaciones de productos estarán disponibles próximamente.</p>
           </div>
@@ -247,39 +253,132 @@
         </div>
       </div>
 
-      <!-- TAB: RUTINA -->
-      <div id="dr" class="dpage px-4 py-4 lg:px-8 lg:py-6 overflow-y-auto" role="tabpanel">
-        <div class="max-w-4xl mx-auto grid gap-4 lg:grid-cols-2 lg:gap-5">
+      <!-- TAB: CONSULTA DE PRODUCTOS -->
+      <div id="dr" class="dpage px-4 py-4 lg:px-6 lg:py-5 overflow-y-auto" role="tabpanel">
 
-          <!-- Productos actuales -->
-          <div class="lg:col-span-2 bg-cream rounded-card p-4">
-            <p class="section-label !mb-3">Productos en rutina actual</p>
-            <div id="routine-current-products" class="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
-              <p class="text-xs text-slate col-span-full text-center py-4">Sin rutina activa. Realiza tu primer análisis.</p>
-            </div>
+        <!-- Vista lista -->
+        <div id="catalog-list">
+
+        <!-- Header: título + buscador -->
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+          <div>
+            <h2 class="font-display text-xl font-semibold text-ink">Consulta de productos</h2>
+            <p class="text-xs text-slate mt-0.5">Explora y busca todos los productos recomendados.</p>
           </div>
-
-          <!-- Rutina recomendada -->
-          <div id="routine-recommended" class="card card-body lg:col-span-2 hidden">
-            <p class="section-label mb-1">Rutina recomendada</p>
-            <p id="routine-recommended-meta" class="text-xs text-slate mb-3">--</p>
-
-            <div class="flex gap-2 mb-4">
-              <button id="rtab-am" class="flex-1 py-2 rounded-md text-xs font-semibold bg-warn text-white border-none cursor-pointer transition-all" onclick="switchRoutine('am')">Mañana</button>
-              <button id="rtab-pm" class="flex-1 py-2 rounded-md text-xs font-semibold bg-cream text-slate border-[1.5px] border-sand cursor-pointer transition-all" onclick="switchRoutine('pm')">Noche</button>
-            </div>
-
-            <div id="routine-am"></div>
-            <div id="routine-pm" class="hidden"></div>
+          <div class="relative flex-shrink-0">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input
+              id="catalog-search"
+              type="text"
+              placeholder="Buscar por nombre o ingrediente"
+              class="pl-9 pr-4 py-2.5 border border-sand rounded-lg text-sm bg-white focus:outline-none focus:border-forest transition-colors w-full sm:w-72"
+              oninput="catalogSearch(this.value)"
+            />
           </div>
-
-          <!-- Sin rutina -->
-          <div id="routine-empty" class="card card-body lg:col-span-2 text-center py-10">
-            <p class="text-xs text-slate mb-4">No tienes rutina activa. Realiza un análisis para recibir tu rutina personalizada.</p>
-            <button class="btn-primary max-w-xs mx-auto" data-go="capture">Hacer análisis</button>
-          </div>
-
         </div>
+
+        <!-- Fila de filtros -->
+        <div class="flex flex-wrap items-end gap-3 mb-4">
+          <!-- Categoría -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Categoría</label>
+            <select
+              id="catalog-cat"
+              class="border border-sand rounded-lg px-3 py-2 text-sm bg-white text-ink focus:outline-none focus:border-forest cursor-pointer min-w-[185px]"
+              onchange="catalogFilter()"
+            >
+              <option value="">Todas las categorías</option>
+              <option value="cleanser">Limpiador</option>
+              <option value="moisturizer">Hidratante</option>
+              <option value="spf">Protector solar</option>
+              <option value="serum">Sérum</option>
+              <option value="exfoliant">Exfoliante</option>
+              <option value="retinoid">Retinoide</option>
+              <option value="spot">Tratamiento puntual</option>
+              <option value="toner">Tónico</option>
+              <option value="eye">Contorno de ojos</option>
+              <option value="mask">Mascarilla</option>
+              <option value="oil">Aceite facial</option>
+            </select>
+          </div>
+
+          <!-- Por análisis -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Por análisis</label>
+            <select
+              id="catalog-analysis"
+              class="border border-sand rounded-lg px-3 py-2 text-sm bg-white text-ink focus:outline-none focus:border-forest cursor-pointer min-w-[200px]"
+              onchange="catalogFilter()"
+            >
+              <option value="">Todos los productos</option>
+            </select>
+          </div>
+
+          <!-- Conteo (derecha) -->
+          <div class="ml-auto flex items-center pb-2">
+            <span id="catalog-count-label" class="text-xs text-slate whitespace-nowrap"></span>
+          </div>
+        </div>
+
+        <!-- Tabla de productos -->
+        <div class="bg-white rounded-card border border-sand overflow-hidden shadow-card">
+          <div id="catalog-loading" class="py-14 text-center">
+            <p class="text-xs text-slate animate-pulse">Cargando productos...</p>
+          </div>
+          <table id="catalog-table" class="w-full hidden">
+            <thead>
+              <tr class="border-b border-sand bg-cream/60">
+
+                <!-- PRODUCTO + sort -->
+                <th class="text-left px-4 py-3">
+                  <button onclick="catalogSortBy('name')" class="flex items-center gap-1.5 group cursor-pointer">
+                    <span class="text-[10px] uppercase tracking-widest text-slate font-semibold group-hover:text-ink transition-colors">Producto</span>
+                    <span id="sort-icon-name" class="text-sm text-slate/50 group-hover:text-slate transition-colors">↕</span>
+                  </button>
+                </th>
+
+                <!-- CATEGORÍA + sort -->
+                <th class="text-left px-4 py-3 hidden sm:table-cell">
+                  <button onclick="catalogSortBy('category')" class="flex items-center gap-1.5 group cursor-pointer">
+                    <span class="text-[10px] uppercase tracking-widest text-slate font-semibold group-hover:text-ink transition-colors whitespace-nowrap">Categoría</span>
+                    <span id="sort-icon-category" class="text-sm text-slate/50 group-hover:text-slate transition-colors">↕</span>
+                  </button>
+                </th>
+
+                <!-- MARCAS + sort -->
+                <th class="text-left px-4 py-3 hidden lg:table-cell">
+                  <button onclick="catalogSortBy('brand')" class="flex items-center gap-1.5 group cursor-pointer">
+                    <span class="text-[10px] uppercase tracking-widest text-slate font-semibold group-hover:text-ink transition-colors whitespace-nowrap">Marcas / Línea</span>
+                    <span id="sort-icon-brand" class="text-sm text-slate/50 group-hover:text-slate transition-colors">↕</span>
+                  </button>
+                </th>
+
+                <!-- INGREDIENTES CLAVE (sin sort) -->
+                <th class="text-left px-4 py-3 hidden lg:table-cell">
+                  <span class="text-[10px] uppercase tracking-widest text-slate font-semibold">Ingredientes Clave</span>
+                </th>
+
+                <th class="w-8"></th>
+              </tr>
+            </thead>
+            <tbody id="catalog-tbody"></tbody>
+          </table>
+          <div id="catalog-empty" class="py-14 text-center hidden">
+            <p class="text-sm text-slate">No se encontraron productos.</p>
+            <p class="text-xs text-slate/60 mt-1">Intenta con otros términos de búsqueda.</p>
+          </div>
+        </div>
+
+        <!-- Paginación -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4" id="catalog-pagination"></div>
+
+        </div><!-- /catalog-list -->
+
+        <!-- Vista detalle del producto -->
+        <div id="catalog-detail" class="hidden animate-fade-in"></div>
+
       </div>
 
     </div>
