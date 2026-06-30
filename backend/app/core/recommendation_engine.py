@@ -165,6 +165,21 @@ def _score_product(
 # La condición primaria (top1_label) siempre se incluye sin umbral.
 SECONDARY_CONDITION_THRESHOLD: float = 0.15
 
+# ── Mapa alergia → ingredientes INCI excluidos ─────────────────────────────────
+# Valores válidos en skin_profiles.allergies (JSONB):
+#   "fragrance", "paraben", "salicylic_acid", "lanolin", "benzoyl_peroxide"
+# Todos los INCI listados aquí se convierten en hard-exclude, igual que
+# los ingredientes clínicos de FALLBACK_AVOID.
+
+ALLERGY_INCI_MAP: dict[str, list[str]] = {
+    'fragrance':        ['fragrance', 'parfum'],
+    'paraben':          ['methylparaben', 'propylparaben', 'ethylparaben',
+                         'butylparaben', 'isobutylparaben'],
+    'salicylic_acid':   ['salicylic acid'],
+    'lanolin':          ['lanolin', 'lanolin alcohol', 'hydrogenated lanolin'],
+    'benzoyl_peroxide': ['benzoyl peroxide'],
+}
+
 
 # ── API pública ────────────────────────────────────────────────────────────────
 
@@ -175,13 +190,14 @@ def _score_for_condition(
     categories: list[str],
     top_n: int,
     severity: float,
+    allergy_avoid: set[str],
 ) -> dict[str, list[dict]]:
     """Corre el pipeline de scoring de ingredientes para una condición."""
     target_raw: list[str] = result.get('target_ingredients') or FALLBACK_TARGET.get(condition, [])
     avoid_raw:  list[str] = result.get('avoid_ingredients')  or FALLBACK_AVOID.get(condition, [])
 
     target: set[str] = {_normalize(i) for i in target_raw}
-    avoid:  set[str] = {_normalize(i) for i in avoid_raw}
+    avoid:  set[str] = {_normalize(i) for i in avoid_raw} | allergy_avoid
     bonus:  list[str] = BONUS_HIGHLIGHTS.get(condition, [])
 
     recommendations: dict[str, list[dict]] = {}
@@ -257,6 +273,14 @@ def get_recommendations(
     result    = analysis.result or {}
     severity  = float(result.get('severity_score', 0.0))
 
+    # Resolver alergias del perfil del usuario → INCI hard-exclude
+    allergy_avoid: set[str] = set()
+    profile = db.query(models.SkinProfile).filter_by(user_id=user_id).first()
+    if profile and profile.allergies:
+        for key in profile.allergies:
+            for inci in ALLERGY_INCI_MAP.get(key, []):
+                allergy_avoid.add(_normalize(inci))
+
     # Condición primaria siempre incluida
     active = [{'label': condition, 'prob': float(analysis.top1_confidence or 1.0)}]
 
@@ -270,7 +294,7 @@ def get_recommendations(
     # Scoring por condición
     conditions_out: list[dict] = []
     for cond in active:
-        reco = _score_for_condition(db, cond['label'], result, categories, top_n, severity)
+        reco = _score_for_condition(db, cond['label'], result, categories, top_n, severity, allergy_avoid)
         conditions_out.append({
             'condition':       cond['label'],
             'confidence':      round(cond['prob'], 4),
