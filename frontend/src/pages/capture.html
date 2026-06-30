@@ -144,4 +144,102 @@
     </aside>
 
   </div>
+
+  <!-- ── FACEID CAMERA MODAL ──────────────────────────────────────────────── -->
+  <style>
+    #faceid-video {
+      width: 100%; height: 100%; object-fit: cover;
+      transform: scaleX(-1); display: block; border-radius: inherit;
+    }
+    #faceid-overlay {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      border-radius: inherit; pointer-events: none;
+    }
+    .faceid-camera-wrap {
+      position: relative; width: 320px; height: 420px;
+      border-radius: 1.5rem; overflow: hidden; background: #111;
+    }
+    @media (min-height: 700px) { .faceid-camera-wrap { width: 360px; height: 480px; } }
+    #faceid-flash {
+      position: absolute; inset: 0; background: white; opacity: 0;
+      border-radius: inherit; pointer-events: none; transition: opacity 0.08s ease-out;
+    }
+    #faceid-flash.active { opacity: 0.9; }
+    @keyframes faceid-dot-ping { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .faceid-detecting-dot { animation: faceid-dot-ping 1.2s ease-in-out infinite; }
+  </style>
+
+  <div id="faceid-modal"
+    class="hidden fixed inset-0 z-50 bg-gray-950 flex-col items-center justify-center gap-6 p-6 overflow-auto"
+    role="dialog" aria-modal="true" aria-label="Cámara facial">
+
+    <!-- Loading state -->
+    <div id="faceid-loadingState" class="flex flex-col items-center gap-5 text-center">
+      <h1 class="text-xl font-semibold tracking-tight text-white">Verificación Facial</h1>
+      <div class="faceid-camera-wrap flex items-center justify-center bg-gray-900">
+        <div class="flex flex-col items-center gap-3">
+          <div class="flex gap-1.5">
+            <span class="faceid-detecting-dot w-2 h-2 rounded-full bg-emerald-400" style="animation-delay:0s"></span>
+            <span class="faceid-detecting-dot w-2 h-2 rounded-full bg-emerald-400" style="animation-delay:0.2s"></span>
+            <span class="faceid-detecting-dot w-2 h-2 rounded-full bg-emerald-400" style="animation-delay:0.4s"></span>
+          </div>
+          <p id="faceid-loadingMsg" class="text-gray-400 text-sm">Cargando detector…</p>
+        </div>
+      </div>
+      <button id="faceid-cancelLoadBtn"
+        class="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 text-sm rounded-full transition-colors">
+        Cancelar
+      </button>
+    </div>
+
+    <!-- Camera state -->
+    <div id="faceid-cameraState" class="hidden flex-col items-center gap-4">
+      <h1 class="text-xl font-semibold tracking-tight text-white">Verificación Facial</h1>
+      <div class="faceid-camera-wrap">
+        <video id="faceid-video" autoplay playsinline muted></video>
+        <canvas id="faceid-overlay"></canvas>
+        <div id="faceid-flash"></div>
+      </div>
+      <div class="flex items-center gap-2 h-6">
+        <span id="faceid-statusDot" class="w-2 h-2 rounded-full bg-gray-500 transition-colors duration-300 shrink-0"></span>
+        <span id="faceid-statusMsg" class="text-sm font-medium text-gray-300 transition-colors duration-300">
+          Posiciona tu cara en el óvalo
+        </span>
+      </div>
+      <div id="faceid-progressWrap" class="w-64 bg-gray-800 rounded-full h-1" style="visibility:hidden">
+        <div id="faceid-progressFill" class="bg-emerald-500 h-1 rounded-full" style="width:0%; transition: width 100ms linear"></div>
+      </div>
+      <button id="faceid-cancelBtn"
+        class="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 text-sm font-medium rounded-full transition-colors">
+        Cancelar
+      </button>
+    </div>
+
+    <!-- Result state -->
+    <div id="faceid-resultState" class="hidden flex-col items-center gap-5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+          <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <span class="font-semibold text-lg text-white">Foto capturada</span>
+      </div>
+      <div class="faceid-camera-wrap shadow-2xl">
+        <img id="faceid-capturedPhoto" class="w-full h-full object-cover" style="border-radius:inherit;" alt="Foto capturada">
+      </div>
+      <div class="flex gap-3">
+        <button id="faceid-retakeBtn"
+          class="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-full transition-colors">
+          Volver a tomar
+        </button>
+        <button id="faceid-usePhotoBtn"
+          class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-full transition-colors shadow-md shadow-emerald-900/40">
+          Usar foto →
+        </button>
+      </div>
+    </div>
+
+  </div>
+
 </section>
