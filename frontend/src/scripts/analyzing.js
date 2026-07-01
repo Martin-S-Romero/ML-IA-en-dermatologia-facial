@@ -7,7 +7,7 @@
  * - Al fallar    → muestra error y botón de regreso
  */
 
-const API           = 'http://localhost:8000/api'
+const API           = '/api'
 const POLL_INTERVAL = 2000   // ms entre cada consulta de estado
 
 // Retardo (ms desde el inicio) en que cada paso se activa visualmente.

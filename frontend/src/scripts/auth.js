@@ -4,7 +4,7 @@
  * Conectado a la API real en /api/auth/.
  */
 
-const API = 'http://localhost:8000/api'
+const API = '/api'
 
 // ── REGISTRO ─────────────────────────────────────────────────────────────
 export function initRegister() {

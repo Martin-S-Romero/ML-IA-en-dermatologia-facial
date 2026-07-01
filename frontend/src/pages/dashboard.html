@@ -1,6 +1,6 @@
 <section
   id="page-dashboard"
-  class="page-enter h-screen overflow-hidden"
+  class="page-enter fixed inset-0 overflow-hidden"
   aria-label="Dashboard"
 >
   <div class="flex h-full">
@@ -83,7 +83,7 @@
       </nav>
 
       <!-- TAB: DASHBOARD -->
-      <div id="dd" class="dpage active px-4 py-3 lg:px-6 lg:py-4" role="tabpanel">
+      <div id="dd" class="dpage active px-4 py-3 pb-4 lg:px-6 lg:py-4 overflow-y-auto" role="tabpanel">
         <div class="grid gap-3 lg:grid-cols-2 lg:gap-4">
 
           <!-- Top row: Estado actual (verde) + 4 KPI cards (blancas) -->
@@ -124,7 +124,7 @@
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-10 sm:pl-4">
 
               <!-- Imagen base + overlay SVG -->
-              <div class="relative w-32 flex-shrink-0 select-none mx-auto sm:mx-0">
+              <div class="relative w-36 sm:w-32 flex-shrink-0 select-none mx-auto sm:mx-0">
                 <img
                   src="/img-resource/rostro-base.png"
                   alt="Silueta del rostro"
@@ -146,13 +146,13 @@
                   </defs>
                   <g clip-path="url(#face-clip)">
                     <ellipse data-zone="frente"        cx="341" cy="165" rx="170" ry="130" fill="#D4C9B8" fill-opacity="0.50"/>
-                    <ellipse data-zone="ceja_izq"      cx="250" cy="310" rx="56"  ry="20"  fill="#D4C9B8" fill-opacity="0.50"/>
-                    <ellipse data-zone="ceja_der"      cx="432" cy="310" rx="56"  ry="20"  fill="#D4C9B8" fill-opacity="0.50"/>
+                    <ellipse data-zone="ceja_izq"      cx="258" cy="320" rx="62"  ry="13"  fill="#D4C9B8" fill-opacity="0.50"/>
+                    <ellipse data-zone="ceja_der"      cx="424" cy="320" rx="62"  ry="13"  fill="#D4C9B8" fill-opacity="0.50"/>
                     <ellipse data-zone="mejilla_izq"   cx="155" cy="560" rx="68"  ry="118" fill="#D4C9B8" fill-opacity="0.50"/>
                     <ellipse data-zone="mejilla_der"   cx="527" cy="560" rx="68"  ry="118" fill="#D4C9B8" fill-opacity="0.50"/>
                     <ellipse data-zone="nariz"         cx="341" cy="482" rx="46"  ry="102" fill="#D4C9B8" fill-opacity="0.50"/>
-                    <ellipse data-zone="nariz_lat_izq" cx="291" cy="575" rx="27"  ry="22"  fill="#D4C9B8" fill-opacity="0.50"/>
-                    <ellipse data-zone="nariz_lat_der" cx="391" cy="575" rx="27"  ry="22"  fill="#D4C9B8" fill-opacity="0.50"/>
+                    <ellipse data-zone="nariz_lat_izq" cx="264" cy="558" rx="23"  ry="18"  fill="#D4C9B8" fill-opacity="0.50"/>
+                    <ellipse data-zone="nariz_lat_der" cx="418" cy="558" rx="23"  ry="18"  fill="#D4C9B8" fill-opacity="0.50"/>
                     <ellipse data-zone="zona_perioral" cx="341" cy="638" rx="80"  ry="48"  fill="#D4C9B8" fill-opacity="0.50"/>
                     <ellipse data-zone="mandibula_izq" cx="193" cy="733" rx="70"  ry="57"  fill="#D4C9B8" fill-opacity="0.50"/>
                     <ellipse data-zone="mandibula_der" cx="489" cy="733" rx="70"  ry="57"  fill="#D4C9B8" fill-opacity="0.50"/>
@@ -189,7 +189,7 @@
               </div>
 
               <!-- Condiciones detectadas (poblado por JS) -->
-              <div id="dash-zones-lesions" class="hidden sm:self-start sm:pt-[30px]"></div>
+              <div id="dash-zones-lesions" class="sm:self-start sm:pt-[30px]"></div>
 
             </div>
           </div>
@@ -259,34 +259,20 @@
         <!-- Vista lista -->
         <div id="catalog-list">
 
-        <!-- Header: título + buscador -->
-        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
-          <div>
-            <h2 class="font-display text-xl font-semibold text-ink">Consulta de productos</h2>
-            <p class="text-xs text-slate mt-0.5">Explora y busca todos los productos recomendados.</p>
-          </div>
-          <div class="relative flex-shrink-0">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <input
-              id="catalog-search"
-              type="text"
-              placeholder="Buscar por nombre o ingrediente"
-              class="pl-9 pr-4 py-2.5 border border-sand rounded-lg text-sm bg-white focus:outline-none focus:border-forest transition-colors w-full sm:w-72"
-              oninput="catalogSearch(this.value)"
-            />
-          </div>
+        <!-- Header: título + subtítulo -->
+        <div class="mb-4">
+          <h2 class="font-display text-xl font-semibold text-ink">Consulta de productos</h2>
+          <p class="text-xs text-slate mt-0.5">Explora y busca todos los productos recomendados.</p>
         </div>
 
-        <!-- Fila de filtros -->
+        <!-- Fila de filtros + buscador -->
         <div class="flex flex-wrap items-end gap-3 mb-4">
           <!-- Categoría -->
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-1 w-full sm:w-auto">
             <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Categoría</label>
             <select
               id="catalog-cat"
-              class="border border-sand rounded-lg px-3 py-2 text-sm bg-white text-ink focus:outline-none focus:border-forest cursor-pointer min-w-[185px]"
+              class="w-full sm:min-w-[185px] sm:w-auto border border-sand rounded-lg px-3 py-2 text-sm bg-white text-ink focus:outline-none focus:border-forest cursor-pointer"
               onchange="catalogFilter()"
             >
               <option value="">Todas las categorías</option>
@@ -303,22 +289,45 @@
               <option value="oil">Aceite facial</option>
             </select>
           </div>
-
           <!-- Por análisis -->
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-1 w-full sm:w-auto">
             <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Por análisis</label>
             <select
               id="catalog-analysis"
-              class="border border-sand rounded-lg px-3 py-2 text-sm bg-white text-ink focus:outline-none focus:border-forest cursor-pointer min-w-[200px]"
+              class="w-full sm:min-w-[185px] sm:w-auto border border-sand rounded-lg px-3 py-2 text-sm bg-white text-ink focus:outline-none focus:border-forest cursor-pointer"
               onchange="catalogFilter()"
             >
               <option value="">Todos los productos</option>
             </select>
           </div>
-
-          <!-- Conteo (derecha) -->
-          <div class="ml-auto flex items-center pb-2">
+          <!-- Buscador -->
+          <div class="flex flex-col gap-1 w-full sm:w-auto">
+            <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Buscar</label>
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <input
+                id="catalog-search"
+                type="text"
+                placeholder="Buscar por nombre o ingrediente"
+                class="w-full sm:w-96 pl-9 pr-4 py-2 border border-sand rounded-lg text-sm bg-white focus:outline-none focus:border-forest transition-colors"
+                oninput="catalogSearch(this.value)"
+              />
+            </div>
+          </div>
+          <!-- Conteo y tamaño de página (derecha) -->
+          <div class="w-full sm:w-auto sm:ml-auto flex items-center justify-end gap-3 pb-0.5">
             <span id="catalog-count-label" class="text-xs text-slate whitespace-nowrap"></span>
+            <div class="flex items-center gap-2 text-xs text-slate">
+              Mostrar por:
+              <select id="catalog-per-page-select" onchange="catalogPageSize(Number(this.value))"
+                class="border border-sand rounded-md px-2 py-1 bg-white text-ink focus:outline-none focus:border-forest cursor-pointer">
+                <option value="12" selected>12</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
           </div>
         </div>
 

@@ -20,7 +20,7 @@ services:
       - SECRET_KEY=skinai-tesis-secret-key-cambiar-antes-de-produccion-2024
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://stool-twitter-props.ngrok-free.dev
       - UPLOAD_DIR=/app/uploads
       - PROCESSED_DIR=/app/processed
       - GMAIL_USER=${GMAIL_USER}

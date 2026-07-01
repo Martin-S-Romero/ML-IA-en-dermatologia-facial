@@ -7,7 +7,7 @@
 import {
   API,
   _LABEL_ES, _DESCRIPCIONES, _ZONE_ES, _ZONE_CHILDREN, _CATEGORY_ES, _CAT_DESC,
-  _formatDate, _scoreInfo,
+  _formatDate, _scoreInfo, _zoneColor,
 } from './dashboard-constants.js'
 
 let _recoData        = null
@@ -209,31 +209,49 @@ function _histFilterBar(analyses) {
   const searchIcon = `<svg class="w-3.5 h-3.5 text-slate pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
 
   return `
-    <div class="hidden lg:flex items-center gap-3 mb-5">
-      <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2">${searchIcon}</span>
-        <input id="hist-search" type="text" placeholder="Buscar análisis"
-          class="text-[12px] border border-sand rounded-full pl-9 pr-4 py-2 w-52 bg-white text-ink placeholder:text-slate/50 outline-none focus:border-forest/40 transition-colors" />
+    <div class="hidden lg:flex items-end gap-3 mb-5">
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Buscar</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2">${searchIcon}</span>
+          <input id="hist-search" type="text" placeholder="Buscar análisis"
+            class="text-sm border border-sand rounded-lg pl-9 pr-4 py-2 w-64 bg-white text-ink placeholder:text-slate/50 focus:outline-none focus:border-forest transition-colors" />
+        </div>
       </div>
-      <select id="hist-cond" class="text-[12px] border border-sand rounded-full px-4 py-2 bg-white text-ink outline-none focus:border-forest/40 cursor-pointer">
-        <option value="">Todos los análisis</option>${condOpts}
-      </select>
-      <select id="hist-period" class="text-[12px] border border-sand rounded-full px-4 py-2 bg-white text-ink outline-none focus:border-forest/40 cursor-pointer">
-        <option value="">Todos los períodos</option>${periodOpts}
-      </select>
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Condición</label>
+        <select id="hist-cond" class="text-sm border border-sand rounded-lg px-3 py-2 min-w-[220px] bg-white text-ink focus:outline-none focus:border-forest cursor-pointer">
+          <option value="">Todas las condiciones</option>${condOpts}
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Fecha</label>
+        <select id="hist-period" class="text-sm border border-sand rounded-lg px-3 py-2 min-w-[220px] bg-white text-ink focus:outline-none focus:border-forest cursor-pointer">
+          <option value="">Todos los períodos</option>${periodOpts}
+        </select>
+      </div>
     </div>
-    <div class="flex lg:hidden items-center gap-2 mb-4">
-      <div class="relative flex-1">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2">${searchIcon}</span>
-        <input id="hist-search-m" type="text" placeholder="Buscar"
-          class="w-full text-[12px] border border-sand rounded-xl pl-9 pr-3 py-2 bg-white text-ink placeholder:text-slate/50 outline-none focus:border-forest/40 transition-colors" />
+    <div class="flex lg:hidden flex-col gap-3 mb-4">
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Buscar</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2">${searchIcon}</span>
+          <input id="hist-search-m" type="text" placeholder="Buscar análisis"
+            class="w-full text-sm border border-sand rounded-lg pl-9 pr-3 py-2 bg-white text-ink placeholder:text-slate/50 focus:outline-none focus:border-forest transition-colors" />
+        </div>
       </div>
-      <select id="hist-cond-m" class="text-[12px] border border-sand rounded-xl px-3 py-2 bg-white text-ink outline-none cursor-pointer flex-shrink-0">
-        <option value="">Todos</option>${condOpts}
-      </select>
-      <select id="hist-period-m" class="text-[12px] border border-sand rounded-xl px-3 py-2 bg-white text-ink outline-none cursor-pointer flex-shrink-0">
-        <option value="">Filtros</option>${periodOpts}
-      </select>
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Condición</label>
+        <select id="hist-cond-m" class="w-full text-sm border border-sand rounded-lg px-3 py-2 bg-white text-ink focus:outline-none focus:border-forest cursor-pointer">
+          <option value="">Todas las condiciones</option>${condOpts}
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] text-slate uppercase tracking-widest font-semibold">Fecha</label>
+        <select id="hist-period-m" class="w-full text-sm border border-sand rounded-lg px-3 py-2 bg-white text-ink focus:outline-none focus:border-forest cursor-pointer">
+          <option value="">Todos los períodos</option>${periodOpts}
+        </select>
+      </div>
     </div>`
 }
 
@@ -378,13 +396,13 @@ export function closeDetail() {
 function _zoneFaceHTML(zoneKey, fillColor, clipId) {
   const zones = {
     frente:        { cx: 341, cy: 165, rx: 170, ry: 130 },
-    ceja_izq:      { cx: 250, cy: 310, rx: 56,  ry: 20  },
-    ceja_der:      { cx: 432, cy: 310, rx: 56,  ry: 20  },
+    ceja_izq:      { cx: 258, cy: 320, rx: 62,  ry: 13  },
+    ceja_der:      { cx: 424, cy: 320, rx: 62,  ry: 13  },
     mejilla_izq:   { cx: 155, cy: 560, rx: 68,  ry: 118 },
     mejilla_der:   { cx: 527, cy: 560, rx: 68,  ry: 118 },
     nariz:         { cx: 341, cy: 482, rx: 46,  ry: 102 },
-    nariz_lat_izq: { cx: 291, cy: 575, rx: 27,  ry: 22  },
-    nariz_lat_der: { cx: 391, cy: 575, rx: 27,  ry: 22  },
+    nariz_lat_izq: { cx: 264, cy: 558, rx: 23,  ry: 18  },
+    nariz_lat_der: { cx: 418, cy: 558, rx: 23,  ry: 18  },
     zona_perioral: { cx: 341, cy: 638, rx: 80,  ry: 48  },
     mandibula_izq: { cx: 193, cy: 733, rx: 70,  ry: 57  },
     mandibula_der: { cx: 489, cy: 733, rx: 70,  ry: 57  },
@@ -557,7 +575,10 @@ function _productRow(p, rank, borderTop) {
       <span class="text-[11px] font-bold text-slate/30 w-4 flex-shrink-0 pt-0.5">${rank}</span>
       <div class="flex-1 min-w-0">
         <div class="flex items-start justify-between gap-2 mb-0.5">
-          <p class="text-[13px] font-semibold text-ink leading-snug">${p.name || '—'}</p>
+          <button onclick="openProductModal(${p.product_id})"
+            class="text-[13px] font-semibold text-ink leading-snug text-left hover:text-forest transition-colors cursor-pointer">
+            ${p.name || '—'}
+          </button>
           <span class="text-[10px] font-semibold ${si.bg} ${si.color} rounded-full px-2 py-0.5 flex-shrink-0 whitespace-nowrap">${si.label}</span>
         </div>
         <p class="text-[11px] text-slate">${p.brand || '—'}</p>
@@ -839,7 +860,7 @@ function _renderDetail(a, container, userNum) {
                   <p class="text-[12px] font-bold text-rose leading-tight">${worstZoneName}</p>
                   <p class="text-[10px] text-slate mt-0.5">${zonesCount} zona${zonesCount !== 1 ? 's' : ''} activa${zonesCount !== 1 ? 's' : ''}</p>
                 </div>
-                ${_zoneFaceHTML(worstZoneKey, '#C47060', 'detail-worst-clip')}
+                ${_zoneFaceHTML(worstZoneKey, _zoneColor(zonesDisp[worstZoneKey]?.severity ?? null), 'detail-worst-clip')}
               </div>
             </div>
             <div class="order-2 lg:order-3 h-full">${_renderSeverityCard(a)}</div>
@@ -849,7 +870,7 @@ function _renderDetail(a, container, userNum) {
                   <p class="text-[10px] text-slate uppercase tracking-widest mb-0.5">Zona menos afectada</p>
                   <p class="text-[12px] font-bold text-ok leading-tight">${bestZoneName}</p>
                 </div>
-                ${_zoneFaceHTML(bestZoneKey, '#5FBA8B', 'detail-best-clip')}
+                ${_zoneFaceHTML(bestZoneKey, _zoneColor(zonesDisp[bestZoneKey]?.severity ?? null), 'detail-best-clip')}
               </div>
             </div>
           </div>

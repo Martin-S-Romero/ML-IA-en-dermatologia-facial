@@ -30,6 +30,7 @@ import {
   catalogSearch, catalogFilter, catalogSortBy,
   catalogGotoPage, catalogPageSize,
   openProductDetail, closeProductDetail,
+  openProductModal, closeProductModal,
 } from './scripts/dashboard.js'
 
 // ── LOAD GLOBAL COMPONENTS ───────────────────────────────────────────────
@@ -83,7 +84,7 @@ async function bootstrap() {
     const token = getToken()
     if (token) {
       try {
-        const meRes = await fetch('http://localhost:8000/api/users/me', {
+        const meRes = await fetch('/api/users/me', {
           headers: { 'Authorization': `Bearer ${token}` },
         })
         if (meRes.status === 401) {
@@ -161,7 +162,7 @@ function registerGlobals() {
     if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...' }
     const token = localStorage.getItem('cutislab_token')
     try {
-      const res = await fetch('http://localhost:8000/api/users/me', {
+      const res = await fetch('/api/users/me', {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       })
@@ -203,6 +204,8 @@ function registerGlobals() {
   window.catalogPageSize    = catalogPageSize
   window.openProductDetail  = openProductDetail
   window.closeProductDetail = closeProductDetail
+  window.openProductModal   = openProductModal
+  window.closeProductModal  = closeProductModal
 }
 
 // ── INJECT STYLES NOT COVERED BY TAILWIND SCAN ───────────────────────────

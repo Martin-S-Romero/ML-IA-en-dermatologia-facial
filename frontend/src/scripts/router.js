@@ -53,6 +53,10 @@ export function logout() {
   localStorage.removeItem('cutislab_token')
   localStorage.removeItem('cutislab_user')
   localStorage.removeItem('cutislab_profile_complete')
+  const drawer  = document.getElementById('side-drawer')
+  const overlay = document.getElementById('drawer-overlay')
+  if (drawer)  drawer.classList.remove('open')
+  if (overlay) overlay.classList.remove('open')
   navigate('landing')
 }
 

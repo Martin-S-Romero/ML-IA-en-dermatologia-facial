@@ -4,7 +4,19 @@
  * Conectado a POST /api/users/profile.
  */
 
-const API = 'http://localhost:8000/api'
+const API = '/api'
+
+const CITIES_BY_COUNTRY = {
+  panama:     ['Ciudad de Panamá', 'San Miguelito', 'Colón', 'David', 'La Chorrera', 'Arraiján', 'Penonomé', 'Santiago', 'Chitré', 'Bocas del Toro'],
+  mexico:     ['Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Tijuana', 'León', 'Ciudad Juárez', 'Mérida', 'Querétaro', 'Cancún', 'Zapopan', 'San Luis Potosí'],
+  colombia:   ['Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Cúcuta', 'Bucaramanga', 'Pereira', 'Santa Marta', 'Ibagué', 'Manizales'],
+  argentina:  ['Buenos Aires', 'Córdoba', 'Rosario', 'Mendoza', 'La Plata', 'Tucumán', 'Mar del Plata', 'Salta', 'Santa Fe', 'San Juan', 'Resistencia'],
+  costa_rica: ['San José', 'Alajuela', 'Desamparados', 'Heredia', 'Cartago', 'Liberia', 'Pérez Zeledón', 'San Carlos', 'Puntarenas', 'Limón'],
+  guatemala:  ['Ciudad de Guatemala', 'Mixco', 'Villa Nueva', 'Quetzaltenango', 'San Juan Sacatepéquez', 'Cobán', 'Escuintla', 'Jalapa', 'Huehuetenango', 'Chiquimula'],
+  peru:       ['Lima', 'Arequipa', 'Trujillo', 'Chiclayo', 'Iquitos', 'Piura', 'Cusco', 'Huancayo', 'Chimbote', 'Tacna', 'Pucallpa'],
+  chile:      ['Santiago', 'Puente Alto', 'Antofagasta', 'Viña del Mar', 'Valparaíso', 'Concepción', 'Temuco', 'Rancagua', 'Talca', 'Arica', 'Iquique'],
+  venezuela:  ['Caracas', 'Maracaibo', 'Valencia', 'Barquisimeto', 'Maracay', 'Ciudad Guayana', 'San Cristóbal', 'Maturín', 'Cumaná', 'Mérida', 'Barinas'],
+}
 
 const FITZ_LABELS = {
   I:   'Tipo I — Siempre se quema, nunca se broncea',
@@ -16,13 +28,24 @@ const FITZ_LABELS = {
 }
 
 export function initProfile() {
-  // Mostrar "Volver al Dashboard" solo si el perfil ya fue completado antes
   if (localStorage.getItem('cutislab_profile_complete') === '1') {
     document.getElementById('btn-back-profile')?.classList.remove('hidden')
+  } else {
+    const btnBackAuth = document.getElementById('btn-back-auth')
+    if (btnBackAuth) {
+      btnBackAuth.classList.remove('hidden')
+      btnBackAuth.addEventListener('click', () => {
+        localStorage.removeItem('cutislab_token')
+        localStorage.removeItem('cutislab_user')
+        localStorage.removeItem('cutislab_profile_complete')
+        window.goAuth('login')
+      })
+    }
   }
   initFitzpatrickInteraction()
-  initAllergyToggle()
   initMultiSelect()
+  initAllergyExclusion()
+  initCitySelect()
   initSaveProfile()
 }
 
@@ -46,11 +69,50 @@ function initFitzpatrickInteraction() {
   })
 }
 
-function initAllergyToggle() {
-  document.querySelectorAll('[data-group="allergy"]').forEach(btn => {
+function initCitySelect() {
+  const countryEl  = document.getElementById('country')
+  const citySelect = document.getElementById('city')
+  const cityOther  = document.getElementById('city-other')
+  if (!countryEl || !citySelect || !cityOther) return
+
+  countryEl.addEventListener('change', () => {
+    const country = countryEl.value
+    const cities  = CITIES_BY_COUNTRY[country]
+
+    if (!country) {
+      citySelect.innerHTML  = '<option value="">Selecciona primero un país</option>'
+      citySelect.disabled   = true
+      citySelect.classList.remove('hidden')
+      cityOther.classList.add('hidden')
+      return
+    }
+
+    if (country === 'otro') {
+      citySelect.classList.add('hidden')
+      cityOther.classList.remove('hidden')
+      cityOther.value = ''
+      return
+    }
+
+    citySelect.classList.remove('hidden')
+    cityOther.classList.add('hidden')
+    citySelect.disabled  = false
+    citySelect.innerHTML = '<option value="">Selecciona una ciudad</option>' +
+      cities.map(c => `<option value="${c}">${c}</option>`).join('')
+  })
+}
+
+function initAllergyExclusion() {
+  const allergyBtns = document.querySelectorAll('[data-group="allergy"]')
+  allergyBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const input = document.getElementById('allergy-input')
-      if (input) input.classList.toggle('hidden', btn.dataset.value !== 'si')
+      if (btn.dataset.value === 'none') {
+        // "No tengo alergias" seleccionado: desmarcar las específicas
+        allergyBtns.forEach(b => { if (b.dataset.value !== 'none') b.classList.remove('selected') })
+      } else {
+        // Alergia específica seleccionada: desmarcar "No tengo alergias"
+        document.querySelector('[data-group="allergy"][data-value="none"]')?.classList.remove('selected')
+      }
     })
   })
 }
@@ -74,10 +136,13 @@ function initSaveProfile() {
     const fitzDot      = document.querySelector('.fitz-dot.selected')?.dataset.value
     const skintype     = document.querySelector('[data-group="skintype"].selected')?.dataset.value
     const country      = document.getElementById('country')?.value
-    const city         = document.getElementById('city')?.value.trim()
+    const city         = (country === 'otro'
+      ? document.getElementById('city-other')
+      : document.getElementById('city'))?.value?.trim()
     const conditions   = [...document.querySelectorAll('[data-group="cond"].selected')].map(b => b.dataset.value)
-    const allergy      = document.querySelector('[data-group="allergy"].selected')?.dataset.value
-    const allergyDetail = document.getElementById('allergy-detail')?.value.trim()
+    const allergies    = [...document.querySelectorAll('[data-group="allergy"].selected')]
+                          .map(b => b.dataset.value)
+                          .filter(v => v !== 'none')
 
     if (!age || age < 12 || age > 90) {
       return showMsg(errorBox, successBox, 'Ingresa una edad válida (12-90 años).', 'error')
@@ -92,7 +157,7 @@ function initSaveProfile() {
       skin_type:       skintype     || null,
       fitzpatrick:     fitzDot      || null,
       skin_conditions: conditions,
-      allergies:       allergy === 'si' ? [allergyDetail].filter(Boolean) : [],
+      allergies,
       country:         country      || null,
       city:            city         || null,
     }

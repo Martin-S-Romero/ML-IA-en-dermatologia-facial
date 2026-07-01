@@ -110,6 +110,8 @@ async function _loadCatalog() {
     }
 
     if (countLbl) countLbl.textContent = `Mostrando ${data.total} producto${data.total !== 1 ? 's' : ''}`
+    const perPageSel = document.getElementById('catalog-per-page-select')
+    if (perPageSel) perPageSel.value = String(data.page_size)
     if (tbody)    tbody.innerHTML = data.items.map(_catalogRow).join('')
     if (table)    table.classList.remove('hidden')
     if (pag)      pag.innerHTML = _catalogPagHTML(data.total, data.page, data.page_size)
@@ -155,15 +157,7 @@ function _catalogRow(p) {
 function _catalogPagHTML(total, page, pageSize) {
   const totalPages = Math.ceil(total / pageSize)
   if (totalPages <= 1 && total <= pageSize) {
-    return `
-      <div></div>
-      <div class="flex items-center gap-2 text-xs text-slate">
-        Mostrar por:
-        <select onchange="catalogPageSize(Number(this.value))"
-          class="border border-sand rounded-md px-2 py-1 bg-white text-ink focus:outline-none focus:border-forest cursor-pointer">
-          ${[12, 25, 50].map(n => `<option value="${n}" ${n === pageSize ? 'selected' : ''}>${n}</option>`).join('')}
-        </select>
-      </div>`
+    return ''
   }
 
   const maxVisible = 5
@@ -201,13 +195,6 @@ function _catalogPagHTML(total, page, pageSize) {
   return `
     <div class="flex items-center gap-1.5">
       ${prev}${pageHtml}${next}
-    </div>
-    <div class="flex items-center gap-2 text-xs text-slate">
-      Mostrar por:
-      <select onchange="catalogPageSize(Number(this.value))"
-        class="border border-sand rounded-md px-2 py-1 bg-white text-ink focus:outline-none focus:border-forest cursor-pointer">
-        ${[12, 25, 50].map(n => `<option value="${n}" ${n === pageSize ? 'selected' : ''}>${n}</option>`).join('')}
-      </select>
     </div>`
 }
 
@@ -277,7 +264,7 @@ export async function openProductDetail(id) {
     })
     if (!res.ok) throw new Error('No se pudo cargar el producto.')
     const p = await res.json()
-    _renderProductDetail(p, detail)
+    _renderProductDetail(p, detail, '<button onclick="closeProductDetail()" class="btn-back-dark mb-5">← Volver al catálogo</button>')
   } catch (err) {
     detail.innerHTML = `
       <button onclick="closeProductDetail()" class="btn-back-dark mb-5">← Volver al catálogo</button>
@@ -329,7 +316,7 @@ function _irrLabel(v) {
   return ['Sin datos','Muy baja','Baja','Moderada','Alta','Muy alta'][Math.min(v, 5)]
 }
 
-function _renderProductDetail(p, container) {
+function _renderProductDetail(p, container, backButtonHTML = '') {
   const catLabel   = _CATEGORY_ES[p.category] || p.category || '--'
   const emoji      = _catEmoji(p.category)
   const ings       = (p.product_ingredients || []).sort((a, b) => a.position - b.position)
@@ -343,10 +330,11 @@ function _renderProductDetail(p, container) {
        </div>`
     : ''
 
-  const descHtml = p.description
+  const descClean = (p.description || '').replace(/\[\s*(?:more|less|show more|show less|ver más|ver menos)\s*\]/gi, '').replace(/\s{2,}/g, ' ').trim()
+  const descHtml = descClean
     ? `<div class="mb-4">
         <p class="section-label mb-1">Descripción</p>
-        <p class="text-sm text-slate leading-relaxed">${_esc(p.description)}</p>
+        <p class="text-sm text-slate leading-relaxed">${_esc(descClean)}</p>
        </div>`
     : ''
 
@@ -427,7 +415,7 @@ function _renderProductDetail(p, container) {
     : ''
 
   container.innerHTML = `
-    <button onclick="closeProductDetail()" class="btn-back-dark mb-5">← Volver al catálogo</button>
+    ${backButtonHTML}
     <div class="max-w-2xl mx-auto">
 
       <div class="card card-body mb-1">
@@ -448,6 +436,51 @@ function _renderProductDetail(p, container) {
       ${propsHtml}
       ${ingsHtml}
     </div>`
+}
+
+// ── MODAL DE PRODUCTO (desde historial y otros contextos) ─────────────────
+
+export function closeProductModal() {
+  document.getElementById('product-modal-overlay')?.remove()
+}
+
+export async function openProductModal(id) {
+  closeProductModal()
+
+  const overlay = document.createElement('div')
+  overlay.id = 'product-modal-overlay'
+  overlay.className = 'fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center'
+  overlay.innerHTML = `
+    <div class="bg-bg w-full sm:max-w-2xl overflow-y-auto shadow-2xl" style="max-height:92vh;border-radius:16px 16px 0 0">
+      <div class="flex items-center justify-between px-5 pt-4 pb-3 sticky top-0 bg-bg z-10 border-b border-sand">
+        <p class="text-[13px] font-semibold text-ink">Detalle del producto</p>
+        <button onclick="closeProductModal()"
+          class="w-8 h-8 rounded-full hover:bg-sand flex items-center justify-center text-slate hover:text-ink transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div id="product-modal-body" class="px-5 py-4">
+        <p class="text-xs text-slate text-center py-8 animate-pulse">Cargando producto...</p>
+      </div>
+    </div>`
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeProductModal() })
+  document.body.appendChild(overlay)
+
+  const token = localStorage.getItem('cutislab_token')
+  const body  = document.getElementById('product-modal-body')
+  try {
+    const res = await fetch(`${API}/products/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error('No se pudo cargar el producto.')
+    const p = await res.json()
+    if (body) _renderProductDetail(p, body)
+  } catch (err) {
+    if (body) body.innerHTML = `<p class="text-xs text-rose text-center py-8">${_esc(err.message)}</p>`
+  }
 }
 
 function _ingredientRow(pi) {

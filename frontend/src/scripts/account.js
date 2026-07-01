@@ -4,7 +4,7 @@
  * Conectado a GET /api/users/me, GET /api/users/profile y PUT /api/users/me.
  */
 
-const API = 'http://localhost:8000/api'
+const API = '/api'
 
 export function initAccount() {
   loadUserData()
@@ -45,7 +45,7 @@ async function loadUserData() {
       setEl('account-gender',    capitalize(profile.gender)    || '--')
       setEl('account-fitz',      profile.fitzpatrick ? `Tipo ${profile.fitzpatrick}` : '--')
       setEl('account-skintype',  capitalize(profile.skin_type) || '--')
-      setEl('account-allergies', profile.allergies?.length ? profile.allergies.join(', ') : 'Ninguna')
+      setEl('account-allergies', profile.allergies?.length ? profile.allergies.map(formatAllergy).join(', ') : 'Ninguna')
     } else {
       // Sin perfil de piel todavía
       setEl('account-age',       '--')
@@ -60,7 +60,7 @@ async function loadUserData() {
     setEl('account-gender',    capitalize(user.gender)    || '--')
     setEl('account-fitz',      user.fitzpatrick ? `Tipo ${user.fitzpatrick}` : '--')
     setEl('account-skintype',  capitalize(user.skin_type) || '--')
-    setEl('account-allergies', user.allergies?.length ? user.allergies.join(', ') : 'Ninguna')
+    setEl('account-allergies', user.allergies?.length ? user.allergies.map(formatAllergy).join(', ') : 'Ninguna')
   }
 
   initEditFields()
@@ -176,12 +176,21 @@ function buildControl(key, rawVal) {
     return buildSelect(SKINTYPE_OPTIONS, rawVal ?? '')
   }
   if (key === 'allergies') {
-    const inp = document.createElement('input')
-    inp.type        = 'text'
-    inp.value       = Array.isArray(rawVal) ? rawVal.join(', ') : ''
-    inp.placeholder = 'Ej: retinol, parfum, parabenos...'
-    inp.style.cssText = FIELD_STYLE + ';max-width:200px'
-    return inp
+    const current = Array.isArray(rawVal) ? rawVal : []
+    const wrap = document.createElement('div')
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:5px'
+    Object.entries(ALLERGY_LABELS).forEach(([value, label]) => {
+      const lbl = document.createElement('label')
+      lbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;color:#181C24;cursor:pointer'
+      const cb = document.createElement('input')
+      cb.type    = 'checkbox'
+      cb.value   = value
+      cb.checked = current.includes(value)
+      lbl.appendChild(cb)
+      lbl.appendChild(document.createTextNode(label))
+      wrap.appendChild(lbl)
+    })
+    return wrap
   }
   // age
   const inp = document.createElement('input')
@@ -218,8 +227,8 @@ function readValue(key, control) {
     return { apiValue: val, displayText: capitalize(val) }
   }
   if (key === 'allergies') {
-    const arr = control.value.split(',').map(s => s.trim()).filter(Boolean)
-    return { apiValue: arr, displayText: arr.length ? arr.join(', ') : 'Ninguna' }
+    const checked = [...control.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value)
+    return { apiValue: checked, displayText: checked.length ? checked.map(formatAllergy).join(', ') : 'Ninguna' }
   }
   // age
   const val = parseInt(control.value)
@@ -453,6 +462,19 @@ async function submitChangePassword() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
+
+const ALLERGY_LABELS = {
+  fragrance:        'Fragancias / Perfume',
+  paraben:          'Parabenos',
+  salicylic_acid:   'Ácido salicílico',
+  lanolin:          'Lanolina',
+  benzoyl_peroxide: 'Peróxido de benzoilo',
+}
+
+function formatAllergy(key) {
+  return ALLERGY_LABELS[key] || key
+}
+
 function setEl(id, text) {
   const el = document.getElementById(id)
   if (el) el.textContent = text || '--'

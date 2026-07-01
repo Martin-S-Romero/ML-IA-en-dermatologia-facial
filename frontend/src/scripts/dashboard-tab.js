@@ -7,21 +7,13 @@
 import {
   API,
   _LABEL_ES, _ZONE_ES, _CATEGORY_ES, _CAT_DESC,
-  _formatDate, _formatDateShort, _relativeTime, _scoreInfo,
+  _formatDate, _formatDateShort, _relativeTime, _scoreInfo, _zoneColor,
 } from './dashboard-constants.js'
 
 let _dashRecoData    = null
 let _dashRecoCondIdx = 0
 
 // ── MAPA FACIAL SVG ───────────────────────────────────────────────────────
-
-function _zoneColor(severity) {
-  if (severity == null) return '#D4C9B8'
-  if (severity < 0.25)  return '#2E7D5A'
-  if (severity < 0.50)  return '#D4942A'
-  if (severity < 0.75)  return '#C47060'
-  return '#8B2A1A'
-}
 
 function _updateFacialMap(result) {
   const svg = document.getElementById('facial-map-svg')
@@ -57,7 +49,7 @@ function _updateZonesLesions(result) {
   }
 
   el.innerHTML = `
-    <div class="border-l border-sand pl-6 flex flex-col gap-3.5 text-[11px]">
+    <div class="border-t sm:border-t-0 sm:border-l border-sand pt-4 sm:pt-0 sm:pl-6 flex flex-col gap-3.5 text-[11px]">
       <p class="text-[9px] text-slate/60 uppercase tracking-widest font-semibold">Condiciones detectadas</p>
       ${topN.slice(0, 3).map((item, i) => {
         const pct   = Math.round(item.prob * 100)
@@ -108,16 +100,16 @@ function _donutSVG(pct, stroke, sizeClass = 'w-11 h-11', dark = true) {
   </svg>`
 }
 
-function _miniFaceSVG(worstZone) {
+function _miniFaceSVG(worstZone, fillColor = '#C47060') {
   const zones = {
     frente:        { cx: 341, cy: 165, rx: 170, ry: 130 },
-    ceja_izq:      { cx: 250, cy: 310, rx: 56,  ry: 20  },
-    ceja_der:      { cx: 432, cy: 310, rx: 56,  ry: 20  },
+    ceja_izq:      { cx: 258, cy: 320, rx: 62,  ry: 13  },
+    ceja_der:      { cx: 424, cy: 320, rx: 62,  ry: 13  },
     mejilla_izq:   { cx: 155, cy: 560, rx: 68,  ry: 118 },
     mejilla_der:   { cx: 527, cy: 560, rx: 68,  ry: 118 },
     nariz:         { cx: 341, cy: 482, rx: 46,  ry: 102 },
-    nariz_lat_izq: { cx: 291, cy: 575, rx: 27,  ry: 22  },
-    nariz_lat_der: { cx: 391, cy: 575, rx: 27,  ry: 22  },
+    nariz_lat_izq: { cx: 264, cy: 558, rx: 23,  ry: 18  },
+    nariz_lat_der: { cx: 418, cy: 558, rx: 23,  ry: 18  },
     zona_perioral: { cx: 341, cy: 638, rx: 80,  ry: 48  },
     mandibula_izq: { cx: 193, cy: 733, rx: 70,  ry: 57  },
     mandibula_der: { cx: 489, cy: 733, rx: 70,  ry: 57  },
@@ -126,7 +118,7 @@ function _miniFaceSVG(worstZone) {
   const worstEllipse = worstZone && zones[worstZone]
     ? `<ellipse cx="${zones[worstZone].cx}" cy="${zones[worstZone].cy}"
          rx="${zones[worstZone].rx}" ry="${zones[worstZone].ry}"
-         fill="#C47060" fill-opacity="0.65"/>`
+         fill="${fillColor}" fill-opacity="0.65"/>`
     : ''
   return `
     <div class="relative w-14 mx-auto select-none my-1">
@@ -206,9 +198,11 @@ export function populateDashTab(analyses) {
   // ── KPI: Zona más afectada ───────────────────────────────────────────────
   const kpiZone = document.getElementById('kpi-zone')
   if (kpiZone) {
+    const worstSev  = result.worst_zone ? (result.zones_display?.[result.worst_zone]?.severity ?? null) : null
+    const worstFill = _zoneColor(worstSev)
     kpiZone.innerHTML = `
       <p class="text-[11px] text-slate font-semibold uppercase tracking-widest">Zona más afectada</p>
-      <div class="w-10 mx-auto">${_miniFaceSVG(result.worst_zone)}</div>
+      <div class="w-10 mx-auto">${_miniFaceSVG(result.worst_zone, worstFill)}</div>
       <div>
         <p class="text-sm font-bold text-rose leading-tight">${worstZone}</p>
         <p class="text-xs text-slate mt-0.5">Principales señales aquí</p>

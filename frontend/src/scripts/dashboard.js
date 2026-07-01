@@ -15,6 +15,7 @@ export {
   catalogSearch, catalogFilter, catalogSortBy,
   catalogGotoPage, catalogPageSize,
   openProductDetail, closeProductDetail,
+  openProductModal, closeProductModal,
 } from './catalog-tab.js'
 
 // ── ESTADO COMPARTIDO ─────────────────────────────────────────────────────

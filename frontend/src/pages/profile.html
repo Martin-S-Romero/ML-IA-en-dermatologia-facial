@@ -5,6 +5,7 @@
 >
   <div class="max-w-3xl mx-auto px-4 py-6 lg:py-10">
 
+    <button id="btn-back-auth"    class="btn-back-dark mb-4 text-sm hidden">← Volver</button>
     <button id="btn-back-profile" class="btn-back-dark mb-4 text-sm hidden" data-go="dashboard">← Volver al Dashboard</button>
 
     <div class="mb-5">
@@ -58,15 +59,16 @@
       <!-- Sección 3: Tipo de piel -->
       <div class="card card-body">
         <p class="section-label">Sección 3 de 6</p>
-        <h2 class="font-display text-lg text-ink mb-3">Tipo de piel</h2>
-        <div class="grid grid-cols-3 gap-1.5 mb-2">
+        <h2 class="font-display text-lg text-ink mb-1">Tipo de piel</h2>
+        <p class="text-xs text-slate mb-3">Selecciona cómo se comporta tu piel habitualmente, sin productos aplicados.</p>
+        <div class="grid grid-cols-2 gap-1.5">
           <button class="option-btn" data-group="skintype" data-value="grasa">Grasa</button>
           <button class="option-btn" data-group="skintype" data-value="mixta">Mixta</button>
           <button class="option-btn" data-group="skintype" data-value="seca">Seca</button>
           <button class="option-btn" data-group="skintype" data-value="sensible">Sensible</button>
           <button class="option-btn" data-group="skintype" data-value="normal">Normal</button>
+          <button class="option-btn" data-group="skintype" data-value="desconocido">No sé</button>
         </div>
-        <button class="option-btn w-full text-center py-2.5 text-[11px]" data-group="skintype" data-value="desconocido">No sé qué tipo de piel tengo</button>
       </div>
 
       <!-- Sección 4: Historial dermatológico -->
@@ -94,15 +96,15 @@
       <!-- Sección 5: Alergias -->
       <div class="card card-body">
         <p class="section-label">Sección 5 de 6</p>
-        <h2 class="font-display text-lg text-ink mb-3">Alergias a ingredientes</h2>
-        <div class="grid grid-cols-3 gap-1.5 mb-3">
-          <button class="option-btn" data-group="allergy" data-value="si">Sí</button>
-          <button class="option-btn" data-group="allergy" data-value="no">No</button>
-          <button class="option-btn" data-group="allergy" data-value="desconocido">No sé</button>
-        </div>
-        <div id="allergy-input" class="hidden">
-          <label class="field-label" for="allergy-detail">¿A qué ingredientes?</label>
-          <input id="allergy-detail" type="text" class="field-input" placeholder="Ej: fragancia, parabenos..." />
+        <h2 class="font-display text-lg text-ink mb-1">Alergias a ingredientes</h2>
+        <p class="text-xs text-slate mb-3">Selecciona las que apliquen. Los productos con estos ingredientes quedarán excluidos de tus recomendaciones.</p>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button class="option-btn multi" data-group="allergy" data-value="fragrance">Fragancias / Perfume</button>
+          <button class="option-btn multi" data-group="allergy" data-value="paraben">Parabenos</button>
+          <button class="option-btn multi" data-group="allergy" data-value="salicylic_acid">Ácido salicílico</button>
+          <button class="option-btn multi" data-group="allergy" data-value="lanolin">Lanolina</button>
+          <button class="option-btn multi" data-group="allergy" data-value="benzoyl_peroxide">Peróxido de benzoilo</button>
+          <button class="option-btn multi" data-group="allergy" data-value="none">No tengo alergias</button>
         </div>
       </div>
 
@@ -128,7 +130,10 @@
         </div>
         <div class="mb-3">
           <label class="field-label" for="city">Ciudad</label>
-          <input id="city" type="text" class="field-input" placeholder="Ciudad de Panamá" />
+          <select id="city" class="field-input" disabled>
+            <option value="">Selecciona primero un país</option>
+          </select>
+          <input id="city-other" type="text" class="field-input hidden" placeholder="Escribe tu ciudad" />
         </div>
         <div>
           <label class="field-label">¿Pasas tiempo en A/C o calefacción?</label>
@@ -140,11 +145,11 @@
         </div>
       </div>
 
-    </div>
+      <!-- CTA: debajo de sección 6 en desktop, al final en móvil -->
+      <div class="lg:col-start-2 flex gap-3 mt-2">
+        <button id="btn-save-profile" class="btn-primary w-full">Guardar y continuar →</button>
+      </div>
 
-    <!-- CTA -->
-    <div class="mt-6 flex gap-3">
-      <button id="btn-save-profile" class="btn-primary max-w-xs">Guardar y continuar →</button>
     </div>
 
   </div>

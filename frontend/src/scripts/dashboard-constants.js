@@ -3,7 +3,7 @@
  * Constantes compartidas y helpers puros usados por los módulos del dashboard.
  */
 
-export const API = 'http://localhost:8000/api'
+export const API = '/api'
 
 export const _LABEL_ES = {
   'acne-comedonal':        'Acné comedonal',
@@ -110,4 +110,12 @@ export function _statusLabel(status) {
     { completed: 'Completado', failed: 'Error', processing: 'Procesando' }[status]
     || status
   )
+}
+
+export function _zoneColor(severity) {
+  if (severity == null) return '#D4C9B8'
+  if (severity < 0.25)  return '#2E7D5A'
+  if (severity < 0.50)  return '#D4942A'
+  if (severity < 0.75)  return '#C47060'
+  return '#8B2A1A'
 }
