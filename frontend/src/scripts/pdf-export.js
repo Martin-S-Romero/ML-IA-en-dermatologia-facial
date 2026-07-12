@@ -141,6 +141,18 @@ export async function generatePdf() {
 
 // Exportar un análisis específico directo desde la fila del historial
 export async function exportAnalysisPdf(id) {
+  // Abrir la ventana SINCRÓNICAMENTE antes de cualquier await — los navegadores
+  // bloquean window.open() si se llama después de una operación async.
+  const printWin = window.open('', '_blank', 'width=900,height=900')
+  if (printWin) {
+    printWin.document.write(
+      '<html><head><title>Cargando...</title></head>' +
+      '<body style="margin:0;display:flex;align-items:center;justify-content:center;' +
+      'height:100vh;font-family:sans-serif;background:#fafaf8;color:#888;font-size:14px">' +
+      '<p>Generando reporte...</p></body></html>'
+    )
+  }
+
   const token    = localStorage.getItem('cutislab_token')
   const analyses = window._cutislabAnalyses || []
   const allComp  = analyses.filter(x => x.status === 'completed')
@@ -154,10 +166,13 @@ export async function exportAnalysisPdf(id) {
     _fetchReco(token, id),
     _fetchImageBase64(token, id),
   ])
-  if (!a) return
+  if (!a) {
+    if (printWin && !printWin.closed) printWin.close()
+    return
+  }
   const html     = _buildSingleAnalysisHtml(a, prev, profile, reco, userNum, imgDataUrl)
   const filename = `Analisis#${userNum}-${_fileDateStr(a.created_at)}.pdf`
-  await _downloadPdf(html, filename)
+  await _downloadPdf(html, filename, printWin)
 }
 
 // ── FETCH HELPERS ──────────────────────────────────────────────────────────
@@ -497,6 +512,39 @@ function _recoBlock(reco) {
   return `<h2>Productos recomendados</h2>${blocks}`
 }
 
+function _singleAnalysisSection(a, prev, reco, userNum, imgDataUrl, isFirst) {
+  const imgBlock = imgDataUrl ? `
+    <h2>Imagen procesada</h2>
+    <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:4px">
+      <div style="flex-shrink:0;text-align:center">
+        <img src="${imgDataUrl}" alt="Análisis #${userNum}"
+          style="width:140px;border-radius:10px;border:1px solid #e0e0e0;object-fit:cover;object-position:top;display:block">
+        <p style="font-size:8px;color:#bbb;margin-top:4px;max-width:140px">
+          Ojos difuminados para proteger tu privacidad
+        </p>
+      </div>
+      <p style="font-size:10px;color:#888;line-height:1.6;margin-top:4px">
+        Esta imagen fue analizada por el modelo de IA para detectar condiciones cutáneas.
+        El procesamiento de zonas afectadas se basa en la imagen completa del rostro.<br><br>
+        <strong style="color:#555">Fecha del análisis:</strong> ${_formatDate(a.created_at)}
+      </p>
+    </div>` : ''
+
+  return `
+    ${isFirst ? '' : '<div style="page-break-before:always;break-before:page;height:0"></div>'}
+    <div style="border-bottom:2px solid #2E7D5A;padding-bottom:8px;margin-bottom:16px${isFirst ? '' : ';margin-top:0'}">
+      <div style="font-size:16px;font-weight:800;color:#2E7D5A">Análisis #${userNum}</div>
+      <div style="font-size:10px;color:#aaa;margin-top:2px">${_formatDate(a.created_at)}</div>
+    </div>
+    ${imgBlock}
+    ${_analysisBlock(a, 'Diagnóstico')}
+    ${_topNBlock(a)}
+    ${_zonesBlock(a)}
+    ${prev ? _compBlock(a, prev) : ''}
+    ${_recoBlock(reco)}
+  `
+}
+
 function _buildSingleAnalysisHtml(a, prev, profile, reco, userNum, imgDataUrl) {
   const user  = _userName()
   const today = _todayStr()
@@ -643,45 +691,41 @@ async function _buildHistoryHtml(analyses, profile, specificId) {
     return _buildSingleAnalysisHtml(a, prev, profile, reco, userNum, imgDataUrl)
   }
 
-  // Todos los análisis — tabla resumen
+  // Todos los análisis — reporte completo de cada uno, uno debajo del otro
+  const token     = localStorage.getItem('cutislab_token')
   const completed = analyses.filter(x => x.status === 'completed')
-  const userNum   = {}
-  analyses.forEach((a, i) => { userNum[a.id] = analyses.length - i })
+  const userNumMap = {}
+  analyses.forEach((a, i) => { userNumMap[a.id] = analyses.length - i })
 
   if (!completed.length) {
     return _wrapHtml(`${_header(user, 'Historial de análisis', today)}${_profileSection(profile)}<p style="margin-top:20px;color:#888">Sin análisis completados.</p>${_footer()}`)
   }
 
-  const rows = completed.map(a => {
-    const r      = a.result || {}
-    const sev    = r.severity_score ?? 0
-    const sevPct = Math.round(sev * 100)
-    const worst  = r.worst_zone ? (_ZONE_ES[r.worst_zone] || r.worst_zone) : '—'
-    const cond   = _LABEL_ES[a.top1_label] || a.top1_label || '—'
-    return `<tr>
-      <td style="font-weight:700;color:#2E7D5A">#${userNum[a.id] || '?'}</td>
-      <td>${_formatDate(a.created_at)}</td>
-      <td style="font-weight:600">${cond}</td>
-      <td>
-        <span class="${_sevClass(sev)}" style="font-weight:700">${sevPct}%</span>
-        <span style="font-size:9px;color:#aaa;margin-left:4px">${_sevLabel(sev)}</span>
-        ${_bar(sevPct, _sevColor(sev))}
-      </td>
-      <td>${worst}</td>
-      <td>${r.affected_zones_count ?? 0}</td>
-    </tr>`
-  }).join('')
+  const completedAsc = [...completed].reverse()
+
+  const allData = await Promise.all(
+    completedAsc.map(async (a, idx) => {
+      const prev = idx > 0 ? completedAsc[idx - 1] : null
+      const [fullA, reco, imgDataUrl] = await Promise.all([
+        _fetchAnalysis(token, a.id),
+        _fetchReco(token, a.id),
+        _fetchImageBase64(token, a.id),
+      ])
+      return { a: fullA || a, prev, reco, userNum: userNumMap[a.id], imgDataUrl }
+    })
+  )
+
+  const sections = allData.map((d, i) =>
+    _singleAnalysisSection(d.a, d.prev, d.reco, d.userNum, d.imgDataUrl, i === 0)
+  ).join('')
 
   return _wrapHtml(`
-    ${_header(user, 'Historial de análisis', today)}
+    ${_header(user, 'Historial completo de análisis', today)}
     ${_profileSection(profile)}
-    <h2>Todos los análisis (${completed.length})</h2>
-    <table>
-      <thead><tr><th>#</th><th>Fecha</th><th>Condición</th><th>Severidad</th><th>Zona más afectada</th><th>Zonas activas</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <p style="font-size:10px;color:#999;margin-top:4px;margin-bottom:20px">${completed.length} análisis completados</p>
+    ${sections}
     ${_footer()}
-  `, 'CutisLab · Historial')
+  `, 'CutisLab · Historial completo')
 }
 
 // ── BUILDER: PRODUCTOS RECOMENDADOS ───────────────────────────────────────

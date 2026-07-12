@@ -92,6 +92,8 @@ BOOST_PERFIL_PERIORAL          = 1.5   # historial "Dermatitis" → perioral (ú
 
 # Tipo de piel
 BOOST_PIEL_SENSIBLE_ROSACEA    = 1.2
+BOOST_PIEL_SENSIBLE_ROSACEA_INFL = 1.15
+BOOST_PIEL_SENSIBLE_PERIORAL   = 1.3   # piel sensible es el perfil más vinculado a dermatitis perioral
 BOOST_PIEL_GRASA_COMEDONAL     = 1.3
 BOOST_PIEL_GRASA_INFL          = 1.2
 # Retirados: BOOST_PIEL_SENSIBLE_SEBORRHEIC, BOOST_PIEL_SECA_SEBORRHEIC (clase inexistente)
@@ -258,10 +260,24 @@ ERYTHEMA_MIN_MANDIBULA   = 0.10   # eritema en mandíbula para activar acne-infl
 COMEDONES_MANDIBULA      = 0.12   # comedones en mandíbula para co-activar acne-inflammatory
 ERYTHEMA_PERIORAL_DIRECT = 0.10   # eritema en zona_perioral para activar perioral-dermatitis
 ERYTHEMA_PERIORAL_MAX_MEJILLAS = 0.08  # mejillas deben estar bajo este valor para confirmar perioral
+ERYTHEMA_MIN_PERINASAL   = 0.10   # eritema en pliegues nasales para el patrón multiorificial
+ERYTHEMA_MIN_SYMMETRY_PERIORAL = 0.6  # simetría mandibular mínima (mismo umbral que rosacea-etr)
 
 # Boosts para las nuevas zonas
 BOOST_ACNE_INFL_MANDIBULA  = 1.3   # eritema + comedones en mandíbula → acne-inflammatory
 BOOST_PERIORAL_DIRECT      = 1.6   # eritema en zona perioral directa (más específico que mentón)
+# La nariz aislada es zona clásica de rosácea; solo cuando el eritema nasal
+# concurre con eritema perioral el patrón se vuelve específico de periorificial.
+# Ref: Wollenberg & Bieber 2011 — compromiso multiorificial (boca+nariz±ojos).
+BOOST_PERIORAL_MULTIORIFICE = 1.3  # eritema concurrente perioral + pliegues nasales
+BOOST_PERIORAL_SYMMETRIC    = 1.15 # distribución simétrica (signo de apoyo, no excluyente)
+
+# Dominancia relativa: cuando el pico de eritema perioral/perinasal supera
+# claramente a las mejillas, el patrón es más específico de perioral que de
+# rosácea difusa, incluso si las mejillas también tienen algo de enrojecimiento
+# (rosácea genuina no debería activarse a máxima fuerza solo por eso).
+RATIO_PERIORAL_DOMINANTE = 1.3   # pico perioral/perinasal debe superar mejillas en 30%+
+BOOST_PERIORAL_DOMINANTE = 1.7   # boost fuerte — señal más específica que las demás
 # =============================================================================
 # CONTINUIDAD DIAGNÓSTICA  (análisis secuenciales)
 # =============================================================================

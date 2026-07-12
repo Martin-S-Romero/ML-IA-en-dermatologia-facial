@@ -31,11 +31,11 @@ function _updateFacialMap(result) {
   })
 }
 
-function _condColor(prob) {
-  if (prob >= 0.75) return '#8B2A1A'
-  if (prob >= 0.50) return '#C47060'
-  if (prob >= 0.25) return '#D4942A'
-  return '#2E7D5A'
+function _condColor(sev) {
+  if (sev < 0.25) return '#2E7D5A'
+  if (sev < 0.50) return '#D4942A'
+  if (sev < 0.75) return '#E8906A'
+  return '#C47060'
 }
 
 function _updateZonesLesions(result) {
@@ -48,13 +48,15 @@ function _updateZonesLesions(result) {
     return
   }
 
+  const sev   = result?.severity_score ?? 0
+  const color = _condColor(sev)
+
   el.innerHTML = `
     <div class="border-t sm:border-t-0 sm:border-l border-sand pt-4 sm:pt-0 sm:pl-6 flex flex-col gap-3.5 text-[11px]">
       <p class="text-[9px] text-slate/60 uppercase tracking-widest font-semibold">Condiciones detectadas</p>
       ${topN.slice(0, 3).map((item, i) => {
         const pct   = Math.round(item.prob * 100)
         const name  = _LABEL_ES[item.label] || item.label
-        const color = _condColor(item.prob)
         const isTop = i === 0
         return `
           <div class="flex items-center gap-2.5 min-w-[180px]">

@@ -16,6 +16,8 @@ from .skinai_config import (
     ERYTHEMA_MIN_PERIORAL,
     ERYTHEMA_MIN_EXCORIATED, ERYTHEMA_MIN_HEALTHY, ERYTHEMA_MIN_SYMMETRY,
     ERYTHEMA_MIN_MANDIBULA, ERYTHEMA_PERIORAL_DIRECT, ERYTHEMA_PERIORAL_MAX_MEJILLAS,
+    ERYTHEMA_MIN_PERINASAL, ERYTHEMA_MIN_SYMMETRY_PERIORAL,
+    RATIO_PERIORAL_DOMINANTE,
     # umbrales de comedones
     COMEDONES_ZONA_T, COMEDONES_MEJILLAS,
     ERITEMA_COMEDONES_MEJILLAS,
@@ -25,6 +27,7 @@ from .skinai_config import (
     BOOST_ACNE_COMEDONAL_ZONA_T, BOOST_ACNE_INFL_MEJILLAS,
     BOOST_PERIORAL, BOOST_ACNE_EXCORIATED_ZONA, BOOST_HEALTHY_SKIN,
     BOOST_ACNE_INFL_MANDIBULA, BOOST_PERIORAL_DIRECT,
+    BOOST_PERIORAL_MULTIORIFICE, BOOST_PERIORAL_SYMMETRIC, BOOST_PERIORAL_DOMINANTE,
     # mediapipe
     FACEMESH_MAX_FACES, FACEMESH_DETECTION_CONFIDENCE, FACEMESH_TRACKING_CONFIDENCE,
     LANDMARK_LEFT_EYE, LANDMARK_RIGHT_EYE,
@@ -362,11 +365,22 @@ def ajustar_por_zona(probs_dict, analisis_zonal, verbose=False):
             if verbose:
                 print(f'  [zona boost] {clase:<35} ×{factor:.2f}  {razon}')
 
-    # Rosácea ETR: eritema simétrico bilateral en mejillas
+    # Pico de eritema en zona perioral/perinasal — se calcula antes que la regla
+    # de rosácea para poder comparar dominancia relativa entre ambos patrones.
+    e_perioral        = eritema.get('zona_perioral', 0)
+    e_nariz_lat_media = (eritema.get('nariz_lat_izq', 0) + eritema.get('nariz_lat_der', 0)) / 2
+    pico_perioral     = max(e_perioral, e_nariz_lat_media)
+
+    # Rosácea ETR: eritema simétrico bilateral en mejillas — solo si las mejillas
+    # son realmente el foco del enrojecimiento. Si boca/nariz las superan
+    # claramente, el patrón es más específico de perioral que de rosácea difusa.
     e_mej_izq = eritema.get('mejilla_izq', 0)
     e_mej_der = eritema.get('mejilla_der', 0)
+    e_mejillas_media = (e_mej_izq + e_mej_der) / 2
     simetria  = 1 - abs(e_mej_izq - e_mej_der) / (max(e_mej_izq, e_mej_der) + 1e-6)
-    if e_mej_izq >= ERYTHEMA_THRESHOLD_MILD and e_mej_der >= ERYTHEMA_THRESHOLD_MILD and simetria > ERYTHEMA_MIN_SYMMETRY:
+    mejillas_son_foco = pico_perioral <= e_mejillas_media * RATIO_PERIORAL_DOMINANTE
+    if (e_mej_izq >= ERYTHEMA_THRESHOLD_MILD and e_mej_der >= ERYTHEMA_THRESHOLD_MILD
+            and simetria > ERYTHEMA_MIN_SYMMETRY and mejillas_son_foco):
         _boost('rosacea-etr',          BOOST_ROSACEA_ETR_BILATERAL, 'eritema bilateral simétrico en mejillas')
         _boost('rosacea-inflammatory', BOOST_ROSACEA_INFL_BILATERAL, 'eritema bilateral')
 
@@ -377,7 +391,6 @@ def ajustar_por_zona(probs_dict, analisis_zonal, verbose=False):
         _boost('acne-comedonal', BOOST_ACNE_COMEDONAL_ZONA_T, 'comedones en zona T')
 
     # Acné inflamatorio: eritema + comedones en mejillas
-    e_mejillas_media = (e_mej_izq + e_mej_der) / 2
     c_mejillas_media = (
         comedones.get('mejilla_izq', 0) + comedones.get('mejilla_der', 0)
     ) / 2
@@ -404,9 +417,27 @@ def ajustar_por_zona(probs_dict, analisis_zonal, verbose=False):
 
     # Dermatitis perioral: eritema en zona perioral directa (más específico que proxy mentón)
     # Ref: Fonacier et al. 2021, JEADV — el halo perioral es el signo patognomónico
-    e_perioral = eritema.get('zona_perioral', 0)
     if e_perioral >= ERYTHEMA_PERIORAL_DIRECT and e_mejillas_media < ERYTHEMA_PERIORAL_MAX_MEJILLAS:
         _boost('perioral-dermatitis', BOOST_PERIORAL_DIRECT, 'eritema en zona perioral directa')
+
+    # Dermatitis perioral: patrón multiorificial (perioral + pliegues nasales concurrentes)
+    # La nariz aislada es zona clásica de rosácea; el compromiso simultáneo de boca y
+    # nariz es más específico de periorificial. Ref: Wollenberg & Bieber 2011.
+    if e_perioral >= ERYTHEMA_PERIORAL_DIRECT and e_nariz_lat_media >= ERYTHEMA_MIN_PERINASAL:
+        _boost('perioral-dermatitis', BOOST_PERIORAL_MULTIORIFICE, 'eritema concurrente perioral + perinasal')
+
+    # Dermatitis perioral: distribución simétrica (signo de apoyo, no excluyente)
+    e_mand_izq = eritema.get('mandibula_izq', 0)
+    e_mand_der = eritema.get('mandibula_der', 0)
+    simetria_perioral = 1 - abs(e_mand_izq - e_mand_der) / (max(e_mand_izq, e_mand_der) + 1e-6)
+    if e_perioral >= ERYTHEMA_PERIORAL_DIRECT and simetria_perioral > ERYTHEMA_MIN_SYMMETRY_PERIORAL:
+        _boost('perioral-dermatitis', BOOST_PERIORAL_SYMMETRIC, 'distribución simétrica mandibular')
+
+    # Dermatitis perioral: boca/nariz claramente dominan sobre mejillas
+    # Es la señal más específica de un patrón perioral puro, en vez de rosácea
+    # difusa con algo de extensión perioral incidental.
+    if pico_perioral >= ERYTHEMA_PERIORAL_DIRECT and pico_perioral > e_mejillas_media * RATIO_PERIORAL_DOMINANTE:
+        _boost('perioral-dermatitis', BOOST_PERIORAL_DOMINANTE, 'eritema perioral/perinasal dominante sobre mejillas')
 
     # Acné excoriado: eritema difuso en mejillas sin comedones marcados
     if e_mejillas_media >= ERYTHEMA_MIN_EXCORIATED and c_mejillas_media < ERYTHEMA_THRESHOLD_MILD:

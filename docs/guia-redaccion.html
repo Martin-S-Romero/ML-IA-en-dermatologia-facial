@@ -1,0 +1,808 @@
+<title>Guía de redacción — Tesis SkinAI</title>
+<meta name="description" content="Guía de redacción para la tesis de Ingeniería de Software sobre detección de afecciones cutáneas faciales con Deep Learning.">
+<style>
+  :root{
+    --paper:#f3f5f3;
+    --paper-raised:#ffffff;
+    --ink:#1b241f;
+    --ink-soft:#4c5850;
+    --ink-faint:#7c8880;
+    --accent:#1c6f61;
+    --accent-ink:#0f4a40;
+    --accent-soft:#dcece7;
+    --rose:#a85356;
+    --rose-soft:#f3e3e1;
+    --line:#d6ded7;
+    --line-strong:#b9c4bb;
+    --code-bg:#e7ede8;
+    --shadow:rgba(20,32,26,.09);
+    --sidebar-w:288px;
+
+    --serif:"Iowan Old Style","Sitka Text",Palatino,"Palatino Linotype",Georgia,serif;
+    --sans:-apple-system,"Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,"Liberation Mono",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#101613;
+      --paper:#10161a;
+      --paper-raised:#161d1a;
+      --ink:#e7ece8;
+      --ink-soft:#aab5ac;
+      --ink-faint:#727f77;
+      --accent:#5cc9b4;
+      --accent-ink:#bdeee0;
+      --accent-soft:#173430;
+      --rose:#d99795;
+      --rose-soft:#2f201f;
+      --line:#293530;
+      --line-strong:#3a4740;
+      --code-bg:#1b2320;
+      --shadow:rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#10161a;
+    --paper-raised:#161d1a;
+    --ink:#e7ece8;
+    --ink-soft:#aab5ac;
+    --ink-faint:#727f77;
+    --accent:#5cc9b4;
+    --accent-ink:#bdeee0;
+    --accent-soft:#173430;
+    --rose:#d99795;
+    --rose-soft:#2f201f;
+    --line:#293530;
+    --line-strong:#3a4740;
+    --code-bg:#1b2320;
+    --shadow:rgba(0,0,0,.5);
+  }
+  :root[data-theme="light"]{
+    --paper:#f3f5f3;
+    --paper-raised:#ffffff;
+    --ink:#1b241f;
+    --ink-soft:#4c5850;
+    --ink-faint:#7c8880;
+    --accent:#1c6f61;
+    --accent-ink:#0f4a40;
+    --accent-soft:#dcece7;
+    --rose:#a85356;
+    --rose-soft:#f3e3e1;
+    --line:#d6ded7;
+    --line-strong:#b9c4bb;
+    --code-bg:#e7ede8;
+    --shadow:rgba(20,32,26,.09);
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16.5px;
+    line-height:1.6;
+    text-underline-offset:2px;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .side-link, .theme-btn, .toc-toggle, details summary{transition:color .15s ease, background-color .15s ease, border-color .15s ease;}
+  }
+
+  a{color:var(--accent-ink);}
+  a.xref{color:var(--accent-ink); text-decoration:underline dotted; text-decoration-thickness:1px;}
+  a.xref:hover{color:var(--rose);}
+
+  h1,h2,h3,h4{font-family:var(--serif); font-weight:600; text-wrap:balance; color:var(--ink);}
+  h1{font-size:clamp(1.7rem,1.35rem + 1.3vw,2.35rem); line-height:1.15; margin:0 0 .5rem;}
+  h2{font-size:clamp(1.3rem,1.15rem + .5vw,1.55rem); line-height:1.25; margin:0 0 .85rem; padding-top:.1rem;}
+  h3{font-size:1.12rem; margin:1.9rem 0 .6rem; color:var(--accent-ink);}
+  h4{font-size:.98rem; margin:1.3rem 0 .4rem; color:var(--ink);}
+
+  p{margin:0 0 1rem;}
+  strong{font-weight:700;}
+  em{font-style:italic;}
+  code{
+    font-family:var(--mono);
+    font-size:.85em;
+    background:var(--code-bg);
+    padding:.12em .38em;
+    border-radius:2px;
+  }
+
+  ul,ol{margin:0 0 1.1rem; padding-left:1.3rem;}
+  li{margin:.32rem 0;}
+  li::marker{color:var(--accent-ink);}
+
+  .eyebrow{
+    display:inline-flex; align-items:baseline; gap:.5rem;
+    font-family:var(--mono); font-size:.72rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--accent-ink);
+    margin-bottom:.5rem;
+  }
+  .eyebrow .num{
+    background:var(--accent-soft); color:var(--accent-ink);
+    padding:.15em .5em; border-radius:2px; font-weight:700;
+  }
+
+  /* ---------- layout ---------- */
+  .shell{display:flex; min-height:100vh; max-width:1280px; margin:0 auto;}
+
+  .sidebar{
+    width:var(--sidebar-w); flex:0 0 auto;
+    position:sticky; top:0; align-self:flex-start;
+    height:100vh; overflow-y:auto;
+    padding:1.9rem 1.4rem 2.5rem;
+    border-right:1px solid var(--line);
+    scrollbar-width:thin;
+  }
+  .brand{margin-bottom:1.4rem;}
+  .brand .mark{
+    font-family:var(--mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:.4rem; display:block;
+  }
+  .brand h1{font-size:1.28rem; line-height:1.25; margin-bottom:.35rem;}
+  .brand p{font-size:.85rem; color:var(--ink-soft); margin:0;}
+
+  .side-tools{display:flex; gap:.5rem; margin:1.1rem 0 1.4rem;}
+  .theme-btn, .print-btn{
+    font-family:var(--sans); font-size:.78rem; font-weight:600;
+    border:1px solid var(--line-strong); background:var(--paper-raised); color:var(--ink);
+    padding:.45em .7em; border-radius:3px; cursor:pointer; display:inline-flex; align-items:center; gap:.4em;
+  }
+  .theme-btn:hover, .print-btn:hover{border-color:var(--accent); color:var(--accent-ink);}
+
+  .side-group{margin-bottom:1.3rem;}
+  .side-group h2{
+    font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-faint); font-weight:600; margin:0 0 .5rem; border:none;
+  }
+  .side-group ul{list-style:none; margin:0; padding:0;}
+  .side-group li{margin:0;}
+  .side-group li::marker{content:none;}
+  .side-link{
+    display:flex; gap:.55em; align-items:baseline;
+    padding:.3rem .1rem; font-size:.86rem; color:var(--ink-soft);
+    text-decoration:none; border-left:2px solid transparent; margin-left:-.1rem; padding-left:.6rem;
+  }
+  .side-link .n{font-family:var(--mono); font-size:.72rem; color:var(--ink-faint); min-width:1.4em;}
+  .side-link:hover{color:var(--accent-ink);}
+  .side-link.is-active{color:var(--accent-ink); border-left-color:var(--accent); font-weight:600; background:var(--accent-soft);}
+
+  main{flex:1 1 auto; min-width:0; padding:2.6rem clamp(1.2rem,4vw,3.4rem) 6rem;}
+  .content{max-width:880px;}
+  .content > p, .content > ul, .content > ol, .content > .callout p{max-width:44em;}
+
+  .masthead{margin-bottom:2.6rem; padding-bottom:1.8rem; border-bottom:1px solid var(--line);}
+  .masthead .kicker{
+    font-family:var(--mono); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--rose); margin-bottom:.7rem; display:block;
+  }
+  .masthead h1{max-width:34em;}
+
+  section.chapter{margin-bottom:3.1rem; padding-top:.4rem;}
+  section.chapter + section.chapter{border-top:1px solid var(--line); padding-top:2.6rem;}
+
+  .callout{
+    border:1px solid var(--line-strong); border-left:3px solid var(--accent);
+    background:var(--paper-raised); border-radius:3px;
+    padding:1rem 1.2rem; margin:1.1rem 0 1.4rem; max-width:52em;
+    box-shadow:0 1px 2px var(--shadow);
+  }
+  .callout.rose{border-left-color:var(--rose);}
+  .callout .tag{
+    font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--accent-ink); display:block; margin-bottom:.4rem; font-weight:700;
+  }
+  .callout.rose .tag{color:var(--rose);}
+  .callout p{margin:0;}
+  .callout p + p{margin-top:.6rem;}
+
+  .lede{
+    font-size:1.05rem; color:var(--ink-soft); max-width:46em; margin-bottom:0;
+  }
+
+  /* ---------- tables ---------- */
+  .table-wrap{
+    overflow-x:auto; margin:1.1rem 0 1.6rem;
+    border:1px solid var(--line-strong); border-radius:4px;
+    background:var(--paper-raised);
+  }
+  table{border-collapse:collapse; width:100%; font-size:.88rem;}
+  caption{
+    text-align:left; font-family:var(--mono); font-size:.72rem; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--ink-faint); padding:.7rem .9rem 0;
+  }
+  thead th{
+    text-align:left; font-family:var(--sans); font-weight:700; font-size:.82rem;
+    color:var(--ink); background:var(--accent-soft);
+    padding:.6rem .85rem; border-bottom:1px solid var(--line-strong);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:.6rem .85rem; border-bottom:1px solid var(--line);
+    vertical-align:top; color:var(--ink-soft);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:nth-child(even){background:color-mix(in srgb, var(--paper) 45%, var(--paper-raised));}
+  td:first-child, th:first-child{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink-faint); font-size:.8rem;}
+  td.num, th.num{font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right;}
+  tbody tr td strong{color:var(--ink);}
+  .table-wrap table td:nth-child(1){white-space:nowrap;}
+
+  /* ---------- checklist ---------- */
+  .checklist{list-style:none; padding:0; margin:1rem 0 1.6rem; max-width:46em;}
+  .checklist li{
+    display:flex; gap:.7rem; align-items:flex-start;
+    padding:.5rem .1rem; border-bottom:1px solid var(--line);
+  }
+  .checklist li:last-child{border-bottom:none;}
+  .checklist .box{
+    flex:0 0 auto; width:1rem; height:1rem; margin-top:.2rem;
+    border:1.5px solid var(--line-strong); border-radius:2px; background:var(--paper-raised);
+  }
+
+  /* ---------- misc lists with bold lead ---------- */
+  .content ol > li::marker{font-family:var(--mono); font-weight:700; color:var(--accent-ink);}
+
+  footer.doc-footer{
+    margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--line);
+    font-size:.82rem; color:var(--ink-faint);
+  }
+
+  /* ---------- mobile ---------- */
+  .toc-toggle{
+    display:none; width:100%; text-align:left;
+    font-family:var(--sans); font-weight:700; font-size:.95rem;
+    background:var(--paper-raised); color:var(--ink); border:1px solid var(--line-strong);
+    padding:.7rem .9rem; border-radius:4px; margin:1rem 1rem 0; cursor:pointer;
+  }
+  @media (max-width: 880px){
+    .shell{flex-direction:column;}
+    .toc-toggle{display:block;}
+    .sidebar{
+      position:fixed; inset:0 12% 0 0; height:100vh; z-index:40;
+      transform:translateX(-100%); transition:transform .2s ease;
+      box-shadow:2px 0 18px var(--shadow); background:var(--paper);
+    }
+    .sidebar.is-open{transform:translateX(0);}
+    .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:30; display:none;}
+    .backdrop.is-open{display:block;}
+    main{padding:1.4rem 1.1rem 4rem;}
+    .content > p, .content > ul, .content > ol{max-width:none;}
+  }
+
+  @media print{
+    .sidebar, .toc-toggle, .side-tools{display:none !important;}
+    .shell{display:block;}
+    main{padding:0; max-width:100%;}
+    a.xref{color:inherit;}
+  }
+</style>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+
+  <button class="toc-toggle" id="tocToggle">☰ Índice del documento</button>
+
+  <nav class="sidebar" id="sidebar" aria-label="Índice">
+    <div class="brand">
+      <span class="mark">Tesis · Ingeniería de Software</span>
+      <h1>Guía de redacción</h1>
+      <p>SkinAI — Detección de afecciones cutáneas faciales con Deep Learning</p>
+    </div>
+
+    <div class="side-tools">
+      <button class="theme-btn" id="themeToggle" type="button">🌓 Tema</button>
+      <button class="print-btn" id="printBtn" type="button">🖨 Imprimir</button>
+    </div>
+
+    <div class="side-group">
+      <h2>Antes de empezar</h2>
+      <ul>
+        <li><a class="side-link" href="#s0"><span class="n">0</span>Idea general</a></li>
+        <li><a class="side-link" href="#s1"><span class="n">1</span>Páginas preliminares</a></li>
+      </ul>
+    </div>
+
+    <div class="side-group">
+      <h2>Capítulos de la tesis</h2>
+      <ul>
+        <li><a class="side-link" href="#s2"><span class="n">2</span>Cap. 1 — Planteamiento</a></li>
+        <li><a class="side-link" href="#s3"><span class="n">3</span>Cap. 2 — Marco teórico</a></li>
+        <li><a class="side-link" href="#s4"><span class="n">4</span>Cap. 3 — Metodología</a></li>
+        <li><a class="side-link" href="#s5"><span class="n">5</span>Cap. 4 — Desarrollo</a></li>
+        <li><a class="side-link" href="#s6"><span class="n">6</span>Cap. 5 — Pruebas y validación</a></li>
+        <li><a class="side-link" href="#s7"><span class="n">7</span>Cap. 6 — Futuras mejoras</a></li>
+        <li><a class="side-link" href="#s8"><span class="n">8</span>Cierre del documento</a></li>
+      </ul>
+    </div>
+
+    <div class="side-group">
+      <h2>Planificación</h2>
+      <ul>
+        <li><a class="side-link" href="#s11"><span class="n">11</span>Orden de redacción</a></li>
+        <li><a class="side-link" href="#s14"><span class="n">14</span>Páginas por capítulo</a></li>
+      </ul>
+    </div>
+
+    <div class="side-group">
+      <h2>Referencia rápida</h2>
+      <ul>
+        <li><a class="side-link" href="#s9"><span class="n">9</span>Diagramas necesarios</a></li>
+        <li><a class="side-link" href="#s10"><span class="n">10</span>Tablas necesarias</a></li>
+        <li><a class="side-link" href="#s12"><span class="n">12</span>Advertencias del asesor</a></li>
+        <li><a class="side-link" href="#s13"><span class="n">13</span>Checklist final</a></li>
+        <li><a class="side-link" href="#s15"><span class="n">15</span>Resumen de diagramas</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <div class="content">
+
+      <header class="masthead">
+        <span class="kicker">Guía de redacción · versión HTML</span>
+        <h1>Guía para la redacción de la tesis — SkinAI<br>(Detección de afecciones cutáneas faciales con Deep Learning)</h1>
+      </header>
+
+      <div class="callout">
+        <span class="tag">Sobre esta guía</span>
+        <p>Basada en el análisis de dos documentos: (1) tu <strong>Anteproyecto</strong> ya aprobado («Diseño y Desarrollo de una aplicación basada en Deep Learning para la detección preliminar de afecciones cutáneas en el rostro») y (2) una <strong>tesis terminada de referencia</strong> de Ingeniería de Software de la UTP («Framework para el análisis del mercado bursátil de acciones»), usada aquí únicamente como modelo de estructura, nivel de detalle y estilo — no de contenido.</p>
+      </div>
+
+      <!-- ============ SECTION 0 ============ -->
+      <section class="chapter" id="s0">
+        <span class="eyebrow"><span class="num">§0</span> Antes de empezar</span>
+        <h2>Idea general antes de empezar</h2>
+        <p>La tesis de referencia (mercado bursátil) y tu anteproyecto comparten el mismo esqueleto institucional (UTP, Ingeniería de Software), solo que la tesis de referencia colapsa «planteamiento del problema» y «marco teórico» en un solo Capítulo 1, mientras que tu anteproyecto los separa en Capítulo 1 y Capítulo 2. <strong>Usa el plan de contenido de tu anteproyecto como esqueleto oficial</strong> (ya está registrado/aprobado); usa la tesis de referencia como ejemplo de <em>cómo llenar</em> cada capítulo: cuánto detalle dar, qué tipo de figuras insertar, cómo documentar decisiones fallidas, cómo comparar arquitecturas, cómo presentar resultados y cómo cerrar con hallazgos.</p>
+
+        <p>Tabla de equivalencia entre ambos documentos:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tu anteproyecto (plan de contenido)</th><th>Tesis de referencia (equivalente)</th></tr></thead>
+            <tbody>
+              <tr><td>Cap. 1: Planteamiento del problema</td><td>Cap. 1: Antecedentes del proyecto (secciones 1.1–1.3)</td></tr>
+              <tr><td>Cap. 2: Marco Teórico</td><td>Cap. 1: Antecedentes del proyecto (secciones 1.4–1.5, Marco teórico y Métodos/conceptos)</td></tr>
+              <tr><td>Cap. 3: Metodología de Trabajo</td><td>Cap. 2: Marco metodológico + Cap. 3: Arquitectura física y requerimientos</td></tr>
+              <tr><td>Cap. 4: Desarrollo del Proyecto</td><td>Cap. 4: Desarrollo del proyecto (la más extensa en ambos casos)</td></tr>
+              <tr><td>Cap. 5: Pruebas y Validación</td><td>Cap. 4 (secciones finales: resultados, simulaciones)</td></tr>
+              <tr><td>— (no tenías capítulo dedicado)</td><td>Cap. 5: Futuras mejoras — <strong>agrégalo como Capítulo 6</strong> si tu programa lo permite, o como sección final de Cap. 5</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ SECTION 1 ============ -->
+      <section class="chapter" id="s1">
+        <span class="eyebrow"><span class="num">§1</span> Antes de empezar</span>
+        <h2>Páginas preliminares <small style="font-family:var(--sans); font-weight:400; color:var(--ink-faint); font-size:.7em;">(se escriben al final, pero van primero en el documento)</small></h2>
+        <p>En este orden exacto (según el ejemplo):</p>
+        <ol>
+          <li>Portada institucional (título, asesor, coasesores si aplica, integrantes con cédula, año)</li>
+          <li>Segunda portada con «Trabajo de graduación para optar por el título de…»</li>
+          <li><strong>Resumen</strong> (1 página): qué se hizo, con qué tecnologías, qué se buscó demostrar/lograr, y la conclusión general. Escríbelo al final, cuando ya sepas los resultados reales.</li>
+          <li><strong>Dedicatoria</strong></li>
+          <li><strong>Agradecimientos</strong></li>
+          <li><strong>Índice general</strong> (con numeración de página)</li>
+          <li><strong>Índice de figuras</strong> (título exacto y número de cada ilustración)</li>
+          <li><strong>Índice de tablas</strong></li>
+          <li><strong>Introducción</strong> (media página a una página por capítulo, resumiendo qué va a leer el lector en cada uno — es un «mapa» del documento, no el planteamiento del problema)</li>
+        </ol>
+
+        <div class="callout">
+          <span class="tag">Regla práctica del ejemplo</span>
+          <p>La Introducción del documento completo (la de la página xiii) es distinta de la introducción/antecedentes del Capítulo 1. La primera es un resumen de «qué contiene cada capítulo»; la segunda es el desarrollo real del contexto del proyecto.</p>
+        </div>
+      </section>
+
+      <!-- ============ SECTION 2 — CAP 1 ============ -->
+      <section class="chapter" id="s2">
+        <span class="eyebrow"><span class="num">§2</span> Capítulo de la tesis</span>
+        <h2>Capítulo 1: Planteamiento del problema</h2>
+        <p>Mapea directamente con tu anteproyecto. Amplíalo con lo que ya aprendiste durante el desarrollo (el anteproyecto es una promesa; el Capítulo 1 final es la versión madura, con datos reales).</p>
+
+        <h3>1.1 Problemática</h3>
+        <ul>
+          <li><strong>1.1.1 Situación actual</strong>: contexto de salud dermatológica, brecha de acceso a dermatólogos (Panamá/región), costos de consulta (puedes retomar tus referencias [9], [12], [14] del anteproyecto sobre precios de clínicas dermatológicas en Panamá).</li>
+          <li><strong>1.1.2 Problema principal</strong>: la falta de una herramienta accesible, gratuita/económica y basada en evidencia que dé una orientación preliminar sobre afecciones cutáneas faciales.</li>
+          <li><strong>1.1.3 Problemas específicos</strong>: por ejemplo, (a) desinformación en redes sociales sobre skincare (tu referencia [17] de TikTok), (b) ausencia de herramientas open-source enfocadas específicamente en rostro, (c) falta de anonimización/censura de datos sensibles en soluciones existentes.</li>
+        </ul>
+
+        <div class="callout">
+          <span class="tag">Nota de estilo tomada del ejemplo</span>
+          <p>En la tesis de referencia, cada «caso de estudio» (NVDA, QQQ, GLD) se redactó como una subsección independiente con su propia justificación numérica. Tú puedes aplicar la misma lógica describiendo <strong>casos de uso o perfiles de usuario</strong> (ej.: usuario con acné leve, usuario con rosácea, usuario sin afecciones) si decides ilustrar el problema con casos concretos.</p>
+        </div>
+
+        <h3>1.2 Propuesta</h3>
+        <ul>
+          <li><strong>1.2.1 Justificación</strong>: por qué Deep Learning (CNN / transfer learning) es adecuado para clasificación de imágenes dermatológicas — cita a Esteva et al. 2017 (ya está en tus referencias [5], el paper de Nature sobre clasificación de cáncer de piel con redes neuronales) y Jeong et al. 2022 [6].</li>
+          <li><strong>1.2.2 Delimitación</strong>: solo rostro, no cuerpo completo; carácter informativo/no diagnóstico (esto ya lo tienes muy claro en tu README — cópialo/formalízalo aquí).</li>
+        </ul>
+
+        <h3>1.3 Objetivos</h3>
+        <p>Ya los tienes redactados en el anteproyecto. En la tesis final, verifica que:</p>
+        <ul>
+          <li>El objetivo general sea una sola oración medible.</li>
+          <li>Cada objetivo específico se pueda «marcar como cumplido» con una sección del Capítulo 4 (haz una tabla mental: objetivo → dónde se demuestra que se cumplió).</li>
+        </ul>
+
+        <h3>1.4 Alcance del proyecto</h3>
+        <p>Usa tu sección «Alcance del sistema» del README (el sistema SÍ hace X, NO hace Y) — es exactamente el tipo de contenido que va aquí.</p>
+
+        <h3>1.5 Impacto social</h3>
+        <p>Redáctalo en la línea de «democratización del acceso a orientación dermatológica», similar al enfoque de FinTech de la tesis de referencia («brindar herramientas a quienes no son expertos»). Aquí puedes citar el enfoque de Topol [15] (<em>Deep Medicine</em>) sobre IA humanizando la salud, y mencionar explícitamente el principio de que <strong>no reemplaza al profesional</strong> (recomendación ética recurrente).</p>
+      </section>
+
+      <!-- ============ SECTION 3 — CAP 2 ============ -->
+      <section class="chapter" id="s3">
+        <span class="eyebrow"><span class="num">§3</span> Capítulo de la tesis</span>
+        <h2>Capítulo 2: Marco Teórico</h2>
+        <p>Aquí es donde más se nota la diferencia con la tesis de referencia (esa es de finanzas/LSTM; la tuya es de visión por computador/dermatología), pero la <strong>estructura</strong> de cómo presentar el marco teórico es igualmente válida:</p>
+
+        <h3>2.1 Antecedentes y tendencias actuales</h3>
+        <p>Sigue el patrón del ejemplo (sección 1.4 «Marco teórico» de la tesis de referencia): resume 4–6 papers/artículos clave, uno por párrafo, indicando: autor, qué hicieron, qué técnica usaron, qué resultado obtuvieron. Ya tienes buen material en tus referencias:</p>
+        <ul>
+          <li>Esteva et al. (2017) — clasificación de cáncer de piel con redes neuronales profundas, comparado a nivel dermatólogo.</li>
+          <li>Jeong et al. (2022) — revisión sistemática de Deep Learning en dermatología (enfoques, resultados, limitaciones).</li>
+          <li>Aboulmira et al. (2024) — app SkinHealthMate, plataforma de IA para diagnóstico de piel (antecedente directo/competidor).</li>
+          <li>Kleinman (2021, BBC) — herramienta de Google para identificar condiciones de piel.</li>
+          <li>Winn (2022, MIT News) — Piction Health, app de clasificación de piel con foto.</li>
+        </ul>
+
+        <h3>2.2 Bases teóricas</h3>
+        <p>Aquí defines, con nivel de «libro de texto», los conceptos técnicos que usarás en el Capítulo 4. Con base en el estilo del ejemplo (que dedicó una sección extensa a explicar LSTM, GRU, ARO, GA con nivel de detalle matemático/conceptual), tú deberías explicar aquí, como mínimo:</p>
+        <ul>
+          <li><strong>Redes Neuronales Convolucionales (CNN)</strong>: qué son, por qué son el estándar para clasificación/detección en imágenes, capas convolucionales, pooling, feature maps.</li>
+          <li><strong>Transfer Learning / Fine-tuning</strong>: por qué se usa sobre entrenar desde cero (dataset pequeño típico en dermatología), y qué modelos base son candidatos (ResNet, EfficientNet, MobileNet, VGG) — con una tabla comparativa (ver <a class="xref" href="#s10">«Tablas necesarias»</a>).</li>
+          <li><strong>Detección y recorte facial</strong> (face detection/landmarks — ej. MediaPipe, dlib, MTCNN): cómo se identifica el rostro y las regiones (frente, mejillas, nariz).</li>
+          <li><strong>Segmentación de regiones faciales</strong>: técnica usada para dividir el rostro en zonas de análisis.</li>
+          <li><strong>Métricas de evaluación de clasificación</strong>: accuracy, precision, recall, F1-score, AUC-ROC, matriz de confusión — con sus fórmulas (igual que el ejemplo puso la fórmula del cambio fraccional, tú debes poner las fórmulas de estas métricas).</li>
+          <li><strong>Ética y anonimización de datos biométricos</strong> (GDPR, censura de ojos/labios) — esto es un diferenciador único de tu proyecto y vale la pena teorizarlo bien, citando normativa de protección de datos.</li>
+        </ul>
+
+        <h3>2.3 Definición de términos</h3>
+        <p>Glosario corto (media página) de términos técnicos: dataset, epoch, batch size, overfitting, augmentation, embedding, etc. El ejemplo no tiene esta sección como tal, pero al ser parte de tu plan de contenido aprobado, mantenla — es estándar en tesis de ingeniería.</p>
+      </section>
+
+      <!-- ============ SECTION 4 — CAP 3 ============ -->
+      <section class="chapter" id="s4">
+        <span class="eyebrow"><span class="num">§4</span> Capítulo de la tesis</span>
+        <h2>Capítulo 3: Metodología de Trabajo</h2>
+
+        <h3>3.1 Concepción del proyecto</h3>
+        <ul>
+          <li><strong>3.1.1 Metodología de trabajo</strong>: declara qué metodología de ingeniería de software usaste (Scrum, Kanban, incremental, etc.) — el ejemplo usó «programación orientada a objetos siguiendo PEP8» como su enfoque técnico, pero tú debes declarar tu metodología de <strong>gestión de proyecto</strong> (con sprints o hitos) y tu enfoque técnico (ej. MLOps ligero: dataset → entrenamiento → validación → despliegue).</li>
+          <li><strong>3.1.2 Análisis del proyecto a desarrollar</strong>: aquí es donde va tu <strong>diagrama de casos de uso UML</strong> (no está en el ejemplo porque es un proyecto de análisis de datos, pero es obligatorio en un proyecto con interfaz de usuario como el tuyo). Casos de uso mínimos: registrar/iniciar sesión, subir imagen, ver resultado de análisis, ver historial, gestionar datos personales/GDPR.</li>
+        </ul>
+
+        <h3>3.2 Tecnologías y Arquitectura</h3>
+        <ul>
+          <li><strong>3.2.1 Evaluación de herramientas y tecnologías disponibles</strong>: aquí replica el estilo de la sección 3.3 de la tesis de referencia («Librerías y entornos de ejecución») — una lista con versión exacta de cada tecnología. Tu README y <code>docker-compose.yml</code> ya tienen esta info; solo hay que formalizarla en una tabla. Justifica cada elección (por qué PostgreSQL y no MySQL, por qué FastAPI/Flask/Django, por qué PyTorch o TensorFlow, por qué contenedores Docker).</li>
+          <li><strong>3.2.2 Propuesta de arquitectura de software</strong>: aquí van tus <strong>diagramas de arquitectura</strong> (ver <a class="xref" href="#s9">«Diagramas que deberías tener sí o sí»</a>). Este es el equivalente a los capítulos 3.1/3.2 de la tesis de referencia sobre arquitectura Turing/Blackwell (hardware GPU) — en tu caso, describe si entrenas localmente con GPU o en la nube, y qué llevó a esa decisión (ej. limitaciones de cómputo, Google Colab, etc.), igual de honesto que el ejemplo, que documentó hasta los problemas de hardware (tarjeta de video dañada, migración de TensorFlow a PyTorch por incompatibilidad CUDA). <strong>Si tuviste contratiempos similares (falta de GPU, cambios de librería, migración de framework), documéntalos — le da rigor y honestidad académica al capítulo.</strong></li>
+        </ul>
+      </section>
+
+      <!-- ============ SECTION 5 — CAP 4 ============ -->
+      <section class="chapter" id="s5">
+        <span class="eyebrow"><span class="num">§5</span> Capítulo de la tesis — el más largo</span>
+        <h2>Capítulo 4: Desarrollo del Proyecto</h2>
+        <p class="lede">Ver <a class="xref" href="#s11">«Orden sugerido de redacción»</a> para saber cuándo conviene escribir este capítulo.</p>
+        <p>Este es el corazón de la tesis, igual que en el ejemplo (su Capítulo 4 tiene ~70 páginas). Sigue tu plan de contenido, pero con esta profundidad mínima por sección:</p>
+
+        <h3>4.1 Requisitos funcionales / 4.2 Requisitos no funcionales</h3>
+        <p>Tabla con ID (RF-01, RF-02…), descripción, prioridad. No funcionales: rendimiento (tiempo de respuesta del análisis), seguridad (cifrado, censura de datos sensibles), usabilidad, escalabilidad, disponibilidad.</p>
+
+        <h3>4.3 Desarrollo y construcción / 4.4 Base de datos</h3>
+        <p>Ya tienes este trabajo prácticamente listo en <code>docs/doc_tesis.md</code> — es tu documentación del esquema relacional (tablas <code>users</code>, <code>skin_profiles</code>, <code>analyses</code>, <code>routines</code>, <code>products</code>, etc.). <strong>Reutiliza ese documento directamente como base de esta sección</strong>, adaptando el tono a tesis (quitar encabezados tipo README, mantener las tablas de columnas y el diagrama entidad-relación).</p>
+
+        <h3>4.5 Backend</h3>
+        <p>Sigue el mismo patrón narrativo que el Capítulo 4 del ejemplo (que documentó paso a paso: análisis exploratorio de datos → feature engineering → iteraciones de modelos → resultados), pero adaptado a visión por computador:</p>
+        <ul>
+          <li><strong>4.5.1 Recolección de datos</strong>: de dónde viene tu dataset (ej. HAM10000, datasets públicos de dermatología, o dataset propio recolectado). Documenta cantidad de imágenes, clases, distribución (balanceada/desbalanceada), formato, resolución.</li>
+          <li><strong>4.5.2 Preprocesamiento de datos</strong>: aquí van: detección/recorte de rostro, censura de ojos/labios, normalización, aumentación de datos (data augmentation: rotación, flip, brillo), redimensionado. Documenta cada técnica con una imagen antes/después, igual que el ejemplo mostró «feature engineering» con capturas de código y gráficas.</li>
+          <li><strong>4.5.3 Clasificación de imágenes</strong>: aquí documenta <strong>cada iteración del modelo</strong> como hizo el ejemplo con LSTMv1, v2, DeepLSTM, BaseLSTM, FlexLSTM. Tu equivalente sería, por ejemplo:
+            <ul>
+              <li>Iteración 1: modelo base/simple (ej. CNN pequeña desde cero) — resultados pobres, ¿por qué?</li>
+              <li>Iteración 2: transfer learning con un modelo preentrenado congelado — mejora.</li>
+              <li>Iteración 3: fine-tuning de capas superiores.</li>
+              <li>Iteración 4: optimización de hiperparámetros (learning rate, batch size, arquitectura) — aquí puedes usar Optuna igual que el ejemplo, o Keras Tuner/Ray Tune si usas TensorFlow.</li>
+              <li>Cada iteración con su tabla de arquitectura (capas, parámetros) y sus métricas (accuracy, loss, matriz de confusión).</li>
+            </ul>
+          </li>
+          <li><strong>4.5.4 Categorización de datos</strong>: mapeo de clases predichas a categorías de afecciones y su relación con el motor de recomendación de ingredientes/rutinas.</li>
+        </ul>
+
+        <h3>4.6 Frontend</h3>
+        <ul>
+          <li><strong>4.6.1 Generación de reporte</strong>: cómo se le presenta el resultado al usuario (mockup/captura de pantalla de la interfaz de resultados, similar a cómo el ejemplo mostró sus gráficas de resultados finales).</li>
+        </ul>
+
+        <h3>4.7 Diseño del proyecto</h3>
+        <ul>
+          <li><strong>4.7.1 Estructura del sistema</strong>: diagrama de arquitectura general (ver <a class="xref" href="#s9">«Diagramas necesarios»</a>).</li>
+          <li><strong>4.7.2 Diseño de base de datos</strong>: diagrama ER (ya lo tienes en <code>doc_tesis.md</code>).</li>
+          <li><strong>4.7.3 Diseño de interfaz web</strong>: wireframes o capturas reales de cada pantalla clave (login, carga de imagen, resultados, historial).</li>
+        </ul>
+
+        <h3>4.8 Integración del backend y frontend</h3>
+        <p>Diagrama de secuencia (ver <a class="xref" href="#s9">«Diagramas necesarios»</a>) mostrando el flujo completo: usuario sube imagen → backend detecta/recorta rostro → censura → modelo predice → motor de recomendación → respuesta al frontend → guardado en historial.</p>
+
+        <div class="callout">
+          <span class="tag">Sugerencia adicional inspirada en el ejemplo</span>
+          <p>Al final del Capítulo 4 (antes de pasar a Pruebas), agrega una sección de <strong>«Hallazgos transversales»</strong> (como hizo la tesis de referencia en su 4.6). Ahí resumes en 4–6 bullets las lecciones aprendidas que no encajan en ninguna subsección específica (ej. «el balanceo de clases fue más determinante que la arquitectura», «las imágenes con mala iluminación degradan fuertemente la predicción», etc.). Es un cierre que da mucho valor académico y es fácil de escribir porque ya lo viviste.</p>
+        </div>
+      </section>
+
+      <!-- ============ SECTION 6 — CAP 5 ============ -->
+      <section class="chapter" id="s6">
+        <span class="eyebrow"><span class="num">§6</span> Capítulo de la tesis</span>
+        <h2>Capítulo 5: Pruebas y Validación</h2>
+        <ul>
+          <li><strong>5.1 Pruebas funcionales y no funcionales</strong>
+            <ul>
+              <li>5.1.1 Pruebas de precisión de modelos de clasificación: reporta accuracy, recall, F1, AUC-ROC por clase, con matriz de confusión. Compara contra un baseline (ej. clasificador aleatorio o el modelo más simple de tus iteraciones), tal como el ejemplo comparó siempre contra «Buy &amp; Hold» o contra el azar de 50%.</li>
+              <li>5.1.2 Pruebas de estrés (carga concurrente de imágenes/usuarios)</li>
+              <li>5.1.3 Pruebas de seguridad (inyección, autenticación, manejo de datos sensibles/GDPR)</li>
+              <li>5.1.4 Pruebas de rendimiento (latencia de inferencia del modelo, tiempo de carga de la app)</li>
+            </ul>
+          </li>
+          <li><strong>5.2 Pruebas de usuario</strong>: aquí implementa lo que prometiste en el anteproyecto (formularios de usabilidad con usuarios reales). Reporta resultados cuantitativos (ej. escala SUS, o simplemente % de tareas completadas sin ayuda) — 5.2.1 Eficacia, 5.2.2 Eficiencia, 5.2.3 Precisión (percibida por el usuario vs. real).</li>
+          <li><strong>5.3 Análisis de resultados</strong>: conecta los resultados con la hipótesis/objetivos del Capítulo 1. Sé honesto si algo no funcionó como esperabas — el ejemplo dedica buena parte de sus resultados a explicar <strong>por qué</strong> ciertos enfoques no mejoraron el modelo (ej. «el sentimiento no mejora NVDA porque el mercado ya lo incorpora»); tu equivalente sería explicar por qué cierta clase se confunde más, o por qué cierta técnica de preprocesamiento no ayudó.</li>
+        </ul>
+      </section>
+
+      <!-- ============ SECTION 7 — CAP 6 ============ -->
+      <section class="chapter" id="s7">
+        <span class="eyebrow"><span class="num">§7</span> Capítulo opcional / recomendado</span>
+        <h2>Capítulo 6: Futuras mejoras</h2>
+        <p>Aunque tu plan de contenido actual no lo tiene como capítulo separado, la tesis de referencia demuestra que es un cierre muy valorado por los asesores. Puedes:</p>
+        <ul>
+          <li>Insertarlo como Capítulo 6 (pide autorización a tu asesora si implica modificar el plan de contenido aprobado), o</li>
+          <li>Insertarlo como sección final del Capítulo 5 («5.4 Futuras mejoras»).</li>
+        </ul>
+        <p>Contenido sugerido: ampliar el dataset, cubrir más tipos de piel/tonos (fairness/sesgo del modelo — tema muy relevante en dermatología por sesgos raciales documentados en la literatura), migrar a app móvil, agregar telemedicina real con dermatólogos, mejorar el motor de recomendación con NLP sobre ingredientes.</p>
+      </section>
+
+      <!-- ============ SECTION 8 — CIERRE ============ -->
+      <section class="chapter" id="s8">
+        <span class="eyebrow"><span class="num">§8</span> Cierre</span>
+        <h2>Cierre del documento</h2>
+        <ol>
+          <li><strong>Conclusiones</strong>: una por objetivo específico, más una conclusión general sobre si se cumplió el objetivo general. Tono breve y reflexivo (mira el estilo corto y personal de las Conclusiones del ejemplo — no es una repetición de resultados, es una reflexión).</li>
+          <li><strong>Recomendaciones</strong>: dirigidas al lector/usuario final (ej. «no sustituir la consulta médica»), y opcionalmente a futuros desarrolladores del proyecto.</li>
+          <li><strong>Referencias bibliográficas</strong>: formato APA/IEEE consistente (el ejemplo usa un estilo tipo IEEE numerado con corchetes en el anteproyecto y APA con autor-fecha en la tesis final — <strong>usa el mismo formato en todo el documento</strong>, verifica con tu asesora cuál exige la UTP para el documento final).</li>
+          <li><strong>Anexos</strong>: capturas adicionales, código relevante, formularios de consentimiento/GDPR usados en las pruebas de usuario, resultados extendidos de matrices de confusión por clase, etc.</li>
+        </ol>
+      </section>
+
+      <!-- ============ SECTION 9 — DIAGRAMAS ============ -->
+      <section class="chapter" id="s9">
+        <span class="eyebrow"><span class="num">§9</span> Referencia rápida</span>
+        <h2>Diagramas que deberías tener sí o sí</h2>
+        <p>Basado en lo que usó la tesis de referencia + lo que es obligatorio para un proyecto de software con interfaz + modelo de IA:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Diagrama</th><th>Dónde va</th><th>Equivalente en el ejemplo</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Diagrama de casos de uso (UML)</td><td>Cap. 3.1.2</td><td>No existe en el ejemplo (es específico de apps con usuario)</td></tr>
+              <tr><td>2</td><td>Diagrama de arquitectura general del sistema (frontend/backend/BD/modelo IA)</td><td>Cap. 3.2.2 y 4.7.1</td><td>Ilustración 2 «Diagrama del framework»</td></tr>
+              <tr><td>3</td><td>Diagrama de secuencia (flujo usuario → resultado)</td><td>Cap. 4.8</td><td>Ilustración 3 «Diagrama de secuencia del framework»</td></tr>
+              <tr><td>4</td><td>Diagrama entidad-relación de la base de datos</td><td>Cap. 4.4 y 4.7.2</td><td>(implícito, tú ya lo tienes en <code>doc_tesis.md</code>)</td></tr>
+              <tr><td>5</td><td>Diagrama de clases (backend, o de la librería/framework de detección facial usada)</td><td>Cap. 4.5</td><td>Ilustración 4 «Diagrama de clases de yfinance»</td></tr>
+              <tr><td>6</td><td>Diagrama de despliegue (Docker, contenedores, servicios)</td><td>Cap. 3.2.2</td><td>No existe en el ejemplo — agrégalo, tienes <code>docker-compose.yml</code> real</td></tr>
+              <tr><td>7</td><td>Diagrama de arquitectura de la red neuronal (capas por iteración, en tabla + diagrama)</td><td>Cap. 4.5.3</td><td>Tablas 2–5 y 9 (arquitecturas LSTM)</td></tr>
+              <tr><td>8</td><td>Curvas de entrenamiento (loss/accuracy por época, train vs. val)</td><td>Cap. 4.5.3</td><td>Ilustraciones 30, 38, 40 (curvas de pérdida)</td></tr>
+              <tr><td>9</td><td>Matriz de confusión y curva ROC-AUC</td><td>Cap. 4.5.3 y 5.1.1</td><td>(equivalente conceptual a las métricas RMSE/MAPE/DA del ejemplo)</td></tr>
+              <tr><td>10</td><td>Comparación de arquitecturas/modelos candidatos (barras)</td><td>Cap. 4.5.3</td><td>Ilustraciones 29, 34, 35</td></tr>
+              <tr><td>11</td><td>Wireframes/mockups o capturas de la interfaz real</td><td>Cap. 4.6, 4.7.3</td><td>No aplica al ejemplo (no tiene UI) — usa tus capturas reales del frontend</td></tr>
+              <tr><td>12</td><td>Diagrama de flujo del preprocesamiento de imagen (recorte, censura, regiones)</td><td>Cap. 4.5.2</td><td>Ilustración 13 «Feature engineering» (equivalente conceptual)</td></tr>
+              <tr><td>13</td><td>Cronograma/Gantt actualizado</td><td>Anexos o Cap. 3</td><td>Cronograma del anteproyecto (actualízalo con fechas reales)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ SECTION 10 — TABLAS ============ -->
+      <section class="chapter" id="s10">
+        <span class="eyebrow"><span class="num">§10</span> Referencia rápida</span>
+        <h2>Tablas que deberías tener sí o sí</h2>
+        <ul>
+          <li>Tabla de requisitos funcionales y no funcionales (Cap. 4.1–4.2)</li>
+          <li>Tabla de tecnologías/versiones exactas de software (Cap. 3.2.1) — parte de esto ya está en tu sección «Herramientas por utilizar» del anteproyecto</li>
+          <li>Tabla de hardware usado (ya la tienes en el anteproyecto — actualízala con el hardware final, especialmente si entrenaste en GPU/nube)</li>
+          <li>Tabla comparativa de modelos preentrenados candidatos (ResNet/EfficientNet/MobileNet/VGG) con criterios (tamaño, velocidad de inferencia, accuracy reportada en literatura)</li>
+          <li>Tabla de composición del dataset (clases, cantidad de imágenes por clase, train/val/test split)</li>
+          <li>Tabla de arquitectura por cada iteración del modelo (igual que Tablas 2–5 y 9 del ejemplo)</li>
+          <li>Tabla de métricas finales por clase (precision, recall, F1, soporte)</li>
+          <li>Tabla de resultados de pruebas de usabilidad</li>
+        </ul>
+      </section>
+
+      <!-- ============ SECTION 11 — ORDEN ============ -->
+      <section class="chapter" id="s11">
+        <span class="eyebrow"><span class="num">§11</span> Planificación</span>
+        <h2>Orden sugerido de redacción <small style="font-family:var(--sans); font-weight:400; color:var(--ink-faint); font-size:.7em;">(no es el orden final del documento)</small></h2>
+        <p>Escribir de forma lineal (Cap. 1 → 5) suele ser ineficiente porque el Capítulo 4 es el que más cambia mientras se sigue desarrollando el proyecto. Sugerencia de orden real de trabajo:</p>
+        <ol>
+          <li><strong>Ahora mismo</strong>: mientras programas, ve documentando cada decisión técnica en un archivo de notas (igual como quedó registrado en <code>docs/doc_tesis.md</code> para la base de datos). Cuando termines el modelo y el sistema, ya tendrás el 60% del Capítulo 4 escrito en borrador.</li>
+          <li><strong>Capítulo 3</strong> (Metodología y Arquitectura): escríbelo tan pronto tengas la arquitectura técnica decidida (stack, BD, framework de IA) — no necesitas esperar a terminar el desarrollo.</li>
+          <li><strong>Capítulo 4</strong> (Desarrollo): a medida que cierres cada módulo (BD → backend de preprocesamiento → modelo → frontend → integración), redacta esa sección de inmediato, con capturas y tablas frescas. Cierra con «Hallazgos transversales».</li>
+          <li><strong>Capítulo 5</strong> (Pruebas y Validación): solo se puede escribir con el sistema funcionando end-to-end. Es lo último del cuerpo técnico.</li>
+          <li><strong>Capítulo 2</strong> (Marco Teórico): puedes escribirlo en paralelo desde ya, revisando y ampliando tus referencias del anteproyecto — no depende del avance del desarrollo.</li>
+          <li><strong>Capítulo 1</strong> (Planteamiento): revisa y «madura» el que ya tienes del anteproyecto, una vez sepas los resultados reales (a veces el problema se termina de entender mejor después de resolverlo).</li>
+          <li><strong>Futuras mejoras</strong>: se escribe casi solo si llevaste una lista de «cosas que no hice pero pensé» durante el desarrollo.</li>
+          <li><strong>Conclusiones y Recomendaciones</strong>: al final, una vez tengas resultados de las pruebas.</li>
+          <li><strong>Páginas preliminares</strong> (Resumen, Dedicatoria, Agradecimientos, Índices, Introducción general): literalmente lo último, cuando ya sabes la paginación final y el tono general de lo que escribiste.</li>
+          <li><strong>Revisión de referencias y anexos</strong>: al cierre, verificando formato consistente (APA o IEEE, no mezclar) y que cada figura/tabla tomada de otra fuente tenga su cita (ver <a class="xref" href="#s12">«Advertencias del asesor»</a>).</li>
+        </ol>
+      </section>
+
+      <!-- ============ SECTION 12 — ADVERTENCIAS ============ -->
+      <section class="chapter" id="s12">
+        <span class="eyebrow"><span class="num">§12</span> Referencia rápida</span>
+        <h2>Advertencias/lecciones tomadas directamente de los errores marcados por el asesor en el ejemplo</h2>
+        <p>En la tesis de referencia, el asesor dejó comentarios señalando fallas puntuales. Evítalas desde el principio:</p>
+        <ol>
+          <li><strong>Toda figura que no sea tuya necesita cita explícita de fuente</strong> (el asesor marcó una figura de un libro sin referencia — «esta figura de dónde salió, parece un libro, hay que poner la referencia»). Si usas un diagrama, ícono o imagen de un modelo preentrenado, arquitectura de red conocida (ej. diagrama de ResNet), o captura de otra app (screenshots de competidores para «antecedentes»), <strong>cita la fuente debajo de la imagen igual que citas texto</strong>.</li>
+          <li><strong>Toda tabla mencionada en el texto debe estar realmente insertada</strong> (el asesor marcó «Tabla 1… esta tabla no se refleja en el texto, debes insertarlo» — es decir, se mencionó una tabla que no aparecía). Verifica que cada <code>Tabla X</code> / <code>Ilustración X</code> que citas en el texto exista físicamente cerca de esa mención.</li>
+          <li><strong>No dejes títulos de sección sin contenido</strong> (el asesor marcó un encabezado vacío con solo «sección»). Cada subtítulo debe tener al menos un párrafo introductorio antes de pasar al siguiente subnivel.</li>
+          <li><strong>Numeración de ilustraciones y tablas consecutiva y sin saltos</strong>, actualizando el índice de figuras/tablas al final, no a medida que escribes (es más fácil generar el índice cuando el documento ya está cerrado).</li>
+          <li><strong>Consistencia en cursivas de términos en inglés</strong> (el ejemplo usa cursiva consistente para <em>software</em>, <em>dataset</em>, <em>feature engineering</em>, <em>backend</em>, <em>frontend</em>, <em>deep learning</em>, etc.). Decide desde el inicio una lista de anglicismos que irán en cursiva y aplícala en todo el documento.</li>
+        </ol>
+      </section>
+
+      <!-- ============ SECTION 13 — CHECKLIST ============ -->
+      <section class="chapter" id="s13">
+        <span class="eyebrow"><span class="num">§13</span> Referencia rápida</span>
+        <h2>Checklist final antes de entregar</h2>
+        <ul class="checklist">
+          <li><span class="box"></span><span>Todas las figuras citadas en el texto existen y están numeradas correctamente.</span></li>
+          <li><span class="box"></span><span>Todas las tablas citadas en el texto existen y están numeradas correctamente.</span></li>
+          <li><span class="box"></span><span>Cada objetivo específico del Cap. 1 tiene una sección correspondiente en el Cap. 4 que demuestra su cumplimiento.</span></li>
+          <li><span class="box"></span><span>El Capítulo 5 contiene métricas cuantitativas reales (no solo capturas de pantalla).</span></li>
+          <li><span class="box"></span><span>Las conclusiones responden directamente a los objetivos, no repiten el resumen.</span></li>
+          <li><span class="box"></span><span>Las referencias están en un solo formato (APA o IEEE) en todo el documento.</span></li>
+          <li><span class="box"></span><span>Se incluye al menos una recomendación ética clara (no reemplazo del criterio médico).</span></li>
+          <li><span class="box"></span><span>El índice general, de figuras y de tablas coincide exactamente con la numeración de página final.</span></li>
+          <li><span class="box"></span><span>Todo el código/arquitectura descrito en el Cap. 4 coincide con lo implementado realmente (revisa contra <code>docs/doc_tesis.md</code>, <code>README.md</code> y <code>DOCUMENTACION_TECNICA.md</code> del repo para no contradecirte).</span></li>
+        </ul>
+      </section>
+
+      <!-- ============ SECTION 14 — PÁGINAS ============ -->
+      <section class="chapter" id="s14">
+        <span class="eyebrow"><span class="num">§14</span> Planificación</span>
+        <h2>Distribución sugerida de páginas por capítulo <small style="font-family:var(--sans); font-weight:400; color:var(--ink-faint); font-size:.7em;">(para ~100 páginas de contenido)</small></h2>
+        <p>«Páginas de contenido» = solo el cuerpo numerado en arábigos (Capítulos 1 al 5/6). <strong>No</strong> incluye páginas preliminares (portada, resumen, dedicatoria, índices — numeradas en romanos), ni Referencias ni Anexos, que se cuentan aparte.</p>
+        <p>Como referencia real: en la tesis de ejemplo, de la página 2 a la 103 (~102 páginas de cuerpo), la distribución fue Cap. 1 ≈20 pág., Cap. 2 ≈8 pág., Cap. 3 ≈5 pág., Cap. 4 ≈67 pág. (66% del total), Cap. 5 ≈2 pág. El patrón se repite en la mayoría de tesis de Ingeniería de Software: <strong>el capítulo de Desarrollo domina el documento</strong>, todo lo demás es proporcionalmente corto.</p>
+        <p>Aplicando esa misma lógica a tu estructura de 5 capítulos (más un Cap. 6 opcional de Futuras mejoras) sobre 100 páginas:</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Capítulo</th><th class="num">Páginas sugeridas</th><th class="num">% del total</th><th>Justificación</th></tr></thead>
+            <tbody>
+              <tr><td>Cap. 1 — Planteamiento del problema</td><td class="num">8–10</td><td class="num">~9%</td><td>Problemática, propuesta, objetivos, alcance e impacto social no requieren mucha extensión; es contextual, no técnico.</td></tr>
+              <tr><td>Cap. 2 — Marco Teórico</td><td class="num">12–15</td><td class="num">~13%</td><td>Necesitas espacio para explicar CNN, transfer learning, detección facial, métricas y ética/anonimización con nivel de detalle técnico, más antecedentes de 4–6 trabajos relacionados.</td></tr>
+              <tr><td>Cap. 3 — Metodología de Trabajo</td><td class="num">8–10</td><td class="num">~9%</td><td>Metodología de gestión, casos de uso, evaluación de tecnologías y arquitectura general — es descriptivo, no necesita extenderse tanto como el Cap. 4.</td></tr>
+              <tr><td>Cap. 4 — Desarrollo del Proyecto</td><td class="num">48–55</td><td class="num">~50%</td><td>Es el núcleo del documento: dataset, preprocesamiento, iteraciones del modelo (cada una con tabla + figura), base de datos, backend, frontend, integración, hallazgos transversales.</td></tr>
+              <tr><td>Cap. 5 — Pruebas y Validación</td><td class="num">12–15</td><td class="num">~13%</td><td>Métricas finales, pruebas funcionales/no funcionales, pruebas de usuario con datos reales y análisis de resultados.</td></tr>
+              <tr><td>Cap. 6 — Futuras mejoras (opcional, o como 5.4)</td><td class="num">2–4</td><td class="num">~3%</td><td>Sección de cierre corta, igual que en el ejemplo (apenas 2 páginas).</td></tr>
+              <tr><td><strong>Total</strong></td><td class="num"><strong>~100</strong></td><td class="num"><strong>100%</strong></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Desglose interno sugerido del Capítulo 4 <small style="font-family:var(--sans); font-weight:400; color:var(--ink-faint); font-size:.75em;">(por ser el más grande, es el que más fácil se desborda o se queda corto)</small></h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Sección</th><th class="num">Páginas aprox.</th></tr></thead>
+            <tbody>
+              <tr><td>4.1–4.2 Requisitos funcionales/no funcionales</td><td class="num">3–4</td></tr>
+              <tr><td>4.3–4.4 Desarrollo, construcción y base de datos</td><td class="num">6–8</td></tr>
+              <tr><td>4.5 Backend (recolección, preprocesamiento, iteraciones del modelo, categorización)</td><td class="num">20–24</td></tr>
+              <tr><td>4.6 Frontend (interfaz y generación de reporte)</td><td class="num">5–6</td></tr>
+              <tr><td>4.7 Diseño del proyecto (estructura, BD, interfaz web)</td><td class="num">6–8</td></tr>
+              <tr><td>4.8 Integración backend/frontend + hallazgos transversales</td><td class="num">4–5</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Cómo usar estos números</h3>
+        <ul>
+          <li>Son <strong>rangos orientativos</strong>, no un límite rígido — sirven para detectar a tiempo si un capítulo se está quedando muy corto (señal de que falta profundidad) o demasiado largo (señal de que hay contenido que debería moverse a Anexos, como capturas extensas de código o tablas de resultados muy detalladas).</li>
+          <li>Si tu asesora exige un mínimo distinto de páginas totales, escala las proporciones (%) en lugar de los números fijos.</li>
+          <li>El Cap. 4 es el único que vale la pena revisar sección por sección con el desglose de arriba, porque ahí es donde documentar cada iteración del modelo (ver <a class="xref" href="#s5">«Capítulo 4: Desarrollo del Proyecto»</a>) puede crecer sin control si no se resume con tablas comparativas en vez de repetir gráficas casi idénticas.</li>
+        </ul>
+      </section>
+
+      <!-- ============ SECTION 15 — RESUMEN DIAGRAMAS ============ -->
+      <section class="chapter" id="s15">
+        <span class="eyebrow"><span class="num">§15</span> Referencia rápida</span>
+        <h2>Resumen de diagramas necesarios</h2>
+        <p>Tabla de referencia rápida (ya detallada en <a class="xref" href="#s9">«Diagramas que deberías tener sí o sí»</a>) con todos los diagramas obligatorios y dónde ubicarlos:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Diagrama</th><th>Dónde va</th><th>Equivalente en el ejemplo</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Diagrama de casos de uso (UML)</td><td>Cap. 3.1.2</td><td>No existe en el ejemplo (es específico de apps con usuario)</td></tr>
+              <tr><td>2</td><td>Diagrama de arquitectura general del sistema (frontend/backend/BD/modelo IA)</td><td>Cap. 3.2.2 y 4.7.1</td><td>Ilustración 2 «Diagrama del framework»</td></tr>
+              <tr><td>3</td><td>Diagrama de secuencia (flujo usuario → resultado)</td><td>Cap. 4.8</td><td>Ilustración 3 «Diagrama de secuencia del framework»</td></tr>
+              <tr><td>4</td><td>Diagrama entidad-relación de la base de datos</td><td>Cap. 4.4 y 4.7.2</td><td>(implícito, tú ya lo tienes en <code>doc_tesis.md</code>)</td></tr>
+              <tr><td>5</td><td>Diagrama de clases (backend, o de la librería/framework de detección facial usada)</td><td>Cap. 4.5</td><td>Ilustración 4 «Diagrama de clases de yfinance»</td></tr>
+              <tr><td>6</td><td>Diagrama de despliegue (Docker, contenedores, servicios)</td><td>Cap. 3.2.2</td><td>No existe en el ejemplo — agrégalo, tienes <code>docker-compose.yml</code> real</td></tr>
+              <tr><td>7</td><td>Diagrama de arquitectura de la red neuronal (capas por iteración, en tabla + diagrama)</td><td>Cap. 4.5.3</td><td>Tablas 2–5 y 9 (arquitecturas LSTM)</td></tr>
+              <tr><td>8</td><td>Curvas de entrenamiento (loss/accuracy por época, train vs. val)</td><td>Cap. 4.5.3</td><td>Ilustraciones 30, 38, 40 (curvas de pérdida)</td></tr>
+              <tr><td>9</td><td>Matriz de confusión y curva ROC-AUC</td><td>Cap. 4.5.3 y 5.1.1</td><td>(equivalente conceptual a las métricas RMSE/MAPE/DA del ejemplo)</td></tr>
+              <tr><td>10</td><td>Comparación de arquitecturas/modelos candidatos (barras)</td><td>Cap. 4.5.3</td><td>Ilustraciones 29, 34, 35</td></tr>
+              <tr><td>11</td><td>Wireframes/mockups o capturas de la interfaz real</td><td>Cap. 4.6, 4.7.3</td><td>No aplica al ejemplo (no tiene UI) — usa tus capturas reales del frontend</td></tr>
+              <tr><td>12</td><td>Diagrama de flujo del preprocesamiento de imagen (recorte, censura, regiones)</td><td>Cap. 4.5.2</td><td>Ilustración 13 «Feature engineering» (equivalente conceptual)</td></tr>
+              <tr><td>13</td><td>Cronograma/Gantt actualizado</td><td>Anexos o Cap. 3</td><td>Cronograma del anteproyecto (actualízalo con fechas reales)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="doc-footer">
+        Generado a partir de <code>docs/guia-redaccion.md</code> · Proyecto SkinAI — Tesis de Ingeniería de Software, UTP.
+      </footer>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  (function(){
+    var root = document.documentElement;
+    var themeBtn = document.getElementById('themeToggle');
+    var stored = null;
+    try { stored = localStorage.getItem('skinai-guide-theme'); } catch(e){}
+    if (stored === 'light' || stored === 'dark') root.setAttribute('data-theme', stored);
+
+    themeBtn.addEventListener('click', function(){
+      var current = root.getAttribute('data-theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var effectiveDark = current === 'dark' || (!current && prefersDark);
+      var next = effectiveDark ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('skinai-guide-theme', next); } catch(e){}
+    });
+
+    document.getElementById('printBtn').addEventListener('click', function(){
+      window.print();
+    });
+
+    var toggle = document.getElementById('tocToggle');
+    var sidebar = document.getElementById('sidebar');
+    var backdrop = document.getElementById('backdrop');
+    function closeSidebar(){
+      sidebar.classList.remove('is-open');
+      backdrop.classList.remove('is-open');
+    }
+    toggle.addEventListener('click', function(){
+      sidebar.classList.toggle('is-open');
+      backdrop.classList.toggle('is-open');
+    });
+    backdrop.addEventListener('click', closeSidebar);
+    sidebar.addEventListener('click', function(e){
+      if (e.target.closest('a')) closeSidebar();
+    });
+
+    var links = Array.prototype.slice.call(document.querySelectorAll('.side-link'));
+    var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    if ('IntersectionObserver' in window && sections.length){
+      var byId = {};
+      links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+      var observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          var link = byId[entry.target.id];
+          if (!link) return;
+          if (entry.isIntersecting) {
+            links.forEach(function(l){ l.classList.remove('is-active'); });
+            link.classList.add('is-active');
+          }
+        });
+      }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+      sections.forEach(function(s){ observer.observe(s); });
+    }
+  })();
+</script>
