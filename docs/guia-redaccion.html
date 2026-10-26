@@ -230,6 +230,27 @@
   tbody tr td strong{color:var(--ink);}
   .table-wrap table td:nth-child(1){white-space:nowrap;}
 
+  /* ---------- use-case diagram ---------- */
+  .uc-diagram-wrap{
+    overflow-x:auto; margin:1.3rem 0 1.6rem;
+    border:1px solid var(--line-strong); border-radius:4px;
+    background:var(--paper-raised); padding:.6rem;
+  }
+  .uc-diagram-wrap svg{display:block; min-width:640px; width:100%; height:auto;}
+  .uc-caption{
+    font-family:var(--mono); font-size:.72rem; letter-spacing:.03em;
+    color:var(--ink-faint); margin:-.6rem 0 1.6rem;
+  }
+  .draft-marker{
+    display:inline-flex; align-items:baseline; gap:.5rem;
+    font-family:var(--mono); font-size:.72rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--rose); margin-bottom:.5rem;
+  }
+  .draft-marker .num{
+    background:var(--rose-soft); color:var(--rose);
+    padding:.15em .5em; border-radius:2px; font-weight:700;
+  }
+
   /* ---------- checklist ---------- */
   .checklist{list-style:none; padding:0; margin:1rem 0 1.6rem; max-width:46em;}
   .checklist li{
@@ -311,6 +332,7 @@
         <li><a class="side-link" href="#s2"><span class="n">2</span>Cap. 1 — Planteamiento</a></li>
         <li><a class="side-link" href="#s3"><span class="n">3</span>Cap. 2 — Marco teórico</a></li>
         <li><a class="side-link" href="#s4"><span class="n">4</span>Cap. 3 — Metodología</a></li>
+        <li><a class="side-link" href="#s4b"><span class="n">✍</span>Cap. 3 — Borrador 3.1</a></li>
         <li><a class="side-link" href="#s5"><span class="n">5</span>Cap. 4 — Desarrollo</a></li>
         <li><a class="side-link" href="#s6"><span class="n">6</span>Cap. 5 — Pruebas y validación</a></li>
         <li><a class="side-link" href="#s7"><span class="n">7</span>Cap. 6 — Futuras mejoras</a></li>
@@ -481,6 +503,189 @@
           <li><strong>3.2.1 Evaluación de herramientas y tecnologías disponibles</strong>: aquí replica el estilo de la sección 3.3 de la tesis de referencia («Librerías y entornos de ejecución») — una lista con versión exacta de cada tecnología. Tu README y <code>docker-compose.yml</code> ya tienen esta info; solo hay que formalizarla en una tabla. Justifica cada elección (por qué PostgreSQL y no MySQL, por qué FastAPI/Flask/Django, por qué PyTorch o TensorFlow, por qué contenedores Docker).</li>
           <li><strong>3.2.2 Propuesta de arquitectura de software</strong>: aquí van tus <strong>diagramas de arquitectura</strong> (ver <a class="xref" href="#s9">«Diagramas que deberías tener sí o sí»</a>). Este es el equivalente a los capítulos 3.1/3.2 de la tesis de referencia sobre arquitectura Turing/Blackwell (hardware GPU) — en tu caso, describe si entrenas localmente con GPU o en la nube, y qué llevó a esa decisión (ej. limitaciones de cómputo, Google Colab, etc.), igual de honesto que el ejemplo, que documentó hasta los problemas de hardware (tarjeta de video dañada, migración de TensorFlow a PyTorch por incompatibilidad CUDA). <strong>Si tuviste contratiempos similares (falta de GPU, cambios de librería, migración de framework), documéntalos — le da rigor y honestidad académica al capítulo.</strong></li>
         </ul>
+      </section>
+
+      <!-- ============ SECTION 4b — BORRADOR CAP 3.1 ============ -->
+      <section class="chapter" id="s4b">
+        <span class="draft-marker"><span class="num">Borrador</span> Redacción real, no guía</span>
+        <h2>Capítulo 3: Metodología de Trabajo — 3.1 Concepción del proyecto</h2>
+
+        <div class="callout rose">
+          <span class="tag">Fuentes usadas para este borrador</span>
+          <p>Se redactó a partir de (1) el apartado «Metodología y técnica de investigación» del <strong>Anteproyecto</strong> aprobado (González, Adriana y Romero, Martín; asesora Dra. Gema Castillo-Sánchez, UTP, 2025), (2) el stack técnico verificable en <code>docker-compose.yml</code>, <code>backend/Dockerfile</code> y <code>frontend/package.json</code>, y (3) las rutas de la API (<code>backend/app/api/*.py</code>) para el inventario real de casos de uso. No se inventaron fechas, métricas ni hallazgos que no estén respaldados por el repositorio.</p>
+          <p><strong>Antes de pegar esto en el documento final:</strong> reemplaza los hitos de 3.1.1 por fechas reales si tu asesora las exige; confirma si el diagrama de casos de uso de 3.1.2 debe rehacerse en una herramienta UML formal (draw.io, StarUML, Lucidchart) para exportarlo como imagen; y revisa que la descripción coincida con el estado del sistema al momento de entrega (algunos endpoints pueden haber cambiado).</p>
+        </div>
+
+        <h3>3.1.1 Metodología de trabajo</h3>
+        <p>El anteproyecto aprobado planteó, en su apartado de «Metodología y técnica de investigación», dos grandes etapas para el desarrollo del sistema: una etapa de levantamiento del marco teórico y de los requerimientos funcionales junto a los usuarios finales, y una etapa de desarrollo de software propiamente dicha, que comprendía la obtención de imágenes, la investigación y comparación de modelos preentrenados, la implementación de <em>backend</em> y <em>frontend</em>, y finalmente las pruebas de validación del sistema. Esta sección describe cómo esa propuesta se tradujo, en la práctica, en un flujo de trabajo concreto para el equipo de dos integrantes (González, Adriana y Romero, Martín), bajo la supervisión de la Dra. Gema Castillo-Sánchez.</p>
+
+        <p>Dado el tamaño reducido del equipo de desarrollo y la naturaleza exploratoria propia de un proyecto que combina ingeniería de software con investigación aplicada en aprendizaje profundo — donde los requisitos técnicos del módulo de clasificación de imágenes se afinan a medida que se comparan arquitecturas de modelos —, se optó por un enfoque de <strong>desarrollo iterativo-incremental organizado por dominio funcional</strong>, en lugar de adoptar el ceremonial completo de un marco ágil formal como Scrum (roles de <em>Product Owner</em>/<em>Scrum Master</em>, <em>sprints</em> de duración fija, reuniones diarias). Esta decisión se ajusta al tamaño del equipo y evita la sobrecarga de proceso que un marco ágil formal impondría sobre un proyecto de solo dos desarrolladores.</p>
+
+        <p>El flujo de trabajo se organizó en los siguientes hitos incrementales, cada uno cerrado y verificado en ejecución antes de iniciar el siguiente:</p>
+        <ol>
+          <li><strong>Diseño e implementación del esquema de base de datos</strong> (PostgreSQL, SQLAlchemy, Alembic) — módulo base del cual dependen todos los demás.</li>
+          <li><strong>Backend de autenticación y gestión de usuarios</strong> (FastAPI, JWT, hashing de contraseñas con Argon2), incluyendo los mecanismos de privacidad exigidos por el enfoque de protección de datos del proyecto (eliminación de cuenta en cascada, censura de imágenes).</li>
+          <li><strong><em>Pipeline</em> de preprocesamiento y análisis de imagen</strong> (detección facial con MediaPipe, censura de regiones sensibles, inferencia del modelo de clasificación con PyTorch), ejecutado de forma asíncrona mediante una cola de tareas (Celery + Redis) para no bloquear las peticiones HTTP del backend mientras el análisis se procesa.</li>
+          <li><strong>Motor de recomendación</strong> de rutinas de cuidado y productos, apoyado en el catálogo de ingredientes cosméticos (nomenclatura INCI).</li>
+          <li><strong>Frontend</strong> (Vite + Tailwind CSS) y su integración con la API REST del backend.</li>
+          <li><strong>Integración de extremo a extremo</strong> de todos los módulos anteriores dentro de un entorno orquestado con Docker Compose, y pruebas del sistema completo.</li>
+        </ol>
+
+        <p>Cada hito se gestionó mediante control de versiones con Git y un repositorio remoto compartido en GitHub, que funcionó como el principal mecanismo de coordinación y trazabilidad entre los dos desarrolladores: cada cambio significativo quedó registrado como un <em>commit</em> independiente, lo que permite identificar en qué momento se incorporó cada decisión técnica y revertirla de ser necesario. A diferencia de un tablero Kanban formal con columnas y tarjetas, la priorización del siguiente módulo a abordar se acordó de manera conjunta entre los integrantes al cierre de cada hito, en función de las dependencias técnicas entre componentes — por ejemplo, el motor de recomendación no podía implementarse hasta que el modelo de clasificación devolviera resultados estructurados y consistentes.</p>
+
+        <p>En el plano técnico, el proyecto siguió además un enfoque ligero de <em>MLOps</em> (<em>Machine Learning Operations</em>), replicando de forma simplificada el ciclo <strong>dataset → entrenamiento → validación → despliegue</strong> descrito en el anteproyecto: los datos usados para entrenar y evaluar el modelo de clasificación se mantuvieron versionados de forma independiente al código de la aplicación; cada iteración del modelo se documentó junto con sus métricas de evaluación correspondientes (ver Capítulo 4); y el despliegue del modelo final se empaquetó dentro del contenedor <code>ai_worker</code>, garantizando que el entorno de ejecución utilizado durante las pruebas fuese el mismo que finalmente sirve las predicciones en producción.</p>
+
+        <h3>3.1.2 Análisis del proyecto a desarrollar</h3>
+        <p>Para delimitar el alcance funcional del sistema y servir de base al diseño de la arquitectura de software (sección 3.2), se identificaron los actores y los casos de uso principales del sistema SkinAI. Se reconocen dos actores humanos/de sistema:</p>
+        <ul>
+          <li><strong>Usuario</strong>: actor principal. Antes de autenticarse puede registrarse o recuperar su contraseña; una vez autenticado puede gestionar su perfil dermatológico, solicitar análisis de imágenes, consultar su historial, gestionar su rutina de cuidado y sus datos personales.</li>
+          <li><strong>Worker de procesamiento asíncrono</strong>: actor de sistema que representa al proceso Celery (contenedor <code>ai_worker</code>) que ejecuta la detección facial, la censura de regiones sensibles y la inferencia del modelo de clasificación sin intervención directa del usuario, comunicándose con el backend a través de la cola de tareas en Redis.</li>
+        </ul>
+
+        <p>La Ilustración X resume gráficamente estas relaciones:</p>
+
+        <div class="uc-diagram-wrap">
+          <svg viewBox="0 0 920 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de casos de uso del sistema SkinAI">
+            <!-- system boundary -->
+            <rect x="140" y="15" width="700" height="560" rx="10" style="fill:none;stroke:var(--line-strong);stroke-width:1.5;"/>
+            <text x="490" y="38" text-anchor="middle" style="font:700 13px var(--sans);fill:var(--ink-faint);letter-spacing:.04em;">SISTEMA SKINAI</text>
+
+            <!-- actor: Usuario -->
+            <g style="stroke:var(--ink-soft);stroke-width:1.6;fill:none;">
+              <circle cx="55" cy="255" r="14" style="fill:var(--paper-raised);"/>
+              <line x1="55" y1="269" x2="55" y2="322"/>
+              <line x1="27" y1="288" x2="83" y2="288"/>
+              <line x1="55" y1="322" x2="32" y2="365"/>
+              <line x1="55" y1="322" x2="78" y2="365"/>
+            </g>
+            <text x="55" y="385" text-anchor="middle" style="font:600 12px var(--sans);fill:var(--ink);">Usuario</text>
+
+            <!-- actor: Worker -->
+            <g style="stroke:var(--ink-soft);stroke-width:1.6;fill:none;">
+              <circle cx="880" cy="215" r="14" style="fill:var(--paper-raised);"/>
+              <line x1="880" y1="229" x2="880" y2="282"/>
+              <line x1="852" y1="248" x2="908" y2="248"/>
+              <line x1="880" y1="282" x2="857" y2="325"/>
+              <line x1="880" y1="282" x2="903" y2="325"/>
+            </g>
+            <text x="880" y="345" text-anchor="middle" style="font:600 12px var(--sans);">
+              <tspan x="880" dy="0" style="fill:var(--ink);">Worker de</tspan>
+              <tspan x="880" dy="14" style="fill:var(--ink);">procesamiento IA</tspan>
+            </text>
+
+            <!-- left column use cases (Usuario) -->
+            <g style="fill:var(--paper-raised);stroke:var(--accent);stroke-width:1.4;">
+              <ellipse cx="290" cy="75" rx="102" ry="28"/>
+              <ellipse cx="290" cy="150" rx="102" ry="32"/>
+              <ellipse cx="290" cy="225" rx="102" ry="28"/>
+              <ellipse cx="290" cy="300" rx="102" ry="28"/>
+              <ellipse cx="290" cy="375" rx="102" ry="28"/>
+              <ellipse cx="290" cy="450" rx="102" ry="32"/>
+            </g>
+            <text x="290" y="79" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">Registrarse / Iniciar sesión</text>
+            <text x="290" y="146" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">
+              <tspan x="290" dy="0">Gestionar cuenta y datos</tspan>
+              <tspan x="290" dy="14">personales (GDPR)</tspan>
+            </text>
+            <text x="290" y="229" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">Subir imagen para análisis</text>
+            <text x="290" y="304" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">Ver historial de análisis</text>
+            <text x="290" y="379" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">Gestionar rutina de cuidado</text>
+            <text x="290" y="446" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">
+              <tspan x="290" dy="0">Consultar catálogo</tspan>
+              <tspan x="290" dy="14">de productos</tspan>
+            </text>
+
+            <!-- core pipeline use cases -->
+            <g style="fill:var(--accent-soft);stroke:var(--accent-ink);stroke-width:1.6;">
+              <ellipse cx="540" cy="225" rx="116" ry="38"/>
+            </g>
+            <text x="540" y="230" text-anchor="middle" style="font:700 12.5px var(--sans);fill:var(--accent-ink);">Analizar imagen</text>
+
+            <g style="fill:var(--paper-raised);stroke:var(--accent);stroke-width:1.4;">
+              <ellipse cx="720" cy="135" rx="95" ry="32"/>
+              <ellipse cx="720" cy="315" rx="95" ry="32"/>
+            </g>
+            <text x="720" y="131" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">
+              <tspan x="720" dy="0">Detectar y censurar</tspan>
+              <tspan x="720" dy="14">rostro</tspan>
+            </text>
+            <text x="720" y="311" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">
+              <tspan x="720" dy="0">Clasificar afección</tspan>
+              <tspan x="720" dy="14">cutánea</tspan>
+            </text>
+
+            <g style="fill:var(--rose-soft);stroke:var(--rose);stroke-width:1.4;">
+              <ellipse cx="540" cy="460" rx="128" ry="36"/>
+            </g>
+            <text x="540" y="456" text-anchor="middle" style="font:500 11.5px var(--sans);fill:var(--ink);">
+              <tspan x="540" dy="0">Generar recomendación</tspan>
+              <tspan x="540" dy="14">de rutina y productos</tspan>
+            </text>
+
+            <!-- associations: actor Usuario -> left UCs -->
+            <g style="stroke:var(--ink-faint);stroke-width:1.1;">
+              <line x1="83" y1="270" x2="190" y2="90"/>
+              <line x1="83" y1="278" x2="190" y2="155"/>
+              <line x1="83" y1="285" x2="190" y2="225"/>
+              <line x1="83" y1="292" x2="190" y2="298"/>
+              <line x1="83" y1="300" x2="190" y2="370"/>
+              <line x1="83" y1="308" x2="190" y2="440"/>
+            </g>
+
+            <!-- Subir imagen -> Analizar imagen -->
+            <line x1="392" y1="225" x2="424" y2="225" style="stroke:var(--ink-soft);stroke-width:1.3;"/>
+
+            <!-- Analizar imagen -> include -> detectar/clasificar -->
+            <line x1="612" y1="190" x2="655" y2="150" style="stroke:var(--accent-ink);stroke-width:1.2;stroke-dasharray:5 4;"/>
+            <text x="640" y="165" text-anchor="middle" style="font:italic 10.5px var(--sans);fill:var(--accent-ink);">«include»</text>
+            <line x1="618" y1="255" x2="655" y2="295" style="stroke:var(--accent-ink);stroke-width:1.2;stroke-dasharray:5 4;"/>
+            <text x="645" y="285" text-anchor="middle" style="font:italic 10.5px var(--sans);fill:var(--accent-ink);">«include»</text>
+
+            <!-- Worker -> detectar/clasificar -->
+            <line x1="852" y1="230" x2="815" y2="150" style="stroke:var(--ink-faint);stroke-width:1.1;"/>
+            <line x1="852" y1="260" x2="815" y2="300" style="stroke:var(--ink-faint);stroke-width:1.1;"/>
+
+            <!-- Generar recomendación -> extend -> Analizar imagen -->
+            <line x1="540" y1="424" x2="540" y2="263" style="stroke:var(--rose);stroke-width:1.2;stroke-dasharray:5 4;"/>
+            <text x="583" y="345" text-anchor="middle" style="font:italic 10.5px var(--sans);fill:var(--rose);">«extend»</text>
+
+            <!-- Generar recomendación -> Gestionar rutina -->
+            <line x1="414" y1="450" x2="392" y2="382" style="stroke:var(--ink-faint);stroke-width:1.1;"/>
+          </svg>
+        </div>
+        <p class="uc-caption">Ilustración X: diagrama de casos de uso del sistema SkinAI (elaboración propia).</p>
+
+        <p>El caso de uso <strong>«Analizar imagen»</strong> constituye el núcleo funcional del sistema: incluye (relación <code>«include»</code>) los casos de uso «Detectar y censurar rostro» y «Clasificar afección cutánea», ambos ejecutados por el actor Worker de procesamiento asíncrono sin intervención del usuario. El caso de uso «Generar recomendación de rutina y productos» extiende (relación <code>«extend»</code>) a «Analizar imagen»: solo se activa cuando el análisis concluye con una clasificación distinta de «piel sin afecciones detectadas», y su resultado retroalimenta la gestión de la rutina de cuidado del usuario.</p>
+
+        <p>La Tabla X detalla el inventario completo de casos de uso identificados, derivado directamente de los módulos ya implementados en el backend (<code>backend/app/api/</code>):</p>
+
+        <div class="table-wrap">
+          <table>
+            <caption>Tabla X — Casos de uso del sistema SkinAI</caption>
+            <thead><tr><th>ID</th><th>Caso de uso</th><th>Actor(es)</th><th>Descripción</th></tr></thead>
+            <tbody>
+              <tr><td>CU-01</td><td>Registrarse</td><td>Usuario</td><td>Crear una cuenta nueva aceptando el consentimiento de tratamiento de datos (GDPR).</td></tr>
+              <tr><td>CU-02</td><td>Iniciar sesión</td><td>Usuario</td><td>Autenticarse con correo y contraseña para obtener un token de acceso (JWT).</td></tr>
+              <tr><td>CU-03</td><td>Recuperar / restablecer contraseña</td><td>Usuario</td><td>Solicitar y completar el restablecimiento de contraseña ante su olvido.</td></tr>
+              <tr><td>CU-04</td><td>Cerrar sesión</td><td>Usuario</td><td>Invalidar la sesión activa.</td></tr>
+              <tr><td>CU-05</td><td>Actualizar perfil dermatológico</td><td>Usuario</td><td>Editar edad, tipo de piel, fototipo Fitzpatrick, condiciones y alergias conocidas.</td></tr>
+              <tr><td>CU-06</td><td>Cambiar contraseña / eliminar cuenta</td><td>Usuario</td><td>Gestionar credenciales y ejercer el derecho al olvido (eliminación en cascada de los datos asociados).</td></tr>
+              <tr><td>CU-07</td><td>Subir imagen para análisis</td><td>Usuario</td><td>Cargar una fotografía facial para iniciar un análisis.</td></tr>
+              <tr><td>CU-08</td><td>Analizar imagen</td><td>Sistema (orquestado por el backend)</td><td>Caso de uso compuesto que agrupa la detección, censura y clasificación de la imagen cargada.</td></tr>
+              <tr><td>CU-09</td><td>Detectar y censurar rostro</td><td>Worker de procesamiento asíncrono</td><td><code>«include»</code> de CU-08; localiza el rostro y desenfoca ojos y boca antes de conservar la imagen.</td></tr>
+              <tr><td>CU-10</td><td>Clasificar afección cutánea</td><td>Worker de procesamiento asíncrono</td><td><code>«include»</code> de CU-08; ejecuta la inferencia del modelo de Deep Learning sobre la imagen censurada.</td></tr>
+              <tr><td>CU-11</td><td>Consultar estado del análisis</td><td>Usuario</td><td>Verificar si un análisis en cola ya fue procesado.</td></tr>
+              <tr><td>CU-12</td><td>Ver resultado del análisis</td><td>Usuario</td><td>Visualizar la clasificación obtenida y la imagen censurada.</td></tr>
+              <tr><td>CU-13</td><td>Ver historial de análisis</td><td>Usuario</td><td>Listar los análisis previos realizados.</td></tr>
+              <tr><td>CU-14</td><td>Obtener / crear rutina de cuidado</td><td>Usuario</td><td><code>«extend»</code> de CU-08; genera o consulta la rutina activa asociada a un resultado de análisis.</td></tr>
+              <tr><td>CU-15</td><td>Registrar seguimiento de rutina</td><td>Usuario</td><td>Indicar si se siguió la rutina activa en un día determinado (<em>skin check</em>).</td></tr>
+              <tr><td>CU-16</td><td>Buscar / consultar catálogo de productos</td><td>Usuario</td><td>Explorar productos e ingredientes del catálogo de <em>skincare</em>.</td></tr>
+              <tr><td>CU-17</td><td>Ver recomendaciones de productos</td><td>Usuario</td><td><code>«extend»</code> de CU-14; consulta productos recomendados en función del análisis y del perfil dermatológico.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Este análisis de casos de uso permite, a su vez, derivar los requisitos funcionales detallados que se documentan formalmente en la sección 4.1, y sirvió de guía durante el desarrollo para la definición de los <em>endpoints</em> de la API REST del backend, descritos en la sección 3.2.2.</p>
       </section>
 
       <!-- ============ SECTION 5 — CAP 4 ============ -->

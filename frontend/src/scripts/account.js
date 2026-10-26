@@ -253,7 +253,7 @@ window.openChangePasswordModal = function () {
     <div role="dialog" aria-modal="true" aria-labelledby="cpw-title"
       style="background:#fff;border-radius:16px;padding:28px 24px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.12)">
 
-      <h2 id="cpw-title" style="font-family:'Fraunces',serif;font-size:18px;color:#181C24;margin:0 0 4px">
+      <h2 id="cpw-title" style="font-family:'Sora',sans-serif;font-size:18px;color:#181C24;margin:0 0 4px">
         Cambiar contraseña
       </h2>
       <p style="font-size:12px;color:#5A6474;margin:0 0 20px;line-height:1.5">

@@ -27,7 +27,7 @@ export function initCharts() {
   // Ordenar del más antiguo al más reciente para el eje X
   const sorted = [...analyses].reverse()
 
-  Chart.defaults.font  = { family: "'DM Sans', sans-serif", size: 11 }
+  Chart.defaults.font  = { family: "'Inter', sans-serif", size: 11 }
   Chart.defaults.color = '#5A6474'
 
   // ── 1. Severidad en el tiempo (eje Y categórico) ─────────────────────────
@@ -76,7 +76,7 @@ export function initCharts() {
             ? ds.pointBackgroundColor[i]
             : ds.pointBackgroundColor
           ctx.save()
-          ctx.font         = 'bold 10px "DM Sans", sans-serif'
+          ctx.font         = 'bold 10px "Inter", sans-serif'
           ctx.fillStyle    = color ?? bark
           ctx.textAlign    = 'center'
           ctx.textBaseline = 'bottom'

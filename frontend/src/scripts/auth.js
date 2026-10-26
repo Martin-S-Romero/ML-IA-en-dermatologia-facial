@@ -118,7 +118,7 @@ function showForgotModal(prefillEmail) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px'
   modal.innerHTML = `
     <div style="background:#fff;border-radius:14px;padding:28px;max-width:380px;width:100%">
-      <h2 style="font-family:'Fraunces',serif;font-size:18px;color:#181C24;margin-bottom:6px">Restablecer contraseña</h2>
+      <h2 style="font-family:'Sora',sans-serif;font-size:18px;color:#181C24;margin-bottom:6px">Restablecer contraseña</h2>
       <p style="font-size:12px;color:#5A6474;margin-bottom:18px;line-height:1.5">Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.</p>
 
       <div id="forgot-error"   style="display:none;background:#FFF5F5;border:1px solid #FED7D7;color:#C53030;font-size:12px;border-radius:8px;padding:10px 12px;margin-bottom:12px"></div>

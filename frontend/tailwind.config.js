@@ -23,8 +23,8 @@ export default {
         bg:      '#F0EDE6',
       },
       fontFamily: {
-        display: ['"Fraunces"', 'serif'],
-        body:    ['"DM Sans"', 'sans-serif'],
+        display: ['"Sora"', 'sans-serif'],
+        body:    ['"Inter"', 'sans-serif'],
       },
       borderRadius: {
         card: '14px',

@@ -124,7 +124,7 @@ El servicio `backend` depende del servicio `db` mediante un healthcheck (`pg_isr
 | Tailwind CSS | 3.4 | Framework de estilos utility-first |
 | PostCSS + Autoprefixer | — | Procesamiento de CSS |
 | Chart.js | 4.4 | Gráficas del dashboard (CDN) |
-| Google Fonts | — | Tipografías: Fraunces + DM Sans |
+| Google Fonts | — | Tipografías: Sora + Inter |
 | JavaScript ES2022+ | — | Lógica de aplicación (módulos nativos) |
 
 **Decisión de diseño:** Se optó por HTML/Vite/Tailwind en lugar de frameworks como React o Vue para mantener el proyecto comprensible, evitar dependencias innecesarias y conservar control total sobre el comportamiento de la aplicación. Vite aporta módulos ES nativos y recarga en caliente sin la complejidad de un framework de componentes.
@@ -206,7 +206,7 @@ Tailwind CSS se configura con una paleta de colores semántica diseñada para un
 | `warn` | `#D4942A` | Advertencias, severidad moderada |
 | `ink` | `#181C24` | Texto principal |
 
-Las tipografías son **Fraunces** (display/títulos, con variante itálica para énfasis) y **DM Sans** (cuerpo de texto), cargadas desde Google Fonts.
+Las tipografías son **Sora** (display/títulos) e **Inter** (cuerpo de texto, formularios, navegación y datos), cargadas desde Google Fonts.
 
 ### 3.5 Manejo de Sesión
 

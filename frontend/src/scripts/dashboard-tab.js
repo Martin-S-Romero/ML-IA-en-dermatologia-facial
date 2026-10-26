@@ -98,7 +98,7 @@ function _donutSVG(pct, stroke, sizeClass = 'w-11 h-11', dark = true) {
     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="${stroke}" stroke-width="3"
       stroke-dasharray="${pct} 100" stroke-linecap="round" transform="rotate(-90 18 18)"/>
     <text x="18" y="22" text-anchor="middle" fill="${textColor}" font-size="8" font-weight="bold"
-      font-family="DM Sans,sans-serif">${pct}%</text>
+      font-family="Inter,sans-serif">${pct}%</text>
   </svg>`
 }
 

@@ -221,7 +221,7 @@ function injectNavStyles() {
       border-radius: 14px;
       cursor: pointer;
       font-size: 11px;
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
       transition: all 0.2s;
     }
     .nav-btn:hover, .nav-btn.active {
@@ -246,7 +246,7 @@ function injectNavStyles() {
       border-top: none;
       border-left: none;
       border-right: none;
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
     }
     .dtab.active {
       color: #B89A72;
