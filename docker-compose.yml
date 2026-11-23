@@ -100,6 +100,20 @@ services:
     networks:
       - tesis-network
 
+  # Túnel público ngrok -> frontend (Vite ya proxya /api al backend)
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command: http --url=${NGROK_DOMAIN:-stool-twitter-props.ngrok-free.dev} frontend:3000
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    ports:
+      - "4040:4040"
+    depends_on:
+      - frontend
+    networks:
+      - tesis-network
+
 networks:
   tesis-network:
     driver: bridge
